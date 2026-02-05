@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/src/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
@@ -14,16 +15,29 @@ export function Navbar() {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <span className="text-2xl font-bold text-[#1a53c8]">SaveGoal</span>
+            <Image
+              src="/SavegoalLogo.png"
+              alt="SaveGoal"
+              width={140}
+              height={48}
+              className="h-12 w-auto"
+              priority
+            />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-10">
+          <div className="hidden md:flex items-center gap-20">
             <Link
               href="/products"
               className="text-base font-medium text-[#1a53c8] hover:text-[#2d3369] transition-colors"
             >
               Browse Products
+            </Link>
+            <Link
+              href="/contributors"
+              className="text-base font-medium text-[#1a53c8] hover:text-[#2d3369] transition-colors"
+            >
+              Contributors
             </Link>
             <Link
               href="/how-it-works"
