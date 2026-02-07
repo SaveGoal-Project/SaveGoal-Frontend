@@ -1,0 +1,95 @@
+// API Configuration
+// Base URL will be set via environment variable
+
+export const API_CONFIG = {
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || "https://api.savegoal.com/api/v1",
+  TIMEOUT: 30000, // 30 seconds
+  RETRY_ATTEMPTS: 3,
+  RETRY_DELAY: 1000, // 1 second
+} as const;
+
+// API Endpoints
+export const API_ENDPOINTS = {
+  // Authentication
+  AUTH: {
+    LOGIN: "/auth/login",
+    REGISTER: "/auth/register",
+    LOGOUT: "/auth/logout",
+    FORGOT_PASSWORD: "/auth/forgot-password",
+    RESET_PASSWORD: "/auth/reset-password",
+    VERIFY_PHONE: "/auth/verify-phone",
+    VERIFY_EMAIL: "/auth/verify-email",
+    REFRESH_TOKEN: "/auth/refresh-token",
+  },
+  
+  // Merchant Authentication
+  MERCHANT_AUTH: {
+    REGISTER: "/auth/merchant/register",
+    VERIFY_BUSINESS: "/auth/merchant/verify-business",
+    UPLOAD_ID: "/auth/merchant/upload-id",
+    UPLOAD_SELFIE: "/auth/merchant/upload-selfie",
+  },
+
+  // Users
+  USERS: {
+    ME: "/users/me",
+    UPDATE_PROFILE: "/users/me",
+    CHANGE_PASSWORD: "/users/me/password",
+  },
+
+  // Products
+  PRODUCTS: {
+    LIST: "/products",
+    DETAILS: (id: string) => `/products/${id}`,
+    CATEGORIES: "/products/categories",
+    SEARCH: "/products/search",
+  },
+
+  // Savings Goals
+  SAVINGS: {
+    LIST: "/savings-goals",
+    CREATE: "/savings-goals",
+    DETAILS: (id: string) => `/savings-goals/${id}`,
+    DEPOSIT: (id: string) => `/savings-goals/${id}/deposit`,
+    CANCEL: (id: string) => `/savings-goals/${id}/cancel`,
+  },
+
+  // Payments
+  PAYMENTS: {
+    INITIATE: "/payments/initiate",
+    VERIFY: (reference: string) => `/payments/verify/${reference}`,
+    HISTORY: "/payments/history",
+  },
+
+  // Merchant
+  MERCHANT: {
+    DASHBOARD: "/merchant/dashboard",
+    PRODUCTS: "/merchant/products",
+    ORDERS: "/merchant/orders",
+    PAYOUTS: "/merchant/payouts",
+    ANALYTICS: "/merchant/analytics",
+  },
+
+  // Refunds
+  REFUNDS: {
+    REQUEST: "/refunds",
+    STATUS: (id: string) => `/refunds/${id}`,
+  },
+} as const;
+
+// HTTP Status Codes
+export const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  NO_CONTENT: 204,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  UNPROCESSABLE_ENTITY: 422,
+  TOO_MANY_REQUESTS: 429,
+  INTERNAL_SERVER_ERROR: 500,
+  SERVICE_UNAVAILABLE: 503,
+} as const;
+
