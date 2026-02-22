@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Star, Bookmark } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 interface BrowseProductCardProps {
   id: string;
@@ -39,56 +40,59 @@ export function BrowseProductCard({
   };
 
   return (
-    <Card className={`bg-white border border-[#3d4a99]/30 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 ${className}`}>
-      {/* Image Container */}
-      <div className="relative h-[240px] bg-gray-100">
-        {image ? (
-          <Image
-            src={image}
-            alt={name}
-            fill
-            className="object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-100 to-gray-200">
-            <div className="w-16 h-16 bg-gray-300 rounded-lg" />
-          </div>
-        )}
-        
-        {/* Category Badge */}
-        {category && (
-          <div className="absolute top-3 left-3">
-            <span className="bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200">
-              {category}
-            </span>
-          </div>
-        )}
-      </div>
+    <Card className={`bg-white border border-[#3d4a99]/30 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer ${className}`}>
+      <Link href={`/products/${id}`} className="block">
+        {/* Image Container */}
+        <div className="relative h-[240px] bg-gray-100">
+          {image ? (
+            <Image
+              src={image}
+              alt={name}
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-100 to-gray-200">
+              <div className="w-16 h-16 bg-gray-300 rounded-lg" />
+            </div>
+          )}
 
-      {/* Content */}
-      <CardContent className="p-4 space-y-2">
-        {/* Brand */}
-        {brand && (
-          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            {brand}
-          </span>
-        )}
-
-        {/* Product Name */}
-        <h3 className="text-base font-bold text-black leading-tight line-clamp-1">{name}</h3>
-
-        {/* Rating */}
-        <div className="flex items-center gap-1.5">
-          <Star className="h-4 w-4 fill-[#ffce31] text-[#ffce31]" />
-          <span className="text-sm text-gray-600">
-            <span className="font-medium">{rating}</span>
-            <span className="text-gray-400"> rating ({formatReviewCount(reviewCount)} reviews)</span>
-          </span>
+          {/* Category Badge */}
+          {category && (
+            <div className="absolute top-3 left-3">
+              <span className="bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200">
+                {category}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-gray-200 pt-3 mt-3">
-          {/* Price and Save Button Row */}
+        {/* Content */}
+        <div className="p-4 space-y-2">
+          {/* Brand */}
+          {brand && (
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              {brand}
+            </span>
+          )}
+
+          {/* Product Name */}
+          <h3 className="text-base font-bold text-black leading-tight line-clamp-1">{name}</h3>
+
+          {/* Rating */}
+          <div className="flex items-center gap-1.5">
+            <Star className="h-4 w-4 fill-[#ffce31] text-[#ffce31]" />
+            <span className="text-sm text-gray-600">
+              <span className="font-medium">{rating}</span>
+              <span className="text-gray-400"> rating ({formatReviewCount(reviewCount)} reviews)</span>
+            </span>
+          </div>
+        </div>
+      </Link>
+
+      {/* Price & Save — outside of Link so button is independently clickable */}
+      <div className="px-4 pb-4">
+        <div className="border-t border-gray-200 pt-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-400 mb-0.5">Total Price</p>
@@ -105,7 +109,7 @@ export function BrowseProductCard({
             </Button>
           </div>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

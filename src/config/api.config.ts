@@ -75,6 +75,46 @@ export const API_ENDPOINTS = {
     REQUEST: "/refunds",
     STATUS: (id: string) => `/refunds/${id}`,
   },
+
+  // Admin
+  ADMIN: {
+    LOGIN: "/auth/admin/login",
+    DASHBOARD: "/admin/dashboard",
+    USERS: {
+      LIST: "/admin/users",
+      DETAILS: (id: string) => `/admin/users/${id}`,
+    },
+    MERCHANTS: {
+      LIST: "/admin/merchants",
+      DETAILS: (id: string) => `/admin/merchants/${id}`,
+    },
+    PLANS: {
+      LIST: "/admin/plans",
+      DETAILS: (id: string) => `/admin/plans/${id}`,
+    },
+    PAYMENTS: {
+      LIST: "/admin/payments",
+      DETAILS: (id: string) => `/admin/payments/${id}`,
+    },
+    DISPUTES: {
+      LIST: "/admin/disputes",
+      DETAILS: (id: string) => `/admin/disputes/${id}`,
+    },
+    RISK: {
+      OVERVIEW: "/admin/risk",
+      INVESTIGATION: (id: string) => `/admin/risk/${id}`,
+    },
+    ANALYTICS: "/admin/analytics",
+    SETTINGS: "/admin/settings",
+    SYSTEM_HEALTH: "/admin/system-health",
+    ROLES: {
+      LIST: "/admin/roles",
+      CREATE: "/admin/roles",
+      UPDATE: (id: string) => `/admin/roles/${id}`,
+      DELETE: (id: string) => `/admin/roles/${id}`,
+    },
+    AUDIT: "/admin/audit",
+  },
 } as const;
 
 // HTTP Status Codes
@@ -92,4 +132,6 @@ export const HTTP_STATUS = {
   INTERNAL_SERVER_ERROR: 500,
   SERVICE_UNAVAILABLE: 503,
 } as const;
+
+
 

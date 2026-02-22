@@ -69,9 +69,7 @@ export const merchantRegisterSchema = merchantBasicInfoSchema
     terms: z.boolean(),
   }));
 
-export type MerchantRegisterFormData = z.infer<typeof merchantRegisterSchema>;
-
-// Ghana regions and cities data
+export type MerchantRegisterFormData = z.infer<typeof merchantRegisterSchema>;// Ghana regions and cities data
 export const ghanaRegions = [
   "Greater Accra",
   "Ashanti",

@@ -34,23 +34,23 @@ export function ProductGrid({
     <section className={`py-16 md:py-24 bg-white ${className}`}>
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-10 md:mb-14">
-          <div className="space-y-3 mb-6 md:mb-0">
-            <h2 className="text-4xl md:text-5xl font-bold text-black">{title}</h2>
-            <p className="text-xl md:text-2xl text-[#5e7fc1]">{subtitle}</p>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-10 md:mb-12">
+          <div className="space-y-2 mb-6 md:mb-0">
+            <h2 className="text-3xl md:text-4xl font-bold text-black">{title}</h2>
+            <p className="text-base md:text-lg text-[#5e7fc1]">{subtitle}</p>
           </div>
           {showViewAll && (
             <Link
               href="/products"
-              className="border-4 border-[#2d3369] text-[#4850a5] px-8 py-3 text-lg font-semibold rounded-full hover:bg-[#2d3369] hover:text-white transition-all duration-300 inline-block text-center"
+              className="border-2 border-[#2C3466] text-[#2C3466] px-7 py-2.5 text-sm font-semibold rounded-full hover:bg-[#2C3466] hover:text-white transition-all duration-300 inline-block text-center whitespace-nowrap"
             >
-              Browse Products
+              View All Products
             </Link>
           )}
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
           {products.map((product) => (
             <ProductCard key={product.id} {...product} />
           ))}

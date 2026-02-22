@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Navbar } from "@/src/components/layouts/Navbar";
 import { Footer } from "@/src/components/marketing/Footer";
 import { BrowseProductCard } from "@/src/components/shared/BrowseProductCard";
 import { Search, ChevronDown } from "lucide-react";
@@ -144,8 +143,6 @@ export default function BrowseProductsPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
-      
       <main className="container mx-auto px-4 py-8 md:py-12">
         {/* Page Header */}
         <div className="mb-8">
@@ -177,11 +174,10 @@ export default function BrowseProductsPage() {
               <button
                 key={category}
                 onClick={() => setActiveCategory(category)}
-                className={`px-5 py-2 rounded-lg border text-sm font-medium transition-all ${
-                  activeCategory === category
-                    ? "bg-[#3d4a99] text-white border-[#3d4a99]"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-[#3d4a99] hover:text-[#3d4a99]"
-                }`}
+                className={`px-5 py-2 rounded-lg border text-sm font-medium transition-all ${activeCategory === category
+                  ? "bg-[#3d4a99] text-white border-[#3d4a99]"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-[#3d4a99] hover:text-[#3d4a99]"
+                  }`}
               >
                 {category}
               </button>
@@ -197,7 +193,7 @@ export default function BrowseProductsPage() {
               <span>{sortBy}</span>
               <ChevronDown className={`h-4 w-4 transition-transform ${isSortOpen ? "rotate-180" : ""}`} />
             </button>
-            
+
             {isSortOpen && (
               <div className="absolute top-full right-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                 {sortOptions.map((option) => (
@@ -207,9 +203,8 @@ export default function BrowseProductsPage() {
                       setSortBy(option);
                       setIsSortOpen(false);
                     }}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
-                      sortBy === option ? "bg-gray-50 text-[#3d4a99] font-medium" : "text-gray-700"
-                    }`}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${sortBy === option ? "bg-gray-50 text-[#3d4a99] font-medium" : "text-gray-700"
+                      }`}
                   >
                     {option}
                   </button>

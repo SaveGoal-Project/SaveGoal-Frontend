@@ -27,9 +27,24 @@ import {
 } from "@/src/domains/auth/auth.api";
 import { tokenStorage } from "@/src/lib/api-client";
 
+// ─── Mock Auth (for development without backend) ─────────────────────────────
+const USE_MOCK_AUTH = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true";
+
+const MOCK_USER: User = {
+  id: "user-001",
+  phone: "0200000000",
+  email: "example@gmail.com",
+  firstName: "Kusi",
+  lastName: "Mensah",
+  role: "CONSUMER",
+  status: "ACTIVE",
+  createdAt: "2025-06-01T12:00:00Z",
+};
+
 // Auth Context Type
 interface AuthContextType extends AuthState {
   login: (credentials: LoginRequest) => Promise<void>;
+  adminLogin: (credentials: { email: string; password: string }) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   registerMerchant: (data: MerchantRegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
@@ -44,6 +59,7 @@ const defaultAuthContext: AuthContextType = {
   isLoading: true,
   error: null,
   login: async () => {},
+  adminLogin: async () => {},
   register: async () => {},
   registerMerchant: async () => {},
   logout: async () => {},
@@ -72,6 +88,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Initialize auth state on mount
   useEffect(() => {
     const initializeAuth = async () => {
+      // Mock auth: immediately set mock user (no backend required)
+      if (USE_MOCK_AUTH) {
+        setState({
+          user: MOCK_USER,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+
       try {
         if (checkIsAuthenticated()) {
           const user = await getCurrentUser();
@@ -136,6 +163,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [router]);
 
+  // Admin login handler - separate flow for admin-only credentials
+  const adminLogin = useCallback(
+    async (credentials: { email: string; password: string }) => {
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
+
+      try {
+        const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true";
+        let response;
+
+        if (USE_MOCK) {
+          const { mockAdminLogin } = await import("@/src/domains/admin/admin.mock");
+          response = await mockAdminLogin(credentials);
+        } else {
+          const { adminLogin: apiAdminLogin } = await import(
+            "@/src/domains/admin/admin.api"
+          );
+          response = await apiAdminLogin(credentials);
+        }
+
+        tokenStorage.setTokens(response.token, response.refreshToken);
+        setState({
+          user: response.user,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+        router.push("/admin/dashboard");
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Admin login failed";
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: message,
+        }));
+        throw error;
+      }
+    },
+    [router]
+  );
+
   // Register handler (consumer)
   const register = useCallback(async (data: RegisterRequest) => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
@@ -195,6 +263,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Logout handler
   const logout = useCallback(async () => {
+    const wasAdmin = state.user?.role === "ADMIN";
     setState((prev) => ({ ...prev, isLoading: true }));
 
     try {
@@ -206,9 +275,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading: false,
         error: null,
       });
-      router.push("/login");
+      router.push(wasAdmin ? "/admin/login" : "/login");
     }
-  }, [router]);
+  }, [router, state.user?.role]);
 
   // Clear error
   const clearError = useCallback(() => {
@@ -231,6 +300,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     ...state,
     login,
+    adminLogin,
     register,
     registerMerchant,
     logout,
@@ -294,4 +364,6 @@ export function withAuth<P extends object>(
 }
 
 export default AuthContext;
+
+
 

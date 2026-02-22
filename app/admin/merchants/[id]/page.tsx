@@ -1,0 +1,256 @@
+"use client";
+
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { cn } from "@/src/lib/utils";
+import { ArrowLeft, Mail, Ban } from "lucide-react";
+import { useAdminMerchantDetail } from "@/src/domains/admin/admin.hooks";
+import { AdminLoadingSkeleton, AdminErrorState } from "@/src/components/admin/AdminFeedback";
+
+const TABS = [
+    "Store Information",
+    "KYC Status",
+    "Payment Methods",
+    "Risk Assesments",
+    "Disputes",
+    "Activity Log",
+];
+
+export default function AdminMerchantDetailPage() {
+    const params = useParams();
+    const id = params.id as string;
+    const [activeTab, setActiveTab] = useState("Store Information");
+    const { data: merchant, isLoading, error, refetch } = useAdminMerchantDetail(id);
+
+    if (isLoading) return <AdminLoadingSkeleton />;
+    if (error || !merchant) return <AdminErrorState message={error || "Merchant not found"} onRetry={refetch} />;
+
+    return (
+        <div className="space-y-6">
+            {/* Back Link */}
+            <Link
+                href="/admin/merchants"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#0754FF] hover:text-[#0643cc] transition-colors"
+            >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Merchant L
+            </Link>
+
+            {/* Merchant Header Card */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                        {/* Avatar */}
+                        <div className="w-14 h-14 rounded-full bg-[#0754FF] flex items-center justify-center text-white font-bold text-xl">
+                            {merchant.initial}
+                        </div>
+                        {/* Info */}
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">{merchant.name}</h2>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                                <Mail className="h-3.5 w-3.5 text-gray-400" />
+                                <span className="text-sm text-gray-500">{merchant.email}</span>
+                            </div>
+                            <p className="text-sm text-gray-500 mt-0.5">{merchant.phone}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#0754FF] text-white">
+                                    {merchant.status}
+                                </span>
+                                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                                    {merchant.kycStatus}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-3">
+                        <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                            <Mail className="h-4 w-4" />
+                            Notify
+                        </button>
+                        <button className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 transition-colors">
+                            <Ban className="h-4 w-4" />
+                            Suspend
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="border-b border-gray-200">
+                <div className="flex items-center gap-8">
+                    {TABS.map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={cn(
+                                "pb-3 text-sm font-medium transition-colors relative",
+                                activeTab === tab
+                                    ? "text-[#0754FF]"
+                                    : "text-gray-500 hover:text-gray-700"
+                            )}
+                        >
+                            {tab}
+                            {activeTab === tab && (
+                                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0754FF]" />
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Tab Content: Store Information */}
+            {activeTab === "Store Information" && (
+                <div className="bg-white rounded-2xl border border-gray-100 p-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                        {/* Store Information Section */}
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-900 pb-2 border-b border-gray-200 mb-6">
+                                Store Information
+                            </h3>
+                            <div className="grid grid-cols-2 gap-y-6">
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Business Name</p>
+                                    <p className="text-sm font-semibold text-gray-900">{merchant.storeInfo.businessName}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Address</p>
+                                    <p className="text-sm font-semibold text-gray-900">{merchant.storeInfo.address}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Full Name</p>
+                                    <p className="text-sm font-semibold text-gray-900">{merchant.storeInfo.fullName}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Landmark</p>
+                                    <p className="text-sm font-semibold text-gray-900">{merchant.storeInfo.landmark}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Financial Status Section */}
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-900 pb-2 border-b border-gray-200 mb-6">
+                                Financial Status
+                            </h3>
+                            <div className="grid grid-cols-2 gap-y-6">
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Total Earned</p>
+                                    <p className="text-sm font-semibold text-gray-900">{merchant.financialStatus.totalEarned}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Last Payout Date</p>
+                                    <p className="text-sm font-semibold text-gray-900">{merchant.financialStatus.lastPayoutDate}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Total Withdrawn</p>
+                                    <p className="text-sm font-semibold text-gray-900">{merchant.financialStatus.totalWithdrawn}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Status</p>
+                                    <p className="text-sm font-semibold text-gray-900">{merchant.financialStatus.status}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Tab Content: KYC Status */}
+            {activeTab === "KYC Status" && (
+                <div className="bg-white rounded-2xl border border-gray-100 p-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-gray-900">Submitted Documents</h3>
+                        <div className="flex items-center gap-3">
+                            <button className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors">
+                                Approve KYC
+                            </button>
+                            <button className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 transition-colors">
+                                Reject KYC
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {merchant.kycDocuments.map((doc, i) => (
+                            <div key={i} className="border border-gray-200 rounded-xl p-4">
+                                <h4 className="text-sm font-bold text-gray-900 mb-3">{doc.name}</h4>
+                                {/* Document Preview Placeholder */}
+                                <div className="w-full h-44 rounded-lg bg-gray-100 flex items-center justify-center mb-4">
+                                    <span className="text-sm text-gray-400">Document Preview</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                                        {doc.status}
+                                    </span>
+                                    <span className="text-sm text-gray-500">{doc.date}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Tab Content: Payment Methods */}
+            {activeTab === "Payment Methods" && (
+                <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Connected Payment Methods</h3>
+                    <div className="space-y-3">
+                        {[
+                            { method: "MTN Mobile Money", account: "024 XXX XXXX", status: "Active" },
+                            { method: "Bank Transfer - GCB", account: "XXXX-XXXX-1234", status: "Active" },
+                        ].map((pm, i) => (
+                            <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-gray-50">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-900">{pm.method}</p>
+                                    <p className="text-xs text-gray-500">{pm.account}</p>
+                                </div>
+                                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                                    {pm.status}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Tab Content: Risk Assessments */}
+            {activeTab === "Risk Assesments" && (
+                <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+                    <p className="text-gray-500 text-sm">No risk assessments recorded for this merchant</p>
+                </div>
+            )}
+
+            {/* Tab Content: Disputes */}
+            {activeTab === "Disputes" && (
+                <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+                    <p className="text-gray-500 text-sm">No disputes filed against this merchant</p>
+                </div>
+            )}
+
+            {/* Tab Content: Activity Log */}
+            {activeTab === "Activity Log" && (
+                <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Activity Log</h3>
+                    <div className="space-y-3">
+                        {[
+                            { action: "Product listed: iPhone 15 Pro Max", time: "Today at 10:30 AM" },
+                            { action: "Payment received: GHS 5,000", time: "Yesterday at 3:00 PM" },
+                            { action: "Updated store description", time: "Feb 18, 2026 at 11:45 AM" },
+                            { action: "KYC documents renewed", time: "Feb 10, 2026 at 9:00 AM" },
+                        ].map((log, i) => (
+                            <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-900">{log.action}</p>
+                                    <p className="text-xs text-gray-500">{log.time}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
