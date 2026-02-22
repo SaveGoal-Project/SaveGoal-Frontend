@@ -1,65 +1,194 @@
-import Image from "next/image";
+import { Navbar } from "@/src/components/layouts/Navbar";
+import { HeroShowcase } from "@/src/components/marketing/HeroShowcase";
+import { HowItWorks } from "@/src/components/marketing/HowItWorks";
+import { ProductGrid } from "@/src/components/marketing/ProductGrid";
+import { Testimonials } from "@/src/components/marketing/Testimonials";
+import { CTA } from "@/src/components/marketing/CTA";
+import { Footer } from "@/src/components/marketing/Footer";
 
-export default function Home() {
+// Mock data - Replace with actual API calls later
+const mockProducts = [
+  {
+    id: "1",
+    name: "Sony PlayStation 5",
+    brand: "Sony",
+    price: 7000,
+    currency: "GHS",
+    category: "Electronics",
+    rating: 5.0,
+    reviewCount: 1200,
+    image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=800&q=80",
+  },
+  {
+    id: "2",
+    name: "Water Bottle",
+    brand: "MELCOM",
+    price: 10000,
+    currency: "GHS",
+    category: "Health",
+    rating: 5.0,
+    reviewCount: 1200,
+    image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&q=80",
+  },
+  {
+    id: "3",
+    name: "Apple Series 3",
+    brand: "TELEFONICA",
+    price: 10000,
+    currency: "GHS",
+    category: "Electronics",
+    rating: 5.0,
+    reviewCount: 1300,
+    image: "https://images.unsplash.com/photo-1546868871-af0de0ae72be?w=800&q=80",
+  },
+  {
+    id: "4",
+    name: "Adidas Sneakers",
+    brand: "APPLE",
+    price: 10000,
+    currency: "GHS",
+    category: "Sneakers",
+    rating: 5.0,
+    reviewCount: 1200,
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
+  },
+];
+
+const mockTestimonials = [
+  {
+    id: "1",
+    name: "Kofi Mensah",
+    role: "Software Developer",
+    quote:
+      "SaveGoal helped me get my MacBook without taking any loans. I saved for 6 months and now I own it completely!",
+    product: "Apple MacBook Air",
+  },
+  {
+    id: "2",
+    name: "Ama Serwaa",
+    role: "Fashion Designer",
+    quote:
+      "I love how I can track my progress every day. It keeps me motivated to save more. Already completed 3 goals!",
+    product: "Sewing Machine",
+  },
+  {
+    id: "3",
+    name: "Kwame Asante",
+    role: "Teacher",
+    quote:
+      "No hidden fees, no interest. Just save and get what you want. This is how shopping should be!",
+    product: "Samsung TV",
+  },
+];
+
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <div className="min-h-screen bg-white">
+      <Navbar />
+      <main>
+        {/* Hero Section - Two Column Layout */}
+        <section className="pt-8 pb-16 md:pt-12 md:pb-20 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Left Column - Content */}
+              <div className="space-y-6 md:space-y-8">
+                {/* Main Heading */}
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black leading-tight">
+                  Save Today,{" "}
+                  <span className="bg-gradient-to-r from-[#4850a5] to-[#5761c9] bg-clip-text text-transparent">
+                    Own Tomorrow
+                  </span>
+                </h1>
+
+                {/* Description */}
+                <p className="text-base md:text-lg text-[#6b7280] leading-relaxed max-w-lg">
+                  Turn your dreams into reality with SaveGoal. Create structured
+                  savings plans for the products you love, and get them when
+                  you&apos;re ready.
+                </p>
+
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <a
+                    href="/register"
+                    className="bg-[#2d3369] hover:bg-[#3d4479] text-white px-8 py-4 text-base font-semibold rounded-full transition-all duration-300 flex items-center justify-center gap-2"
+                  >
+                    Start Saving Now
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 8l4 4m0 0l-4 4m4-4H3"
+                      />
+                    </svg>
+                  </a>
+                  <a
+                    href="/products"
+                    className="border-2 border-[#d1d5db] text-[#374151] px-8 py-4 text-base font-semibold rounded-full hover:bg-[#f9fafb] transition-all duration-300 text-center"
+                  >
+                    Browse Products
+                  </a>
+                </div>
+
+                {/* Stats Row */}
+                <div className="flex flex-wrap gap-8 pt-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 text-[#4850a5]">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-[#4850a5]">100%</div>
+                      <div className="text-sm text-[#9ca3af]">Secure Savings</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 text-[#4850a5]">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-[#4850a5]">50K +</div>
+                      <div className="text-sm text-[#9ca3af]">Goals Achieved</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 text-[#4850a5]">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                        <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-[#4850a5]">GH¢5M +</div>
+                      <div className="text-sm text-[#9ca3af]">Saved</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Hero Showcase */}
+              <div className="flex justify-center lg:justify-end">
+                <HeroShowcase />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <HowItWorks />
+        <ProductGrid products={mockProducts} />
+        <Testimonials testimonials={mockTestimonials} />
+        <CTA />
       </main>
+      <Footer />
     </div>
   );
 }
