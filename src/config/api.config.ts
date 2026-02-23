@@ -12,16 +12,17 @@ export const API_CONFIG = {
 export const API_ENDPOINTS = {
   // Authentication
   AUTH: {
-    LOGIN: "/auth/login",
-    REGISTER: "/auth/register",
+    LOGIN: "/auth/email/signin",
+    REGISTER: "/auth/email/signup",
     LOGOUT: "/auth/logout",
     FORGOT_PASSWORD: "/auth/forgot-password",
     RESET_PASSWORD: "/auth/reset-password",
-    VERIFY_PHONE: "/auth/verify-phone",
+    SEND_OTP: "/auth/phone/send-otp",
+    VERIFY_PHONE: "/auth/phone/verify-otp",
     VERIFY_EMAIL: "/auth/verify-email",
     REFRESH_TOKEN: "/auth/refresh-token",
   },
-  
+
   // Merchant Authentication
   MERCHANT_AUTH: {
     REGISTER: "/auth/merchant/register",

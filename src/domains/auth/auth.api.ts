@@ -22,32 +22,58 @@ import {
  * Login with phone/email and password
  */
 export async function login(credentials: LoginRequest): Promise<AuthResponse> {
-  const response = await apiClient.post<AuthResponse>(
+  // Map frontend's generic phoneOrEmail input into the explicit email key expected by the backend
+  const payload = {
+    email: credentials.phoneOrEmail,
+    password: credentials.password,
+  };
+
+  const response = await apiClient.post<any>(
     API_ENDPOINTS.AUTH.LOGIN,
-    credentials,
+    payload,
     { skipAuth: true }
   );
-  
+
+  // Format the unwrapped API response back to the structural contract expected by AuthContext
+  const authResponse: AuthResponse = {
+    user: response.user,
+    token: response.session?.token || response.token,
+    refreshToken: response.session?.refreshToken || response.refreshToken,
+  };
+
   // Store tokens on successful login
-  tokenStorage.setTokens(response.token, response.refreshToken);
-  
-  return response;
+  tokenStorage.setTokens(authResponse.token, authResponse.refreshToken);
+
+  return authResponse;
 }
 
 /**
  * Register a new consumer account
  */
 export async function register(data: RegisterRequest): Promise<AuthResponse> {
-  const response = await apiClient.post<AuthResponse>(
+  // Combine frontend split names to satisfy backend BetterAuth string mapping
+  const payload = {
+    email: data.email || data.phone,
+    password: data.password,
+    name: `${data.firstName} ${data.lastName}`.trim(),
+  };
+
+  const response = await apiClient.post<any>(
     API_ENDPOINTS.AUTH.REGISTER,
-    data,
+    payload,
     { skipAuth: true }
   );
-  
+
+  const authResponse: AuthResponse = {
+    user: response.user,
+    token: response.session?.token || response.token,
+    refreshToken: response.session?.refreshToken || response.refreshToken,
+  };
+
   // Store tokens on successful registration
-  tokenStorage.setTokens(response.token, response.refreshToken);
-  
-  return response;
+  tokenStorage.setTokens(authResponse.token, authResponse.refreshToken);
+
+  return authResponse;
 }
 
 /**
@@ -73,10 +99,10 @@ export async function registerMerchant(data: MerchantRegisterRequest): Promise<A
     data,
     { skipAuth: true }
   );
-  
+
   // Store tokens on successful registration
   tokenStorage.setTokens(response.token, response.refreshToken);
-  
+
   return response;
 }
 
@@ -114,7 +140,7 @@ export async function uploadSelfie(file: File): Promise<{ url: string; filename:
 export async function requestPhoneVerification(
   data: PhoneVerificationRequest
 ): Promise<{ success: boolean; message: string }> {
-  return apiClient.post(API_ENDPOINTS.AUTH.VERIFY_PHONE, data, { skipAuth: true });
+  return apiClient.post(API_ENDPOINTS.AUTH.SEND_OTP, data, { skipAuth: true });
 }
 
 /**
@@ -123,7 +149,7 @@ export async function requestPhoneVerification(
 export async function verifyPhoneCode(
   data: PhoneVerificationConfirmRequest
 ): Promise<{ success: boolean; verified: boolean }> {
-  return apiClient.post(`${API_ENDPOINTS.AUTH.VERIFY_PHONE}/confirm`, data, { skipAuth: true });
+  return apiClient.post(API_ENDPOINTS.AUTH.VERIFY_PHONE, data, { skipAuth: true });
 }
 
 // ==================== Password Recovery ====================
@@ -157,10 +183,10 @@ export async function refreshToken(data: RefreshTokenRequest): Promise<RefreshTo
     data,
     { skipAuth: true }
   );
-  
+
   // Update stored tokens
   tokenStorage.setTokens(response.token, response.refreshToken);
-  
+
   return response;
 }
 
@@ -187,24 +213,24 @@ export const authService = {
   login,
   register,
   logout,
-  
+
   // Merchant
   registerMerchant,
   submitMerchantVerification,
   uploadIdDocument,
   uploadSelfie,
-  
+
   // Phone verification
   requestPhoneVerification,
   verifyPhoneCode,
-  
+
   // Password
   forgotPassword,
   resetPassword,
-  
+
   // Token
   refreshToken,
-  
+
   // User
   getCurrentUser,
   isAuthenticated,

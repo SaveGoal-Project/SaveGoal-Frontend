@@ -11,28 +11,28 @@ export const tokenStorage = {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(ACCESS_TOKEN_KEY);
   },
-  
+
   setAccessToken: (token: string): void => {
     if (typeof window === "undefined") return;
     localStorage.setItem(ACCESS_TOKEN_KEY, token);
   },
-  
+
   getRefreshToken: (): string | null => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(REFRESH_TOKEN_KEY);
   },
-  
+
   setRefreshToken: (token: string): void => {
     if (typeof window === "undefined") return;
     localStorage.setItem(REFRESH_TOKEN_KEY, token);
   },
-  
+
   clearTokens: (): void => {
     if (typeof window === "undefined") return;
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
   },
-  
+
   setTokens: (accessToken: string, refreshToken?: string): void => {
     tokenStorage.setAccessToken(accessToken);
     if (refreshToken) {
@@ -81,7 +81,7 @@ interface RequestOptions extends RequestInit {
 // Build URL with query params
 function buildUrl(endpoint: string, params?: Record<string, string | number | boolean | undefined>): string {
   const url = new URL(`${API_CONFIG.BASE_URL}${endpoint}`);
-  
+
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -89,7 +89,7 @@ function buildUrl(endpoint: string, params?: Record<string, string | number | bo
       }
     });
   }
-  
+
   return url.toString();
 }
 
@@ -99,14 +99,14 @@ async function request<T>(
   options: RequestOptions = {}
 ): Promise<T> {
   const { params, timeout = API_CONFIG.TIMEOUT, skipAuth = false, ...fetchOptions } = options;
-  
+
   // Build headers
   const headers = new Headers(fetchOptions.headers);
-  
+
   if (!headers.has("Content-Type") && !(fetchOptions.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
-  
+
   // Add auth token if available and not skipped
   if (!skipAuth) {
     const token = tokenStorage.getAccessToken();
@@ -114,41 +114,47 @@ async function request<T>(
       headers.set("Authorization", `Bearer ${token}`);
     }
   }
-  
+
   // Create abort controller for timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
+
   try {
     const response = await fetch(buildUrl(endpoint, params), {
       ...fetchOptions,
       headers,
       signal: controller.signal,
     });
-    
+
     clearTimeout(timeoutId);
-    
+
     // Handle no content responses
     if (response.status === HTTP_STATUS.NO_CONTENT) {
       return {} as T;
     }
-    
+
     // Parse response
-    const data = await response.json();
-    
+    const json = await response.json();
+
     // Handle error responses
-    if (!response.ok) {
-      throw new ApiClientError(response.status, {
-        code: data.code || "UNKNOWN_ERROR",
-        message: data.message || "An unexpected error occurred",
-        details: data.details,
+    if (!response.ok || (json.success === false)) {
+      const errorData = json.error || json;
+      throw new ApiClientError(response.status || 400, {
+        code: errorData.code || "UNKNOWN_ERROR",
+        message: errorData.message || "An unexpected error occurred",
+        details: errorData.details,
       });
     }
-    
-    return data as T;
+
+    // Unwrap the global response envelope if it exists
+    if (json && typeof json === "object" && "success" in json && "data" in json) {
+      return json.data as T;
+    }
+
+    return json as T;
   } catch (error) {
     clearTimeout(timeoutId);
-    
+
     // Handle abort/timeout
     if (error instanceof Error && error.name === "AbortError") {
       throw new ApiClientError(408, {
@@ -156,7 +162,7 @@ async function request<T>(
         message: "Request timed out. Please try again.",
       });
     }
-    
+
     // Handle network errors
     if (error instanceof TypeError && error.message === "Failed to fetch") {
       throw new ApiClientError(0, {
@@ -164,12 +170,12 @@ async function request<T>(
         message: "Unable to connect to the server. Please check your internet connection.",
       });
     }
-    
+
     // Re-throw ApiClientError
     if (error instanceof ApiClientError) {
       throw error;
     }
-    
+
     // Wrap unknown errors
     throw new ApiClientError(500, {
       code: "UNKNOWN_ERROR",
@@ -182,28 +188,28 @@ async function request<T>(
 export const apiClient = {
   get: <T>(endpoint: string, options?: RequestOptions) =>
     request<T>(endpoint, { ...options, method: "GET" }),
-    
+
   post: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
     request<T>(endpoint, {
       ...options,
       method: "POST",
       body: body instanceof FormData ? body : JSON.stringify(body),
     }),
-    
+
   patch: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
     request<T>(endpoint, {
       ...options,
       method: "PATCH",
       body: JSON.stringify(body),
     }),
-    
+
   put: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
     request<T>(endpoint, {
       ...options,
       method: "PUT",
       body: JSON.stringify(body),
     }),
-    
+
   delete: <T>(endpoint: string, options?: RequestOptions) =>
     request<T>(endpoint, { ...options, method: "DELETE" }),
 };
@@ -217,13 +223,13 @@ export async function uploadFile(
 ): Promise<{ url: string; filename: string }> {
   const formData = new FormData();
   formData.append(fieldName, file);
-  
+
   if (additionalData) {
     Object.entries(additionalData).forEach(([key, value]) => {
       formData.append(key, value);
     });
   }
-  
+
   return apiClient.post(endpoint, formData);
 }
 
