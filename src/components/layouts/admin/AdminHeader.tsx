@@ -19,7 +19,8 @@ export function AdminHeader({
   title = "Dashboard",
   searchPlaceholder = "Search across entities",
 }: AdminHeaderProps) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+
   return (
     <header className="sticky top-0 z-30 h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between gap-4">
       {/* Page Title */}
@@ -50,6 +51,11 @@ export function AdminHeader({
         <button className="relative w-9 h-9 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 transition-colors">
           <Bell className="h-5 w-5" />
         </button>
+
+        <div className="hidden md:flex flex-col text-right mr-2">
+          <span className="text-sm font-medium text-gray-900">{user?.firstName ? `${user.firstName} ${user.lastName}` : "Admin User"}</span>
+          <span className="text-xs text-gray-500">{user?.role || "ADMIN"}</span>
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
