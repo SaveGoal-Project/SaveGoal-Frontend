@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { MerchantSidebar } from '@/src/components/merchant/sidebar';
 import { MerchantTopbar } from '@/src/components/merchant/topbar';
 
@@ -6,12 +9,20 @@ export default function MerchantLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
     return (
         <div className="flex min-h-screen bg-slate-50">
-            <MerchantSidebar />
+            <MerchantSidebar
+                isOpen={isMobileMenuOpen}
+                onClose={() => setIsMobileMenuOpen(false)}
+            />
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <MerchantTopbar title="Merchant Dashboard" />
-                <main className="flex-1 overflow-auto p-6">
+                <MerchantTopbar
+                    title="Merchant Dashboard"
+                    onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                />
+                <main className="flex-1 overflow-auto p-4 md:p-6">
                     {children}
                 </main>
             </div>

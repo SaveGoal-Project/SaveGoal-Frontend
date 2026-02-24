@@ -101,26 +101,28 @@ export default function MerchantSettingsPage() {
             </div>
 
             <Tabs defaultValue="profile" className="w-full space-y-6">
-                <TabsList className="bg-slate-100/50 p-1 rounded-xl w-full sm:w-auto h-auto flex flex-wrap gap-1">
-                    <TabsTrigger value="profile" className="rounded-lg px-6 py-2.5 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-[#1A53C8] data-[state=active]:shadow-sm transition-all border-none">
-                        Store Profile
-                    </TabsTrigger>
-                    <TabsTrigger value="notifications" className="rounded-lg px-6 py-2.5 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-[#1A53C8] data-[state=active]:shadow-sm transition-all border-none">
-                        Notifications
-                    </TabsTrigger>
-                    <TabsTrigger value="payouts" className="rounded-lg px-6 py-2.5 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-[#1A53C8] data-[state=active]:shadow-sm transition-all border-none">
-                        Payout Accounts
-                    </TabsTrigger>
-                    <TabsTrigger value="security" className="rounded-lg px-6 py-2.5 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-[#1A53C8] data-[state=active]:shadow-sm transition-all border-none">
-                        Security
-                    </TabsTrigger>
-                </TabsList>
+                <div className="overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <TabsList className="bg-slate-100/50 p-1 rounded-xl w-max sm:w-auto h-auto flex gap-1">
+                        <TabsTrigger value="profile" className="rounded-lg px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-[#1A53C8] data-[state=active]:shadow-sm transition-all border-none whitespace-nowrap">
+                            Store Profile
+                        </TabsTrigger>
+                        <TabsTrigger value="notifications" className="rounded-lg px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-[#1A53C8] data-[state=active]:shadow-sm transition-all border-none whitespace-nowrap">
+                            Notifications
+                        </TabsTrigger>
+                        <TabsTrigger value="payouts" className="rounded-lg px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-[#1A53C8] data-[state=active]:shadow-sm transition-all border-none whitespace-nowrap">
+                            Payout Accounts
+                        </TabsTrigger>
+                        <TabsTrigger value="security" className="rounded-lg px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-[#1A53C8] data-[state=active]:shadow-sm transition-all border-none whitespace-nowrap">
+                            Security
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
 
                 <TabsContent value="profile" className="space-y-6 outline-none">
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center gap-8 bg-slate-50/30">
-                            <div className="relative">
-                                <div className="w-28 h-28 rounded-2xl bg-white border-4 border-white shadow-md overflow-hidden ring-1 ring-slate-100">
+                        <div className="p-4 md:p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center gap-6 md:gap-8 bg-slate-50/30">
+                            <div className="relative self-center md:self-auto">
+                                <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-white border-4 border-white shadow-md overflow-hidden ring-1 ring-slate-100">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={profile?.logo || "https://images.unsplash.com/photo-1516035069371-29a1b244cc32"}
@@ -132,24 +134,24 @@ export default function MerchantSettingsPage() {
                                     <Camera className="w-4 h-4" />
                                 </button>
                             </div>
-                            <div>
-                                <h2 className="text-xl font-bold text-slate-900">{profile?.storeName}</h2>
-                                <p className="text-sm text-slate-500 font-medium">Merchant Account ID: {profile?.id}</p>
-                                <div className="flex items-center gap-2 mt-3">
-                                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase rounded-lg border border-emerald-100">Verified Merchant</span>
-                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase rounded-lg border border-slate-200">{profile?.category}</span>
+                            <div className="text-center md:text-left">
+                                <h2 className="text-lg md:text-xl font-bold text-slate-900">{profile?.storeName}</h2>
+                                <p className="text-xs md:text-sm text-slate-500 font-medium">Account ID: {profile?.id}</p>
+                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-3">
+                                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[9px] md:text-[10px] font-bold uppercase rounded-lg border border-emerald-100">Verified</span>
+                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[9px] md:text-[10px] font-bold uppercase rounded-lg border border-slate-200">{profile?.category}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                             <div className="space-y-2">
                                 <Label htmlFor="storeName" className="text-sm font-bold text-slate-700">Store Name</Label>
                                 <div className="relative">
                                     <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                     <Input
                                         id="storeName"
-                                        className="pl-11 h-12 rounded-xl border-slate-200 focus:ring-4 focus:ring-blue-50 transition-all font-medium"
+                                        className="pl-11 h-11 md:h-12 rounded-xl border-slate-200 focus:ring-4 focus:ring-blue-50 transition-all font-medium text-sm"
                                         value={formData.storeName}
                                         onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
                                     />
@@ -161,7 +163,7 @@ export default function MerchantSettingsPage() {
                                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                     <Input
                                         id="ownerName"
-                                        className="pl-11 h-12 rounded-xl border-slate-200 focus:ring-4 focus:ring-blue-50 transition-all font-medium"
+                                        className="pl-11 h-11 md:h-12 rounded-xl border-slate-200 focus:ring-4 focus:ring-blue-50 transition-all font-medium text-sm"
                                         value={formData.ownerName}
                                         onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
                                     />
@@ -174,7 +176,7 @@ export default function MerchantSettingsPage() {
                                     <Input
                                         id="email"
                                         type="email"
-                                        className="pl-11 h-12 rounded-xl border-slate-200 focus:ring-4 focus:ring-blue-50 transition-all font-medium"
+                                        className="pl-11 h-11 md:h-12 rounded-xl border-slate-200 focus:ring-4 focus:ring-blue-50 transition-all font-medium text-sm"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     />
@@ -186,7 +188,7 @@ export default function MerchantSettingsPage() {
                                     <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                     <Input
                                         id="phone"
-                                        className="pl-11 h-12 rounded-xl border-slate-200 focus:ring-4 focus:ring-blue-50 transition-all font-medium"
+                                        className="pl-11 h-11 md:h-12 rounded-xl border-slate-200 focus:ring-4 focus:ring-blue-50 transition-all font-medium text-sm"
                                         value={formData.phone}
                                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                     />
@@ -198,7 +200,7 @@ export default function MerchantSettingsPage() {
                                     <MapPin className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                                     <Textarea
                                         id="address"
-                                        className="pl-11 pt-2.5 min-h-[100px] rounded-xl border-slate-200 focus:ring-4 focus:ring-blue-50 transition-all font-medium"
+                                        className="pl-11 pt-2.5 min-h-[100px] rounded-xl border-slate-200 focus:ring-4 focus:ring-blue-50 transition-all font-medium text-sm"
                                         value={formData.address}
                                         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                     />
@@ -206,14 +208,14 @@ export default function MerchantSettingsPage() {
                             </div>
                         </div>
 
-                        <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex justify-end">
+                        <div className="p-4 md:p-8 bg-slate-50/50 border-t border-slate-100 flex justify-end">
                             <Button
-                                className="bg-[#1A53C8] hover:bg-[#1542a1] text-white gap-2 font-bold px-8 h-12 rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                                className="w-full md:w-auto bg-[#1A53C8] hover:bg-[#1542a1] text-white gap-2 font-bold px-8 h-12 rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
                                 onClick={handleSave}
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                Save Profile Changes
+                                Save Changes
                             </Button>
                         </div>
                     </div>

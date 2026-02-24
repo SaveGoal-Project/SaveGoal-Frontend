@@ -115,8 +115,8 @@ export default function MerchantProductsPage() {
             {/* Content Card */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 {/* Search and Filters */}
-                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/30">
-                    <div className="relative flex-1 max-w-sm">
+                <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/30">
+                    <div className="relative flex-1 lg:max-w-sm">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                             type="text"
@@ -127,7 +127,7 @@ export default function MerchantProductsPage() {
                         />
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" className="h-10 rounded-xl gap-2 font-medium">
+                        <Button variant="outline" size="sm" className="h-10 rounded-xl gap-2 font-medium flex-1 sm:flex-none">
                             <Filter className="w-4 h-4" />
                             Filter
                         </Button>
@@ -135,16 +135,16 @@ export default function MerchantProductsPage() {
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
+                <div className="overflow-x-auto scrollbar-hide">
+                    <table className="w-full text-left text-sm min-w-[900px]">
                         <thead className="bg-slate-50/50 text-slate-500 font-medium border-b border-slate-100">
                             <tr>
-                                <th className="px-6 py-4">Product</th>
-                                <th className="px-6 py-4">Category</th>
-                                <th className="px-6 py-4">Price</th>
-                                <th className="px-6 py-4">Stock</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
+                                <th className="px-4 md:px-6 py-4">Product</th>
+                                <th className="px-4 md:px-6 py-4">Category</th>
+                                <th className="px-4 md:px-6 py-4">Price</th>
+                                <th className="px-4 md:px-6 py-4">Stock</th>
+                                <th className="px-4 md:px-6 py-4">Status</th>
+                                <th className="px-4 md:px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">

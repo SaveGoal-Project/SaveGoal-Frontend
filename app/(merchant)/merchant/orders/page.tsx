@@ -99,8 +99,8 @@ export default function MerchantOrdersPage() {
             {/* Content */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 {/* Toolbar */}
-                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
-                    <div className="relative flex-1 max-w-sm">
+                <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center gap-3">
+                    <div className="relative flex-1 lg:max-w-sm">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                             type="text"
@@ -110,33 +110,37 @@ export default function MerchantOrdersPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" className="gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="outline" size="sm" className="gap-2 h-9">
                             <Filter className="w-4 h-4" />
-                            Status
+                            <span className="hidden sm:inline">Status</span>
                         </Button>
-                        <Button variant="outline" size="sm" className="gap-2">
+                        <Button variant="outline" size="sm" className="gap-2 h-9">
                             <Calendar className="w-4 h-4" />
-                            Date Range
+                            <span className="hidden sm:inline">Date Range</span>
+                        </Button>
+                        <Button variant="outline" size="sm" className="gap-2 h-9 lg:hidden">
+                            <Download className="w-4 h-4" />
+                            <span className="hidden sm:inline">Export</span>
                         </Button>
                     </div>
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
+                <div className="overflow-x-auto scrollbar-hide">
+                    <table className="w-full text-left text-sm min-w-[800px]">
                         <thead className="bg-slate-50 border-b border-slate-100">
                             <tr>
-                                <th className="px-6 py-4 font-semibold text-slate-700 w-12">
+                                <th className="px-4 md:px-6 py-4 font-semibold text-slate-700 w-12">
                                     <input type="checkbox" className="rounded border-slate-300 text-[#1A53C8] focus:ring-[#1A53C8]" />
                                 </th>
-                                <th className="px-6 py-4 font-semibold text-slate-700">Order ID</th>
-                                <th className="px-6 py-4 font-semibold text-slate-700">Customer</th>
-                                <th className="px-6 py-4 font-semibold text-slate-700">Date</th>
-                                <th className="px-6 py-4 font-semibold text-slate-700">Amount</th>
-                                <th className="px-6 py-4 font-semibold text-slate-700">Payment</th>
-                                <th className="px-6 py-4 font-semibold text-slate-700">Status</th>
-                                <th className="px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
+                                <th className="px-4 md:px-6 py-4 font-semibold text-slate-700">Order ID</th>
+                                <th className="px-4 md:px-6 py-4 font-semibold text-slate-700">Customer</th>
+                                <th className="px-4 md:px-6 py-4 font-semibold text-slate-700">Date</th>
+                                <th className="px-4 md:px-6 py-4 font-semibold text-slate-700">Amount</th>
+                                <th className="px-4 md:px-6 py-4 font-semibold text-slate-700">Payment</th>
+                                <th className="px-4 md:px-6 py-4 font-semibold text-slate-700">Status</th>
+                                <th className="px-4 md:px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
