@@ -10,6 +10,8 @@ import {
     getProductById,
     type MockProduct,
 } from "@/src/domains/products/products.mock";
+import { useCreateSavingsGoal } from "@/src/domains/savings-goals/savings.hooks";
+import { SavingsFrequency } from "@/src/domains/savings-goals/savings.types";
 
 type Frequency = "weekly" | "biweekly" | "monthly";
 
@@ -22,6 +24,8 @@ export default function CreateSavingsPlanPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [frequency, setFrequency] = useState<Frequency>("weekly");
     const [isConfirming, setIsConfirming] = useState(false);
+
+    const { create } = useCreateSavingsGoal();
 
     const fetchProduct = useCallback(async () => {
         setIsLoading(true);
@@ -94,11 +98,26 @@ export default function CreateSavingsPlanPage() {
     }, [product, frequency]);
 
     const handleConfirm = async () => {
+        if (!product) return;
         setIsConfirming(true);
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        // TODO: Replace with actual createSavingsGoal call
-        router.push("/dashboard");
+        try {
+            let apiFrequency: SavingsFrequency = "WEEKLY";
+            if (frequency === "biweekly") apiFrequency = "BIWEEKLY";
+            if (frequency === "monthly") apiFrequency = "MONTHLY";
+
+            await create({
+                productId: product.id,
+                targetAmount: product.price,
+                frequency: apiFrequency,
+            });
+
+            router.push("/dashboard");
+        } catch (error) {
+            console.error("Failed to create savings plan:", error);
+            // Optionally could display an error toast here
+        } finally {
+            setIsConfirming(false);
+        }
     };
 
     if (isLoading) {
@@ -200,8 +219,8 @@ export default function CreateSavingsPlanPage() {
                                         key={option.key}
                                         onClick={() => setFrequency(option.key)}
                                         className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${frequency === option.key
-                                                ? "border-[#3d4a99] bg-[#3d4a99]/5 text-[#3d4a99]"
-                                                : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                                            ? "border-[#3d4a99] bg-[#3d4a99]/5 text-[#3d4a99]"
+                                            : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                                             }`}
                                     >
                                         {option.label}
