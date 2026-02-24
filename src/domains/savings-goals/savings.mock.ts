@@ -234,7 +234,7 @@ export async function createSavingsGoal(
     progress: 0,
     createdAt: new Date().toISOString(),
     product: {
-      id: _data.productId,
+      id: _data.productId || 'unknown',
       name: "New Product",
       price: _data.targetAmount,
       currency: "GHS",

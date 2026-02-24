@@ -48,11 +48,11 @@ export const API_ENDPOINTS = {
 
   // Savings Goals
   SAVINGS: {
-    LIST: "/savings-goals",
-    CREATE: "/savings-goals",
-    DETAILS: (id: string) => `/savings-goals/${id}`,
-    DEPOSIT: (id: string) => `/savings-goals/${id}/deposit`,
-    CANCEL: (id: string) => `/savings-goals/${id}/cancel`,
+    LIST: "/goals",
+    CREATE: "/goals",
+    DETAILS: (id: string) => `/goals/${id}`,
+    DEPOSIT: (id: string) => `/goals/${id}/deposit`,
+    CANCEL: (id: string) => `/goals/${id}/cancel`,
   },
 
   // Payments

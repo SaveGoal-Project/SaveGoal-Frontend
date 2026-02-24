@@ -14,7 +14,7 @@ import {
   createSavingsGoal,
   cancelSavingsGoal,
   getDashboardStats,
-} from "./savings.mock";
+} from "./savings.api";
 
 // ─── Hook: Fetch all savings goals ──────────────────────────────────────────
 
