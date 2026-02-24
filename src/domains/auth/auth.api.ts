@@ -34,9 +34,22 @@ export async function login(credentials: LoginRequest): Promise<AuthResponse> {
     { skipAuth: true }
   );
 
+  // Map the backend's unified "name" string back to the frontend's expected properties
+  let firstName = "";
+  let lastName = "";
+  if (response.user?.name) {
+    const parts = response.user.name.split(" ");
+    firstName = parts[0] || "";
+    lastName = parts.slice(1).join(" ") || "";
+  }
+
   // Format the unwrapped API response back to the structural contract expected by AuthContext
   const authResponse: AuthResponse = {
-    user: response.user,
+    user: {
+      ...response.user,
+      firstName,
+      lastName,
+    },
     token: response.session?.token || response.token,
     refreshToken: response.session?.refreshToken || response.refreshToken,
   };
@@ -64,8 +77,21 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
     { skipAuth: true }
   );
 
+  // Map the backend's unified "name" string back to the frontend's expected properties
+  let responseFirstName = "";
+  let responseLastName = "";
+  if (response.user?.name) {
+    const parts = response.user.name.split(" ");
+    responseFirstName = parts[0] || "";
+    responseLastName = parts.slice(1).join(" ") || "";
+  }
+
   const authResponse: AuthResponse = {
-    user: response.user,
+    user: {
+      ...response.user,
+      firstName: responseFirstName,
+      lastName: responseLastName,
+    },
     token: response.session?.token || response.token,
     refreshToken: response.session?.refreshToken || response.refreshToken,
   };
