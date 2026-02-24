@@ -10,7 +10,8 @@ import {
     Plus,
     Type,
     Upload,
-    X
+    X,
+    Loader2
 } from "lucide-react"
 
 import { Button } from "@/src/components/ui/button"
@@ -33,10 +34,12 @@ import {
     SelectValue,
 } from "@/src/components/ui/select"
 import { cn } from "@/src/lib/utils"
+import { useCreateProduct } from "@/src/domains/products/products.hooks"
 
 interface AddProductModalProps {
     isOpen: boolean
     onClose: () => void
+    onSuccess?: () => void
 }
 
 type Step = "basic" | "inventory" | "media" | "review"
@@ -48,7 +51,8 @@ const steps: { id: Step; label: string; icon: any }[] = [
     { id: "review", label: "Review", icon: Check },
 ]
 
-export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
+export function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalProps) {
+    const { create, isSubmitting, error: submitError } = useCreateProduct()
     const [currentStep, setCurrentStep] = useState<Step>("basic")
     const [formData, setFormData] = useState({
         name: "",
@@ -90,28 +94,41 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
         })
     }
 
-    const handleSubmit = () => {
-        // Here you would typically send the data to your backend
-        console.log("Submitting product:", formData)
-        onClose()
-        // Reset form
-        setFormData({
-            name: "",
-            description: "",
-            category: "",
-            price: "",
-            sku: "",
-            stock: "",
-            images: [],
-        })
-        setCurrentStep("basic")
+    const handleSubmit = async () => {
+        try {
+            await create({
+                name: formData.name,
+                description: formData.description,
+                category: formData.category,
+                price: `GH¢${formData.price}`,
+                sku: formData.sku,
+                stock: parseInt(formData.stock) || 0,
+                images: formData.images
+            })
+
+            onSuccess?.()
+
+            // Reset form
+            setFormData({
+                name: "",
+                description: "",
+                category: "",
+                price: "",
+                sku: "",
+                stock: "",
+                images: [],
+            })
+            setCurrentStep("basic")
+        } catch (err) {
+            console.error(err instanceof Error ? err.message : "Failed to create product")
+        }
     }
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl sm:max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl sm:max-h-[90vh] overflow-y-auto rounded-2xl">
                 <DialogHeader>
-                    <DialogTitle>Add New Product</DialogTitle>
+                    <DialogTitle className="text-xl font-bold">Add New Product</DialogTitle>
                     <DialogDescription>
                         Add a new product to your inventory in a few simple steps.
                     </DialogDescription>
@@ -127,20 +144,20 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
                             <div key={step.id} className="flex flex-col items-center relative z-10">
                                 <div
                                     className={cn(
-                                        "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors duration-200 bg-white",
+                                        "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors duration-200 bg-white shadow-sm",
                                         isActive
-                                            ? "border-[#1A53C8] text-[#1A53C8]"
+                                            ? "border-[#1A53C8] text-[#1A53C8] ring-4 ring-blue-50"
                                             : isCompleted
                                                 ? "border-[#1A53C8] bg-[#1A53C8] text-white"
                                                 : "border-slate-200 text-slate-400"
                                     )}
                                 >
-                                    <step.icon className="w-5 h-5" />
+                                    {isCompleted ? <Check className="w-5 h-5" /> : <step.icon className="w-5 h-5" />}
                                 </div>
                                 <span
                                     className={cn(
-                                        "text-xs font-medium mt-2",
-                                        isActive ? "text-[#1A53C8]" : "text-slate-500"
+                                        "text-[11px] font-bold mt-2 uppercase tracking-wide",
+                                        isActive ? "text-[#1A53C8]" : "text-slate-400"
                                     )}
                                 >
                                     {step.label}
@@ -150,7 +167,7 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
                                 {index < steps.length - 1 && (
                                     <div className={cn(
                                         "absolute top-5 left-1/2 w-[calc(100%+3rem)] h-[2px] -z-10",
-                                        steps.findIndex((s) => s.id === currentStep) > index ? "bg-[#1A53C8]" : "bg-slate-200"
+                                        steps.findIndex((s) => s.id === currentStep) > index ? "bg-[#1A53C8]" : "bg-slate-100"
                                     )} />
                                 )}
                             </div>
@@ -161,39 +178,41 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
                 {/* Step Content */}
                 <div className="py-4 min-h-[300px]">
                     {currentStep === "basic" && (
-                        <div className="space-y-4">
+                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Product Name</Label>
+                                <Label htmlFor="name" className="text-sm font-bold text-slate-700">Product Name</Label>
                                 <Input
                                     id="name"
                                     placeholder="e.g. Apple MacBook Pro 14"
+                                    className="rounded-xl h-11"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
+                                <Label htmlFor="description" className="text-sm font-bold text-slate-700">Description</Label>
                                 <Textarea
                                     id="description"
                                     placeholder="Describe your product..."
-                                    className="min-h-[100px]"
+                                    className="min-h-[120px] rounded-xl"
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="category">Category</Label>
+                                <Label htmlFor="category" className="text-sm font-bold text-slate-700">Category</Label>
                                 <Select
                                     value={formData.category}
                                     onValueChange={(value) => setFormData({ ...formData, category: value })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="h-11 rounded-xl">
                                         <SelectValue placeholder="Select Category" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="electronics">Electronics</SelectItem>
-                                        <SelectItem value="fashion">Fashion</SelectItem>
-                                        <SelectItem value="home">Home & Living</SelectItem>
+                                        <SelectItem value="Electronics">Electronics</SelectItem>
+                                        <SelectItem value="Clothing">Clothing</SelectItem>
+                                        <SelectItem value="Sneakers">Sneakers</SelectItem>
+                                        <SelectItem value="Health">Health</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -201,36 +220,38 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
                     )}
 
                     {currentStep === "inventory" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
                             <div className="space-y-2">
-                                <Label htmlFor="price">Price (GH¢)</Label>
+                                <Label htmlFor="price" className="text-sm font-bold text-slate-700">Price (GH¢)</Label>
                                 <div className="relative">
-                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">GH¢</div>
                                     <Input
                                         id="price"
                                         type="number"
                                         placeholder="0.00"
-                                        className="pl-9"
+                                        className="pl-12 h-11 rounded-xl"
                                         value={formData.price}
                                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                                     />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="stock">Stock Quantity</Label>
+                                <Label htmlFor="stock" className="text-sm font-bold text-slate-700">Stock Quantity</Label>
                                 <Input
                                     id="stock"
                                     type="number"
                                     placeholder="0"
+                                    className="h-11 rounded-xl"
                                     value={formData.stock}
                                     onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                                 />
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="sku">SKU</Label>
+                                <Label htmlFor="sku" className="text-sm font-bold text-slate-700">SKU (Stock Keeping Unit)</Label>
                                 <Input
                                     id="sku"
                                     placeholder="e.g. MB-PRO-14-2025"
+                                    className="h-11 rounded-xl"
                                     value={formData.sku}
                                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                                 />
@@ -239,24 +260,27 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
                     )}
 
                     {currentStep === "media" && (
-                        <div className="space-y-4">
+                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                            <Label className="text-sm font-bold text-slate-700">Product Images</Label>
                             <div className="grid grid-cols-3 gap-4">
                                 {formData.images.map((img, idx) => (
-                                    <div key={idx} className="relative aspect-square rounded-xl bg-slate-50 border border-slate-200 overflow-hidden group">
+                                    <div key={idx} className="relative aspect-square rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden group shadow-sm transition-all hover:ring-2 hover:ring-[#1A53C8]/20">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img src={img} alt={`Product ${idx}`} className="w-full h-full object-cover" />
                                         <button
                                             onClick={() => removeImage(idx)}
-                                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                                         >
-                                            <X className="w-3 h-3" />
+                                            <X className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 ))}
 
-                                <label className="aspect-square rounded-xl border-2 border-dashed border-slate-300 hover:border-[#1A53C8] hover:bg-blue-50/50 flex flex-col items-center justify-center cursor-pointer transition-colors">
-                                    <Plus className="w-6 h-6 text-slate-400 mb-2" />
-                                    <span className="text-xs text-slate-500 font-medium">Add Image</span>
+                                <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 hover:border-[#1A53C8] hover:bg-blue-50/50 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 group">
+                                    <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center mb-2 group-hover:bg-[#1A53C8]/10 transition-colors">
+                                        <Plus className="w-5 h-5 text-slate-400 group-hover:text-[#1A53C8]" />
+                                    </div>
+                                    <span className="text-xs text-slate-500 font-bold">Add Image</span>
                                     <Input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                                 </label>
                             </div>
@@ -264,55 +288,70 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
                     )}
 
                     {currentStep === "review" && (
-                        <div className="bg-slate-50 rounded-xl p-6 space-y-4">
+                        <div className="bg-slate-50 rounded-2xl p-6 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                             <div className="flex gap-4">
                                 {formData.images[0] ? (
                                     // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={formData.images[0]} alt="Preview" className="w-20 h-20 rounded-lg object-cover bg-white border border-slate-200" />
+                                    <img src={formData.images[0]} alt="Preview" className="w-24 h-24 rounded-2xl object-cover bg-white border border-slate-200 shadow-sm" />
                                 ) : (
-                                    <div className="w-20 h-20 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-300">
-                                        <Package className="w-8 h-8" />
+                                    <div className="w-24 h-24 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-300 shadow-sm">
+                                        <Package className="w-10 h-10" />
                                     </div>
                                 )}
                                 <div>
-                                    <h3 className="font-bold text-lg text-slate-900">{formData.name || "Untitled Product"}</h3>
-                                    <p className="text-sm text-slate-500">{formData.category || "Uncategorized"}</p>
-                                    <p className="font-semibold text-[#1A53C8] mt-1">{formData.price ? `GH¢${formData.price}` : "Price TBD"}</p>
+                                    <h3 className="font-bold text-xl text-slate-900 leading-tight">{formData.name || "Untitled Product"}</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="bg-blue-100 text-[#1A53C8] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{formData.category || "General"}</span>
+                                        <span className="text-slate-300 text-xs">|</span>
+                                        <span className="text-slate-500 text-xs font-medium">SKU: {formData.sku || "N/A"}</span>
+                                    </div>
+                                    <p className="font-bold text-xl text-[#1A53C8] mt-2">{formData.price ? `GH¢${formData.price}` : "Price TBD"}</p>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4 text-sm border-t border-slate-200 pt-4">
-                                <div>
-                                    <span className="text-slate-500">Stock:</span>
-                                    <span className="ml-2 font-medium text-slate-900">{formData.stock || 0}</span>
+
+                            <div className="grid grid-cols-2 gap-4 text-sm border-t border-slate-200 pt-6">
+                                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Stock Level</p>
+                                    <p className="text-lg font-bold text-slate-900">{formData.stock || 0} Units</p>
                                 </div>
-                                <div>
-                                    <span className="text-slate-500">SKU:</span>
-                                    <span className="ml-2 font-medium text-slate-900">{formData.sku || "-"}</span>
+                                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Listing Status</p>
+                                    <p className="text-lg font-bold text-emerald-600">Ready to Publish</p>
                                 </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Product Description</p>
+                                <p className="text-sm text-slate-600 leading-relaxed italic">{formData.description || "No description provided."}</p>
                             </div>
                         </div>
                     )}
                 </div>
 
-                <DialogFooter className="flex items-center justify-between sm:justify-between w-full">
+                <DialogFooter className="flex items-center justify-between sm:justify-between w-full border-t border-slate-100 pt-6">
                     <Button
-                        variant="outline"
+                        variant="ghost"
+                        className="rounded-xl font-bold text-slate-500 hover:text-slate-900 px-6 h-11"
                         onClick={currentStep === "basic" ? onClose : handleBack}
+                        disabled={isSubmitting}
                     >
                         {currentStep === "basic" ? "Cancel" : "Back"}
                     </Button>
 
                     <Button
-                        className="bg-[#1A53C8] hover:bg-[#1542a1] text-white gap-2"
+                        className="bg-[#1A53C8] hover:bg-[#1542a1] text-white gap-2 rounded-xl px-8 h-11 font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
                         onClick={currentStep === "review" ? handleSubmit : handleNext}
+                        disabled={isSubmitting}
                     >
-                        {currentStep === "review" ? (
+                        {isSubmitting ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : currentStep === "review" ? (
                             <>
-                                <Check className="w-4 h-4" /> Save Product
+                                <Check className="w-5 h-5" /> Publish Product
                             </>
                         ) : (
                             <>
-                                Next <ChevronRight className="w-4 h-4" />
+                                Next <ChevronRight className="w-5 h-5" />
                             </>
                         )}
                     </Button>

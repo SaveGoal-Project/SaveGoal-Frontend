@@ -178,7 +178,7 @@ export default function CreateSavingsPlanPage() {
                                     {product.name}
                                 </h3>
                                 <p className="text-sm font-bold text-[#3d4a99]">
-                                    GH¢{product.price.toLocaleString()}
+                                    {product.formattedPrice || `GH¢${product.price.toLocaleString()}`}
                                 </p>
                             </div>
                         </div>
@@ -200,8 +200,8 @@ export default function CreateSavingsPlanPage() {
                                         key={option.key}
                                         onClick={() => setFrequency(option.key)}
                                         className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${frequency === option.key
-                                                ? "border-[#3d4a99] bg-[#3d4a99]/5 text-[#3d4a99]"
-                                                : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                                            ? "border-[#3d4a99] bg-[#3d4a99]/5 text-[#3d4a99]"
+                                            : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                                             }`}
                                     >
                                         {option.label}
@@ -268,7 +268,7 @@ export default function CreateSavingsPlanPage() {
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-gray-500">Product Price</span>
                                 <span className="text-sm font-bold text-black">
-                                    GH¢ {product.price.toLocaleString()}
+                                    {product.formattedPrice || `GH¢${product.price.toLocaleString()}`}
                                 </span>
                             </div>
 

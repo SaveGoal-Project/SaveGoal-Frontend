@@ -58,13 +58,13 @@ const defaultAuthContext: AuthContextType = {
   isAuthenticated: false,
   isLoading: true,
   error: null,
-  login: async () => {},
-  adminLogin: async () => {},
-  register: async () => {},
-  registerMerchant: async () => {},
-  logout: async () => {},
-  clearError: () => {},
-  refreshUser: async () => {},
+  login: async () => { },
+  adminLogin: async () => { },
+  register: async () => { },
+  registerMerchant: async () => { },
+  logout: async () => { },
+  clearError: () => { },
+  refreshUser: async () => { },
 };
 
 // Create context
@@ -146,7 +146,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Redirect based on user role
       if (response.user.role === "MERCHANT") {
-        router.push("/merchant/dashboard");
+        router.push("/merchant");
       } else if (response.user.role === "ADMIN") {
         router.push("/admin/dashboard");
       } else {
@@ -248,7 +248,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (merchantUser.verificationStatus === "PENDING") {
         router.push("/merchant/verification");
       } else {
-        router.push("/merchant/dashboard");
+        router.push("/merchant");
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Merchant registration failed";
