@@ -1,6 +1,8 @@
 // Mock product data — shared across browse and detail pages
 // Replace with actual API calls when backend is ready
 
+import { Product } from "./products.types";
+
 export interface MockProduct {
     id: string;
     name: string;
@@ -236,3 +238,108 @@ export async function getProducts(): Promise<MockProduct[]> {
     await delay(300);
     return mockProducts;
 }
+
+export const PRODUCTS: Product[] = [
+    {
+        id: 1,
+        name: 'Apple MacBook Pro',
+        merchant: 'APPLE',
+        price: 'GH¢10,000',
+        tag: 'Electronics',
+        image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca4?q=80&w=2026&auto=format&fit=crop',
+        description: 'The new MacBook Pro delivers game-changing performance for pros. With the powerful M1 Pro or M1 Max chip to supercharge pro-level workflows while getting amazing battery life.',
+        rating: 4.8,
+        reviews: 245,
+        specs: {
+            "Processor": "M1 Pro",
+            "RAM": "16GB",
+            "Storage": "512GB SSD",
+            "Display": "14-inch Liquid Retina XDR"
+        }
+    },
+    {
+        id: 2,
+        name: 'Water Bottle',
+        merchant: 'MELCOM',
+        price: 'GH¢100',
+        tag: 'Health',
+        image: 'https://images.unsplash.com/photo-1602143407151-01114192003b?q=80&w=1935&auto=format&fit=crop',
+        description: 'Stay hydrated with our durable and eco-friendly water bottle. Perfect for gym, office, or outdoor adventures.',
+        rating: 4.5,
+        reviews: 89
+    },
+    {
+        id: 3,
+        name: 'Apple Series 3',
+        merchant: 'TELEFONICA',
+        price: 'GH¢1,500',
+        tag: 'Electronics',
+        image: 'https://images.unsplash.com/photo-1434493789847-2f02ea6ca920?q=80&w=2074&auto=format&fit=crop',
+        description: 'Track your workouts, monitor your health, and stay connected with the Apple Watch Series 3.',
+        rating: 4.6,
+        reviews: 156
+    },
+    {
+        id: 4,
+        name: 'Adidas Sneakers',
+        merchant: 'APPLE',
+        price: 'GH¢800',
+        tag: 'Sneakers',
+        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=2070&auto=format&fit=crop',
+        description: 'Experience comfort and style with these premium Adidas sneakers. Designed for everyday wear and athletic performance.',
+        rating: 4.7,
+        reviews: 312
+    },
+    {
+        id: 5,
+        name: 'Sony PlayStation 5',
+        merchant: 'SONY',
+        price: 'GH¢7,000',
+        tag: 'Electronics',
+        image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?q=80&w=2072&auto=format&fit=crop',
+        description: 'Experience lightning-fast loading with the PS5\'s ultra-high speed SSD, deeper immersion with haptic feedback, and a whole new generation of incredible PlayStation games.',
+        rating: 5.0,
+        reviews: 1200,
+        specs: {
+            "CPU": "AMD Zen 2 (8 cores)",
+            "GPU": "10.28 TFLOPs",
+            "Storage": "825GB SSD",
+            "Resolution": "Up to 8K"
+        }
+    },
+    {
+        id: 6,
+        name: 'Canon EOS R5',
+        merchant: 'CANON',
+        price: 'GH¢35,000',
+        tag: 'Electronics',
+        image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1638&auto=format&fit=crop',
+        description: 'The Canon EOS R5 lets you shoot 45MP stills at up to 20fps and capture 8K RAW video. It is the camera you have been waiting for.',
+        rating: 4.9,
+        reviews: 85
+    },
+    {
+        id: 7,
+        name: 'Designer Shirt',
+        merchant: 'ZARA',
+        price: 'GH¢450',
+        tag: 'Clothing',
+        image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=1888&auto=format&fit=crop',
+        description: 'Elevate your wardrobe with this stylish designer shirt. Made from high-quality materials for a comfortable fit.',
+        rating: 4.2,
+        reviews: 56
+    },
+    {
+        id: 8,
+        name: 'Nike Air Force',
+        merchant: 'NIKE',
+        price: 'GH¢1,200',
+        tag: 'Sneakers',
+        image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=1887&auto=format&fit=crop',
+        description: 'The legend lives on in the Nike Air Force 1, which stays true to its roots with iconic AF1 style and Nike Air for all-day comfort and long-lasting wear.',
+        rating: 4.8,
+        reviews: 423
+    },
+];
+
+export const CATEGORIES = ['All', 'Electronics', 'Clothing', 'Sneakers', 'Health'];
