@@ -1,142 +1,258 @@
 'use client';
 
+import { useState } from 'react';
 import {
     DollarSign,
-    Download,
     ArrowUpRight,
-    ArrowDownLeft,
-    CreditCard,
-    Wallet,
+    ArrowDownRight,
+    Download,
+    Plus,
     Building2,
     Calendar,
-    Search
+    Search,
+    Filter,
+    Clock,
+    CheckCircle2,
+    XCircle,
+    Info,
+    Loader2,
 } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
+import { useWalletBalance, useTransactions, useBankDetails, usePayoutRequest } from '@/src/domains/payments/settlements.hooks';
+import { cn } from '@/src/lib/utils';
+import { Skeleton } from '@/src/components/ui/skeleton';
+import { Badge } from '@/src/components/ui/badge';
+
+const getStatusBadge = (status: string) => {
+    switch (status) {
+        case 'Completed':
+            return <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-50 font-medium whitespace-nowrap">Completed</Badge>;
+        case 'Pending':
+            return <Badge className="bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-50 font-medium whitespace-nowrap">Pending</Badge>;
+        case 'Scheduled':
+            return <Badge className="bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-50 font-medium whitespace-nowrap">Scheduled</Badge>;
+        case 'Failed':
+            return <Badge className="bg-red-50 text-red-700 border-red-100 hover:bg-red-50 font-medium whitespace-nowrap">Failed</Badge>;
+        default:
+            return <Badge variant="outline">{status}</Badge>;
+    }
+};
+
+const getTransactionIcon = (type: string) => {
+    switch (type) {
+        case 'Sale':
+            return <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><Plus className="w-5 h-5" /></div>;
+        case 'Payout':
+            return <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><ArrowUpRight className="w-5 h-5" /></div>;
+        case 'Refund':
+            return <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0"><ArrowDownRight className="w-5 h-5" /></div>;
+        case 'Fee':
+            return <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center shrink-0"><Info className="w-5 h-5" /></div>;
+        default:
+            return <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center shrink-0"><DollarSign className="w-5 h-5" /></div>;
+    }
+};
 
 export default function MerchantPaymentsPage() {
+    const { balance, isLoading: isBalanceLoading } = useWalletBalance();
+    const { transactions, isLoading: isTransactionsLoading } = useTransactions();
+    const { bankDetails, isLoading: isBankLoading } = useBankDetails();
+    const { request: requestPayout, isSubmitting } = usePayoutRequest();
+
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const handlePayout = async () => {
+        if (!balance) return;
+        try {
+            const amount = parseFloat(balance.availableForPayout.replace(/[^0-9.]/g, ''));
+            await requestPayout(amount);
+            console.log("Payout request submitted successfully");
+        } catch (err) {
+            console.error(err instanceof Error ? err.message : "Failed to create product")
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Payments</h1>
-                    <p className="text-slate-500 text-sm mt-1">Manage your earrings and payouts</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Payments & Settlements</h1>
+                    <p className="text-slate-500 text-sm mt-1">Manage your funds and payout history</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" className="gap-2">
+                    <Button variant="outline" className="gap-2 h-11 rounded-xl">
                         <Download className="w-4 h-4" />
-                        Statement
+                        Export Statements
                     </Button>
-                    <Button className="gap-2 bg-[#1A53C8] hover:bg-[#1542a1] text-white">
-                        <ArrowUpRight className="w-4 h-4" />
+                    <Button
+                        className="bg-[#1A53C8] hover:bg-[#1542a1] text-white gap-2 h-11 px-6 rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+                        onClick={handlePayout}
+                        disabled={isSubmitting || (!!balance && parseFloat(balance.availableForPayout.replace(/[^0-9.]/g, '')) === 0)}
+                    >
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
                         Request Payout
                     </Button>
                 </div>
             </div>
 
-            {/* Balance Card */}
+            {/* Wallet Overview */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Balance */}
-                <div className="bg-gradient-to-br from-[#1A53C8] to-[#306CFE] rounded-2xl p-6 text-white shadow-lg lg:col-span-1 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-8 opacity-10">
-                        <Wallet className="w-32 h-32" />
-                    </div>
-                    <div className="relative z-10">
-                        <p className="text-blue-100 text-sm font-medium mb-1">Available Balance</p>
-                        <h2 className="text-3xl font-bold mb-6">GH¢ 45,200.00</h2>
-
-                        <div className="flex items-center gap-4 text-sm mb-8">
-                            <div>
-                                <p className="text-blue-200 text-xs">Pending Clearing</p>
-                                <p className="font-semibold">GH¢ 2,450.00</p>
+                {/* Balance Card */}
+                <div className="lg:col-span-2 bg-[#212D67] rounded-2xl p-8 relative overflow-hidden text-white shadow-xl">
+                    <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/3" />
+                    <div className="relative z-10 flex flex-col justify-between h-full">
+                        <div>
+                            <div className="flex items-center gap-2 text-blue-200 text-sm font-medium mb-2">
+                                <Building2 className="w-4 h-4" />
+                                Current Wallet Balance
                             </div>
-                            <div className="w-px h-8 bg-white/20"></div>
-                            <div>
-                                <p className="text-blue-200 text-xs">Last Payout</p>
-                                <p className="font-semibold">GH¢ 12,000.00</p>
-                            </div>
+                            {isBalanceLoading ? (
+                                <Skeleton className="h-12 w-48 bg-white/10" />
+                            ) : (
+                                <h2 className="text-4xl font-bold tracking-tight">{balance?.currentBalance}</h2>
+                            )}
                         </div>
 
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between text-xs text-blue-100">
-                                <span>**** **** **** 4829</span>
-                                <span>Ecobank Ghana</span>
+                        <div className="mt-12 grid grid-cols-2 gap-8">
+                            <div>
+                                <p className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Available for Payout</p>
+                                {isBalanceLoading ? (
+                                    <Skeleton className="h-6 w-24 bg-white/10" />
+                                ) : (
+                                    <p className="text-xl font-bold">{balance?.availableForPayout}</p>
+                                )}
+                            </div>
+                            <div>
+                                <p className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Pending Settlement</p>
+                                {isBalanceLoading ? (
+                                    <Skeleton className="h-6 w-24 bg-white/10" />
+                                ) : (
+                                    <p className="text-xl font-bold text-blue-100">{balance?.pendingSettlement}</p>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Quick Stats */}
-                <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                                <ArrowDownLeft className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Total Earnings</p>
-                                <p className="text-xl font-bold text-slate-900">GH¢ 1.2M</p>
-                            </div>
-                        </div>
-                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500 w-[75%]" />
-                        </div>
-                        <p className="text-xs text-slate-400 mt-2">+12% from last month</p>
+                {/* Bank Details Card */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="font-bold text-slate-900">Settlement Info</h3>
+                        {bankDetails?.isVerified === true && (
+                            <Badge className="bg-emerald-50 text-emerald-700 border-none hover:bg-emerald-50"><CheckCircle2 className="w-3 h-3 mr-1" />Verified</Badge>
+                        )}
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                <Building2 className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Bank Account</p>
-                                <p className="text-xl font-bold text-slate-900">Ecobank</p>
-                            </div>
+                    {isBankLoading ? (
+                        <div className="space-y-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
                         </div>
-                        <Button variant="outline" size="sm" className="w-full">Manage Account</Button>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Bank Name</p>
+                                <p className="text-sm font-bold text-slate-900">{bankDetails?.bankName}</p>
+                            </div>
+                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Account Number</p>
+                                <p className="text-sm font-bold text-slate-900">{bankDetails?.accountNumber}</p>
+                            </div>
+                            <Button variant="ghost" className="w-full text-[#1A53C8] hover:bg-blue-50 text-xs font-bold rounded-lg h-9">
+                                Change Bank Details
+                            </Button>
+                        </div>
+                    )}
+
+                    <div className="mt-6 flex items-start gap-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                        <Info className="w-4 h-4 text-[#1A53C8] mt-0.5 shrink-0" />
+                        <p className="text-[11px] text-[#1A53C8] font-medium leading-relaxed">
+                            Settlements are processed every Thursday. Next scheduled settlement is Oct 30, 2025.
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Transactions List */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                    <h3 className="font-bold text-slate-900">Recent Transactions</h3>
+            {/* Transactions Section */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-lg text-slate-900">Recent Transactions</h3>
                     <div className="flex items-center gap-2">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="Search..."
-                                className="pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-[#1A53C8]"
+                                placeholder="Search ID, Ref..."
+                                className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-[#1A53C8]/10 focus:outline-none w-48 transition-all"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
+                        <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs font-bold gap-1.5">
+                            <Filter className="w-3 h-3" />
+                            Filters
+                        </Button>
                     </div>
                 </div>
-                <div className="divide-y divide-slate-50">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${i % 2 === 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
-                                    {i % 2 === 0 ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="divide-y divide-slate-100">
+                        {isTransactionsLoading ? (
+                            Array(5).fill(0).map((_, i) => (
+                                <div key={i} className="p-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <Skeleton className="w-10 h-10 rounded-xl" />
+                                        <div className="space-y-2">
+                                            <Skeleton className="h-4 w-32" />
+                                            <Skeleton className="h-3 w-20" />
+                                        </div>
+                                    </div>
+                                    <Skeleton className="h-6 w-24" />
                                 </div>
-                                <div>
-                                    <p className="text-sm font-semibold text-slate-900">{i % 2 === 0 ? 'Order Payment #ORD-8292' : 'Payout to Bank **** 4829'}</p>
-                                    <p className="text-xs text-slate-500">Oct 24, 2025 at 2:30 PM</p>
+                            ))
+                        ) : transactions.length === 0 ? (
+                            <div className="p-12 text-center text-slate-500">No transactions found.</div>
+                        ) : (
+                            transactions.map((tx) => (
+                                <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        {getTransactionIcon(tx.type)}
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-slate-900 text-sm truncate">{tx.description}</p>
+                                            <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 font-medium">
+                                                <span>{tx.date}</span>
+                                                {tx.reference && (
+                                                    <>
+                                                        <span>•</span>
+                                                        <span className="text-[#1A53C8] font-bold">Ref: {tx.reference}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className={cn(
+                                            "font-bold text-sm",
+                                            tx.amount.startsWith('+') ? "text-emerald-600" : "text-slate-900"
+                                        )}>
+                                            {tx.amount}
+                                        </p>
+                                        <div className="mt-1">
+                                            {getStatusBadge(tx.status)}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="text-right">
-                                <p className={`text-sm font-bold ${i % 2 === 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
-                                    {i % 2 === 0 ? '+' : '-'} GH¢ {i % 2 === 0 ? '450.00' : '1,200.00'}
-                                </p>
-                                <p className="text-xs text-slate-400">{i % 2 === 0 ? 'Completed' : 'Processing'}</p>
-                            </div>
+                            ))
+                        )}
+                    </div>
+                    <div className="bg-slate-50/50 p-4 border-t border-slate-100 flex items-center justify-between">
+                        <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">Page 1 of 4</p>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" className="h-8 rounded-lg px-4 text-xs font-bold" disabled>Prev</Button>
+                            <Button variant="outline" size="sm" className="h-8 rounded-lg px-4 text-xs font-bold">Next</Button>
                         </div>
-                    ))}
-                </div>
-                <div className="p-4 border-t border-slate-100 text-center">
-                    <Button variant="ghost" size="sm" className="text-[#1A53C8]">View All Transactions</Button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -148,13 +148,13 @@ export default function ProductDetailPage() {
 
                         {/* Thumbnail Gallery */}
                         <div className="flex gap-3">
-                            {product.images.map((img, index) => (
+                            {product.images.map((img: string, index: number) => (
                                 <button
                                     key={index}
                                     onClick={() => setSelectedImage(index)}
                                     className={`relative w-[100px] h-[80px] rounded-xl overflow-hidden border-2 transition-all ${selectedImage === index
-                                            ? "border-[#3d4a99] ring-2 ring-[#3d4a99]/20"
-                                            : "border-gray-200 hover:border-gray-300"
+                                        ? "border-[#3d4a99] ring-2 ring-[#3d4a99]/20"
+                                        : "border-gray-200 hover:border-gray-300"
                                         }`}
                                 >
                                     <Image
@@ -201,8 +201,8 @@ export default function ProductDetailPage() {
                                 <button
                                     onClick={() => setIsWishlisted(!isWishlisted)}
                                     className={`w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all ${isWishlisted
-                                            ? "border-red-400 bg-red-50 text-red-500"
-                                            : "border-gray-200 bg-white text-gray-400 hover:border-gray-300"
+                                        ? "border-red-400 bg-red-50 text-red-500"
+                                        : "border-gray-200 bg-white text-gray-400 hover:border-gray-300"
                                         }`}
                                 >
                                     <Heart
@@ -247,7 +247,7 @@ export default function ProductDetailPage() {
                         {/* Price */}
                         <div className="flex items-baseline gap-3">
                             <span className="text-3xl md:text-4xl font-bold text-[#3d4a99]">
-                                GH¢{product.price.toLocaleString()}
+                                {product.formattedPrice || `GH¢${product.price.toLocaleString()}`}
                             </span>
                             <span className="text-sm text-gray-400">Total Price</span>
                         </div>
@@ -261,7 +261,7 @@ export default function ProductDetailPage() {
                         <div className="space-y-3">
                             <h3 className="text-base font-bold text-black">Specifications</h3>
                             <div className="grid grid-cols-2 gap-3">
-                                {product.specifications.map((spec, index) => (
+                                {product.specifications.map((spec: { label: string; value: string }, index: number) => (
                                     <div key={index} className="flex items-start gap-2">
                                         <Check className="h-4 w-4 text-[#3d4a99] mt-0.5 shrink-0" />
                                         <div>

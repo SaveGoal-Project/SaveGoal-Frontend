@@ -4,70 +4,18 @@ import { useState } from 'react';
 import {
     Search,
     Filter,
-    MoreHorizontal,
     Eye,
     Download,
     Calendar,
     CheckCircle2,
     Clock,
     XCircle,
-    Truck
+    Truck,
 } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
-
-// Mock Data
-const orders = [
-    {
-        id: 'ORD-0091',
-        customer: 'Kwame Adu',
-        email: 'kwame.adu@example.com',
-        product: 'Apple MacBook Pro 14"',
-        date: 'Oct 24, 2025',
-        amount: 'GH¢10,000.00',
-        paymentStatus: 'Paid',
-        orderStatus: 'Delivered',
-    },
-    {
-        id: 'ORD-0090',
-        customer: 'Ama Owusu',
-        email: 'ama.o@example.com',
-        product: 'Sony PlayStation 5',
-        date: 'Oct 23, 2025',
-        amount: 'GH¢7,000.00',
-        paymentStatus: 'Paid',
-        orderStatus: 'Processing',
-    },
-    {
-        id: 'ORD-0089',
-        customer: 'Kofi Mensah',
-        email: 'kofi.m@example.com',
-        product: 'Adidas Sneakers',
-        date: 'Oct 23, 2025',
-        amount: 'GH¢800.00',
-        paymentStatus: 'Pending',
-        orderStatus: 'Pending',
-    },
-    {
-        id: 'ORD-0088',
-        customer: 'Abena Sarpong',
-        email: 'abena.s@example.com',
-        product: 'Canon EOS R5',
-        date: 'Oct 22, 2025',
-        amount: 'GH¢35,000.00',
-        paymentStatus: 'Paid',
-        orderStatus: 'Shipped',
-    },
-    {
-        id: 'ORD-0087',
-        customer: 'Yaw Boateng',
-        email: 'yaw.b@example.com',
-        product: 'Nike Air Force 1',
-        date: 'Oct 21, 2025',
-        amount: 'GH¢1,200.00',
-        paymentStatus: 'Failed',
-        orderStatus: 'Cancelled',
-    }
-];
+import { useOrders, useOrderStats } from '@/src/domains/orders/orders.hooks';
+import { Skeleton } from '@/src/components/ui/skeleton';
+import Link from 'next/link';
 
 const getStatusBadge = (status: string) => {
     switch (status) {
@@ -87,6 +35,25 @@ const getStatusBadge = (status: string) => {
 };
 
 export default function MerchantOrdersPage() {
+    const { orders, isLoading: isOrdersLoading, error: ordersError } = useOrders();
+    const { stats, isLoading: isStatsLoading } = useOrderStats();
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredOrders = orders.filter(order =>
+        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.product.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (ordersError) {
+        return (
+            <div className="p-8 text-center bg-white rounded-2xl border border-red-100 ring-1 ring-red-50">
+                <p className="text-red-600 font-medium">Error: {ordersError}</p>
+                <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>Retry</Button>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {/* Page Header */}
@@ -104,45 +71,55 @@ export default function MerchantOrdersPage() {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p className="text-xs text-slate-500 mb-1">Total Orders</p>
-                    <p className="text-2xl font-bold text-slate-900">1,248</p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p className="text-xs text-slate-500 mb-1">Pending Processing</p>
-                    <p className="text-2xl font-bold text-amber-600">24</p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p className="text-xs text-slate-500 mb-1">Delivered (Month)</p>
-                    <p className="text-2xl font-bold text-emerald-600">156</p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p className="text-xs text-slate-500 mb-1">Returns</p>
-                    <p className="text-2xl font-bold text-red-600">3</p>
-                </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {isStatsLoading ? (
+                    Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
+                ) : (
+                    <>
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                            <p className="text-xs text-slate-500 mb-1">Total Orders</p>
+                            <p className="text-2xl font-bold text-slate-900">{stats?.totalOrders.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                            <p className="text-xs text-slate-500 mb-1">Pending Processing</p>
+                            <p className="text-2xl font-bold text-amber-600">{stats?.pendingProcessing}</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                            <p className="text-xs text-slate-500 mb-1">Delivered (Month)</p>
+                            <p className="text-2xl font-bold text-emerald-600">{stats?.deliveredMonth}</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                            <p className="text-xs text-slate-500 mb-1">Returns</p>
+                            <p className="text-2xl font-bold text-red-600">{stats?.returns}</p>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Content */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 {/* Toolbar */}
-                <div className="p-4 border-b border-slate-100 flex items-center gap-3">
+                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="relative flex-1 max-w-sm">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                             type="text"
                             placeholder="Search orders, customers..."
                             className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1A53C8]/20 focus:border-[#1A53C8] transition-all text-sm"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <Button variant="outline" className="gap-2">
-                        <Filter className="w-4 h-4" />
-                        Status
-                    </Button>
-                    <Button variant="outline" className="gap-2">
-                        <Calendar className="w-4 h-4" />
-                        Date Range
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" className="gap-2">
+                            <Filter className="w-4 h-4" />
+                            Status
+                        </Button>
+                        <Button variant="outline" size="sm" className="gap-2">
+                            <Calendar className="w-4 h-4" />
+                            Date Range
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Table */}
@@ -163,45 +140,61 @@ export default function MerchantOrdersPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {orders.map((order) => (
-                                <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <input type="checkbox" className="rounded border-slate-300 text-[#1A53C8] focus:ring-[#1A53C8]" />
-                                    </td>
-                                    <td className="px-6 py-4 font-medium text-slate-900">{order.id}</td>
-                                    <td className="px-6 py-4">
-                                        <div>
-                                            <p className="font-medium text-slate-900">{order.customer}</p>
-                                            <p className="text-xs text-slate-500">{order.email}</p>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-600">{order.date}</td>
-                                    <td className="px-6 py-4 font-medium text-slate-900">{order.amount}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${order.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800' :
-                                            order.paymentStatus === 'Pending' ? 'bg-amber-100 text-amber-800' :
-                                                'bg-red-100 text-red-800'
-                                            }`}>
-                                            {order.paymentStatus}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {getStatusBadge(order.orderStatus)}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[#1A53C8]">
-                                            <Eye className="w-4 h-4" />
-                                        </Button>
-                                    </td>
+                            {isOrdersLoading ? (
+                                Array(5).fill(0).map((_, i) => (
+                                    <tr key={i}>
+                                        <td colSpan={8} className="px-6 py-4"><Skeleton className="h-6 w-full" /></td>
+                                    </tr>
+                                ))
+                            ) : filteredOrders.length === 0 ? (
+                                <tr>
+                                    <td colSpan={8} className="px-6 py-10 text-center text-slate-500">No orders found matching your search.</td>
                                 </tr>
-                            ))}
+                            ) : (
+                                filteredOrders.map((order) => (
+                                    <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <input type="checkbox" className="rounded border-slate-300 text-[#1A53C8] focus:ring-[#1A53C8]" />
+                                        </td>
+                                        <td className="px-6 py-4 font-medium text-slate-900">{order.id}</td>
+                                        <td className="px-6 py-4">
+                                            <div>
+                                                <p className="font-medium text-slate-900">{order.customer}</p>
+                                                <p className="text-xs text-slate-500">{order.email}</p>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-600">{order.date}</td>
+                                        <td className="px-6 py-4 font-medium text-slate-900">{order.amount}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${order.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800' :
+                                                order.paymentStatus === 'Pending' ? 'bg-amber-100 text-amber-800' :
+                                                    'bg-red-100 text-red-800'
+                                                }`}>
+                                                {order.paymentStatus}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {getStatusBadge(order.orderStatus)}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <Link href={`/merchant/orders/${order.id}`}>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[#1A53C8]">
+                                                    <Eye className="w-4 h-4" />
+                                                </Button>
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
 
                 {/* Pagination */}
                 <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
-                    <p className="text-sm text-slate-500">Showing 1-10 of 1,248 orders</p>
+                    <p className="text-sm text-slate-500">
+                        {isOrdersLoading ? "Loading orders..." : `Showing 1-${filteredOrders.length} of ${stats?.totalOrders || filteredOrders.length} orders`}
+                    </p>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" disabled>Previous</Button>
                         <Button variant="outline" size="sm">Next</Button>

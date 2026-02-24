@@ -197,7 +197,7 @@ export default function CreateSavingsPlanPage() {
                                     {product.name}
                                 </h3>
                                 <p className="text-sm font-bold text-[#3d4a99]">
-                                    GH¢{product.price.toLocaleString()}
+                                    {product.formattedPrice || `GH¢${product.price.toLocaleString()}`}
                                 </p>
                             </div>
                         </div>
@@ -287,7 +287,7 @@ export default function CreateSavingsPlanPage() {
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-gray-500">Product Price</span>
                                 <span className="text-sm font-bold text-black">
-                                    GH¢ {product.price.toLocaleString()}
+                                    {product.formattedPrice || `GH¢${product.price.toLocaleString()}`}
                                 </span>
                             </div>
 

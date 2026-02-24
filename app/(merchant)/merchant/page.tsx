@@ -12,6 +12,8 @@ import {
     Star,
     Clock,
 } from 'lucide-react';
+import { useMerchantDashboard } from '@/src/domains/merchant/merchant.hooks';
+import { Skeleton } from '@/src/components/ui/skeleton';
 
 // --- Stat Card ---
 function StatCard({
@@ -52,14 +54,27 @@ function StatCard({
     );
 }
 
-// --- Mini Bar Chart (CSS-based) ---
-const barData = [40, 65, 50, 80, 70, 95, 60, 85, 75, 90, 55, 70];
-const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-function SalesChart() {
-    const max = Math.max(...barData);
+function StatCardSkeleton() {
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 col-span-2">
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <div className="flex items-start justify-between mb-4">
+                <Skeleton className="w-11 h-11 rounded-xl" />
+                <Skeleton className="w-7 h-7 rounded-lg" />
+            </div>
+            <Skeleton className="h-8 w-24 mb-2" />
+            <Skeleton className="h-4 w-32 mb-4" />
+            <Skeleton className="h-4 w-20" />
+        </div>
+    );
+}
+
+// --- Sales Chart ---
+function SalesChart({ data }: { data: number[] }) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const max = Math.max(...data);
+
+    return (
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 col-span-1 lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h2 className="text-base font-bold text-slate-900">Sales Overview</h2>
@@ -70,7 +85,7 @@ function SalesChart() {
                 </div>
             </div>
             <div className="flex items-end gap-2 h-48">
-                {barData.map((v, i) => (
+                {data.map((v, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
                         <div className="w-full relative group">
                             <div
@@ -89,31 +104,23 @@ function SalesChart() {
     );
 }
 
-// --- Donut chart (CSS-based) ---
-function OrderStatusChart() {
-    const statusData = [
-        { label: 'Delivered', value: 58, color: '#1A53C8' },
-        { label: 'Processing', value: 24, color: '#306CFE' },
-        { label: 'Pending', value: 12, color: '#8AABEE' },
-        { label: 'Cancelled', value: 6, color: '#E63330' },
-    ];
-
+// --- Order Status Chart ---
+function OrderStatusChart({ data }: { data: { label: string; value: number; color: string }[] }) {
     // Build conic gradient
     let cumulative = 0;
-    const gradientStops = statusData.map(({ value, color }) => {
+    const gradientStops = data.map(({ value, color }) => {
         const start = cumulative;
         cumulative += value;
         return `${color} ${start}% ${cumulative}%`;
     }).join(', ');
 
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 col-span-1">
             <div className="mb-6">
                 <h2 className="text-base font-bold text-slate-900">Order Status</h2>
                 <p className="text-xs text-slate-500 mt-0.5">Distribution by status</p>
             </div>
             <div className="flex flex-col items-center gap-6">
-                {/* Donut */}
                 <div className="relative">
                     <div
                         className="w-36 h-36 rounded-full"
@@ -128,9 +135,8 @@ function OrderStatusChart() {
                         </div>
                     </div>
                 </div>
-                {/* Legend */}
                 <div className="w-full space-y-2">
-                    {statusData.map(({ label, value, color }) => (
+                    {data.map(({ label, value, color }) => (
                         <div key={label} className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
@@ -145,8 +151,8 @@ function OrderStatusChart() {
     );
 }
 
-// --- Recent Orders ---
-const recentOrders = [
+// --- Recent Orders (Kept local for now until Phase 2) ---
+const recentOrdersData = [
     { id: '#ORD-0091', product: 'Apple MacBook Pro', customer: 'Kwame Adu', amount: 'GH¢10,000', status: 'Delivered', statusColor: 'bg-emerald-100 text-emerald-700' },
     { id: '#ORD-0090', product: 'Sony PlayStation 5', customer: 'Ama Owusu', amount: 'GH¢7,000', status: 'Processing', statusColor: 'bg-blue-100 text-blue-700' },
     { id: '#ORD-0089', product: 'Adidas Sneakers', customer: 'Kofi Mensah', amount: 'GH¢800', status: 'Pending', statusColor: 'bg-amber-100 text-amber-700' },
@@ -156,7 +162,7 @@ const recentOrders = [
 
 function RecentOrders() {
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 col-span-2">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 col-span-1 lg:col-span-2">
             <div className="flex items-center justify-between p-6 border-b border-slate-100">
                 <div>
                     <h2 className="text-base font-bold text-slate-900">Recent Orders</h2>
@@ -167,7 +173,7 @@ function RecentOrders() {
                 </a>
             </div>
             <div className="divide-y divide-slate-50">
-                {recentOrders.map(order => (
+                {recentOrdersData.map(order => (
                     <div key={order.id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors">
                         <div className="w-9 h-9 rounded-xl bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
                             <ShoppingCart className="w-4 h-4 text-[#1A53C8]" />
@@ -188,16 +194,9 @@ function RecentOrders() {
 }
 
 // --- Top Products ---
-const topProducts = [
-    { name: 'Apple MacBook Pro', sales: 48, revenue: 'GH¢480,000', rating: 4.8 },
-    { name: 'Sony PlayStation 5', sales: 35, revenue: 'GH¢245,000', rating: 5.0 },
-    { name: 'Canon EOS R5', sales: 12, revenue: 'GH¢420,000', rating: 4.9 },
-    { name: 'Nike Air Force', sales: 74, revenue: 'GH¢88,800', rating: 4.8 },
-];
-
-function TopProducts() {
+function TopProducts({ products }: { products: any[] }) {
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 col-span-1">
             <div className="flex items-center justify-between p-6 border-b border-slate-100">
                 <div>
                     <h2 className="text-base font-bold text-slate-900">Top Products</h2>
@@ -206,7 +205,7 @@ function TopProducts() {
                 <TrendingUp className="w-4 h-4 text-emerald-500" />
             </div>
             <div className="divide-y divide-slate-50">
-                {topProducts.map((p, i) => (
+                {products.map((p, i) => (
                     <div key={p.name} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors">
                         <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold flex items-center justify-center flex-shrink-0">
                             {i + 1}
@@ -228,25 +227,31 @@ function TopProducts() {
 }
 
 // --- Quick Activity Feed ---
-const activities = [
-    { text: 'New order from Kwame Adu', time: '2 min ago', icon: ShoppingCart, color: 'bg-blue-100 text-blue-600' },
-    { text: 'Product "MacBook Pro" restocked', time: '1 hr ago', icon: Package, color: 'bg-emerald-100 text-emerald-600' },
-    { text: 'Payment received GH¢7,000', time: '3 hrs ago', icon: DollarSign, color: 'bg-purple-100 text-purple-600' },
-    { text: 'Order #ORD-0085 shipped', time: '5 hrs ago', icon: Clock, color: 'bg-amber-100 text-amber-600' },
-];
+function ActivityFeed({ activities }: { activities: any[] }) {
+    const getTypeStyles = (type: string) => {
+        switch (type) {
+            case 'order': return 'bg-blue-100 text-blue-600';
+            case 'product': return 'bg-emerald-100 text-emerald-600';
+            case 'payment': return 'bg-purple-100 text-purple-600';
+            case 'shipping': return 'bg-amber-100 text-amber-600';
+            default: return 'bg-slate-100 text-slate-600';
+        }
+    };
 
-function ActivityFeed() {
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 col-span-1">
             <div className="p-6 border-b border-slate-100">
                 <h2 className="text-base font-bold text-slate-900">Recent Activity</h2>
                 <p className="text-xs text-slate-500 mt-0.5">What's happening in your store</p>
             </div>
             <div className="divide-y divide-slate-50">
-                {activities.map(({ text, time, icon: Icon, color }, i) => (
-                    <div key={i} className="flex items-start gap-4 px-6 py-4">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-                            <Icon className="w-4 h-4" />
+                {activities.map(({ id, text, time, type }, i) => (
+                    <div key={id} className="flex items-start gap-4 px-6 py-4">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${getTypeStyles(type)}`}>
+                            {type === 'order' && <ShoppingCart className="w-4 h-4" />}
+                            {type === 'product' && <Package className="w-4 h-4" />}
+                            {type === 'payment' && <DollarSign className="w-4 h-4" />}
+                            {type === 'shipping' && <Clock className="w-4 h-4" />}
                         </div>
                         <div>
                             <p className="text-sm text-slate-700 font-medium leading-tight">{text}</p>
@@ -259,8 +264,39 @@ function ActivityFeed() {
     );
 }
 
+// --- Error Helper ---
+function XCircle({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <circle cx="12" cy="12" r="10" />
+            <path d="m15 9-6 6" />
+            <path d="m9 9 6 6" />
+        </svg>
+    );
+}
+
 // --- Main Page ---
 export default function MerchantDashboard() {
+    const { data, isLoading, error } = useMerchantDashboard();
+
+    if (error) {
+        return (
+            <div className="min-h-[400px] flex flex-col items-center justify-center p-8 bg-white rounded-2xl border border-red-100">
+                <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                    <XCircle className="w-6 h-6 text-red-500" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Failed to load dashboard</h3>
+                <p className="text-slate-500 text-center max-w-xs mb-6">{error}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-4 py-2 bg-[#1A53C8] text-white rounded-lg font-semibold hover:bg-[#1542a1] transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {/* Welcome Banner */}
@@ -276,24 +312,82 @@ export default function MerchantDashboard() {
 
             {/* Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard label="Total Revenue" value="GH¢1.84M" change="+12.5%" changeLabel="vs last month" icon={DollarSign} iconBg="bg-gradient-to-br from-[#1A53C8] to-[#306CFE]" positive />
-                <StatCard label="Total Orders" value="324" change="+8.2%" changeLabel="vs last month" icon={ShoppingCart} iconBg="bg-gradient-to-br from-emerald-400 to-emerald-600" positive />
-                <StatCard label="Active Products" value="48" change="+3" changeLabel="this week" icon={Package} iconBg="bg-gradient-to-br from-purple-400 to-purple-600" positive />
-                <StatCard label="Avg. Order Value" value="GH¢5,679" change="-2.1%" changeLabel="vs last month" icon={TrendingUp} iconBg="bg-gradient-to-br from-amber-400 to-amber-600" positive={false} />
+                {isLoading ? (
+                    Array(4).fill(0).map((_, i) => <StatCardSkeleton key={i} />)
+                ) : (
+                    <>
+                        <StatCard
+                            label="Total Revenue"
+                            value={data!.stats.totalRevenue}
+                            change={data!.stats.revenueChange}
+                            changeLabel="vs last month"
+                            icon={DollarSign}
+                            iconBg="bg-gradient-to-br from-[#1A53C8] to-[#306CFE]"
+                            positive
+                        />
+                        <StatCard
+                            label="Total Orders"
+                            value={data!.stats.totalOrders.toString()}
+                            change={data!.stats.ordersChange}
+                            changeLabel="vs last month"
+                            icon={ShoppingCart}
+                            iconBg="bg-gradient-to-br from-emerald-400 to-emerald-600"
+                            positive
+                        />
+                        <StatCard
+                            label="Active Products"
+                            value={data!.stats.activeProducts.toString()}
+                            change={data!.stats.productsChange}
+                            changeLabel="this week"
+                            icon={Package}
+                            iconBg="bg-gradient-to-br from-purple-400 to-purple-600"
+                            positive
+                        />
+                        <StatCard
+                            label="Avg. Order Value"
+                            value={data!.stats.avgOrderValue}
+                            change={data!.stats.avgOrderValueChange}
+                            changeLabel="vs last month"
+                            icon={TrendingUp}
+                            iconBg="bg-gradient-to-br from-amber-400 to-amber-600"
+                            positive={data!.stats.avgOrderValueChange.startsWith('+')}
+                        />
+                    </>
+                )}
             </div>
 
             {/* Charts row */}
-            <div className="grid grid-cols-3 gap-4">
-                <SalesChart />
-                <OrderStatusChart />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {isLoading ? (
+                    <>
+                        <Skeleton className="h-72 col-span-1 lg:col-span-2 rounded-2xl" />
+                        <Skeleton className="h-72 rounded-2xl" />
+                    </>
+                ) : (
+                    <>
+                        <SalesChart data={data!.stats.recentRevenue} />
+                        <OrderStatusChart data={data!.stats.orderStatusDistribution} />
+                    </>
+                )}
             </div>
 
             {/* Bottom row */}
-            <div className="grid grid-cols-3 gap-4">
-                <RecentOrders />
-                <div className="flex flex-col gap-4">
-                    <TopProducts />
-                    <ActivityFeed />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="col-span-1 lg:col-span-2">
+                    {isLoading ? <Skeleton className="h-[400px] rounded-2xl" /> : <RecentOrders />}
+                </div>
+                <div className="flex flex-col gap-6">
+                    {isLoading ? (
+                        <>
+                            <Skeleton className="h-64 rounded-2xl" />
+                            <Skeleton className="h-64 rounded-2xl" />
+                        </>
+                    ) : (
+                        <>
+                            <TopProducts products={data!.topProducts} />
+                            <ActivityFeed activities={data!.recentActivities} />
+                        </>
+                    )}
                 </div>
             </div>
         </div>
