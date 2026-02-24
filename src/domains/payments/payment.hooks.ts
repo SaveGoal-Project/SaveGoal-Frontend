@@ -15,7 +15,7 @@ import {
   deletePaymentMethod,
   setDefaultPaymentMethod,
   getRecentActivity,
-} from "./payment.mock";
+} from "./payment.api";
 
 // ─── Hook: Payment history ──────────────────────────────────────────────────
 

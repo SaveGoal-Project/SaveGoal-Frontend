@@ -1,13 +1,13 @@
 "use client";
 
-import { useUserProfile } from "@/src/domains/user-profile/users.hooks";
+import { useAuth } from "@/src/contexts/AuthContext";
 import { useUserStats } from "@/src/domains/user-profile/users.hooks";
 
 export function UserSummaryCard() {
-  const { profile, isLoading: profileLoading } = useUserProfile();
+  const { user } = useAuth();
   const { stats, isLoading: statsLoading } = useUserStats();
 
-  if (profileLoading || statsLoading) {
+  if (statsLoading || !user) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
         <div className="flex items-center gap-4 mb-6">
@@ -30,8 +30,8 @@ export function UserSummaryCard() {
   }
 
   const getInitials = () => {
-    const first = profile?.firstName?.[0] || "";
-    const last = profile?.lastName?.[0] || "";
+    const first = user?.firstName?.[0] || "";
+    const last = user?.lastName?.[0] || "";
     return (first + last).toUpperCase();
   };
 
@@ -44,10 +44,10 @@ export function UserSummaryCard() {
         </div>
         <div>
           <h3 className="text-lg font-bold text-gray-900">
-            {profile?.firstName} {profile?.lastName}
+            {user?.firstName} {user?.lastName}
           </h3>
           <p className="text-sm text-gray-500">
-            {profile?.email || profile?.phone}
+            {user?.email || user?.phone}
           </p>
         </div>
       </div>

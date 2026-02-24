@@ -30,7 +30,8 @@ export interface GoalDeposit {
 // Savings Goal — list item shape
 export interface SavingsGoal {
   id: string;
-  productId: string;
+  productId?: string;
+  name?: string; // used by backend response
   userId: string;
   targetAmount: number;
   currentAmount: number;
@@ -52,7 +53,8 @@ export interface SavingsGoalDetail extends SavingsGoal {
 
 // Create goal request
 export interface CreateSavingsGoalRequest {
-  productId: string;
+  productId?: string;
+  name?: string; // used for the transformer shim since backend uses name
   targetAmount: number;
   frequency: SavingsFrequency;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/src/components/ui/button";
-import { Bell, Plus, Search, Users2 } from "lucide-react";
+import { Bell, Plus, Search, Users2, Menu } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,21 +13,31 @@ import { useAuth } from "@/src/contexts/AuthContext";
 interface AdminHeaderProps {
   title?: string;
   searchPlaceholder?: string;
+  onMenuClick: () => void;
 }
 
 export function AdminHeader({
   title = "Dashboard",
   searchPlaceholder = "Search across entities",
+  onMenuClick,
 }: AdminHeaderProps) {
   const { user, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-30 h-16 bg-white border-b border-gray-200 px-4 md:px-6 flex items-center justify-between gap-2 md:gap-4">
+      {/* Mobile Menu Toggle */}
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        <Menu className="h-6 w-6" />
+      </button>
+
       {/* Page Title */}
-      <h2 className="text-xl font-bold text-gray-900 shrink-0">{title}</h2>
+      <h2 className="text-lg md:text-xl font-bold text-gray-900 shrink-0 truncate max-w-[120px] md:max-w-none">{title}</h2>
 
       {/* Search Bar */}
-      <div className="flex items-center gap-3 flex-1 max-w-md mx-4">
+      <div className="hidden sm:flex items-center gap-3 flex-1 max-w-md mx-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -39,10 +49,10 @@ export function AdminHeader({
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-1 md:gap-3 shrink-0">
         <Button
           size="sm"
-          className="bg-[#0754FF] hover:bg-[#222E76] text-white rounded-lg px-4 h-9 text-sm font-medium"
+          className="hidden sm:flex bg-[#0754FF] hover:bg-[#222E76] text-white rounded-lg px-4 h-9 text-sm font-medium"
         >
           <Plus className="h-4 w-4 mr-1.5" />
           Quick Action

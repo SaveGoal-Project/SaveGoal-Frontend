@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/src/contexts/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { AdminSidebar } from "@/src/components/layouts/admin/AdminSidebar";
 import { AdminHeader } from "@/src/components/layouts/admin/AdminHeader";
 
@@ -40,6 +40,12 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const isLoginPage = pathname === "/admin/login";
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Close sidebar on route change on mobile
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (isLoginPage) return;
@@ -71,10 +77,19 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminSidebar adminName={adminName} adminEmail={user?.email} adminRole="Super Admin" />
-      <div className="pl-64">
-        <AdminHeader title={getPageTitle(pathname)} />
-        <main className="p-6">{children}</main>
+      <AdminSidebar
+        adminName={adminName}
+        adminEmail={user?.email}
+        adminRole="Super Admin"
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+      <div className="lg:pl-64 flex flex-col min-h-screen transition-all duration-300">
+        <AdminHeader
+          title={getPageTitle(pathname)}
+          onMenuClick={() => setIsSidebarOpen(true)}
+        />
+        <main className="flex-1 p-4 md:p-6 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );
