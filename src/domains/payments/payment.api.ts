@@ -34,11 +34,13 @@ export async function getSavedPaymentMethods(): Promise<SavedPaymentMethod[]> {
     return [];
 }
 
-export async function deletePaymentMethod(): Promise<{ success: boolean }> {
+export async function deletePaymentMethod(methodId: string): Promise<{ success: boolean }> {
+    console.debug(`Deleting method ${methodId}`);
     return { success: true };
 }
 
-export async function setDefaultPaymentMethod(): Promise<{ success: boolean }> {
+export async function setDefaultPaymentMethod(methodId: string): Promise<{ success: boolean }> {
+    console.debug(`Setting default method ${methodId}`);
     return { success: true };
 }
 
