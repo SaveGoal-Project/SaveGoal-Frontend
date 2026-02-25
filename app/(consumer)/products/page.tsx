@@ -135,8 +135,8 @@ export default function BrowseProductsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {filteredProducts.map((product) => (
             <BrowseProductCard
-              key={product.id}
-              id={product.id}
+              key={String(product.id)}
+              id={String(product.id)}
               name={product.name}
               brand={product.brand}
               price={product.price}
