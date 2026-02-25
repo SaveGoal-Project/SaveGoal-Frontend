@@ -211,7 +211,7 @@ export async function getSavedPaymentMethods(): Promise<SavedPaymentMethod[]> {
 
 /** Delete saved payment method */
 export async function deletePaymentMethod(
-  _methodId: string
+  methodId: string
 ): Promise<{ success: boolean }> {
   await delay(300);
   return { success: true };
@@ -219,7 +219,7 @@ export async function deletePaymentMethod(
 
 /** Set default payment method */
 export async function setDefaultPaymentMethod(
-  _methodId: string
+  methodId: string
 ): Promise<{ success: boolean }> {
   await delay(300);
   return { success: true };
