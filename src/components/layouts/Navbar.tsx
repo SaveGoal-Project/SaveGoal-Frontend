@@ -93,9 +93,8 @@ export function Navbar() {
                       {getInitials()}
                     </div>
                     <ChevronDown
-                      className={`h-4 w-4 text-gray-500 transition-transform ${
-                        isUserMenuOpen ? "rotate-180" : ""
-                      }`}
+                      className={`h-4 w-4 text-gray-500 transition-transform ${isUserMenuOpen ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
 
