@@ -5,13 +5,53 @@ import { ProductGrid } from "@/src/components/marketing/ProductGrid";
 import { Testimonials } from "@/src/components/marketing/Testimonials";
 import { CTA } from "@/src/components/marketing/CTA";
 import { Footer } from "@/src/components/marketing/Footer";
-import { mockProducts as allMockProducts } from "@/src/domains/products/products.mock";
 
+// Mock data - Replace with actual API calls later
 const mockProducts = [
-  allMockProducts.find((p) => p.name === "Sony PlayStation 5") || allMockProducts[0],
-  allMockProducts.find((p) => p.name === "Water Bottle") || allMockProducts[1],
-  allMockProducts.find((p) => p.name === "Apple Series 3") || allMockProducts[2],
-  allMockProducts.find((p) => p.name === "Adidas Sneakers") || allMockProducts[3],
+  {
+    id: "1",
+    name: "Sony PlayStation 5",
+    brand: "Sony",
+    price: 7000,
+    currency: "GHS",
+    category: "Electronics",
+    rating: 5.0,
+    reviewCount: 1200,
+    image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=800&q=80",
+  },
+  {
+    id: "2",
+    name: "Water Bottle",
+    brand: "MELCOM",
+    price: 10000,
+    currency: "GHS",
+    category: "Health",
+    rating: 5.0,
+    reviewCount: 1200,
+    image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&q=80",
+  },
+  {
+    id: "3",
+    name: "Apple Series 3",
+    brand: "TELEFONICA",
+    price: 10000,
+    currency: "GHS",
+    category: "Electronics",
+    rating: 5.0,
+    reviewCount: 1300,
+    image: "https://images.unsplash.com/photo-1546868871-af0de0ae72be?w=800&q=80",
+  },
+  {
+    id: "4",
+    name: "Adidas Sneakers",
+    brand: "APPLE",
+    price: 10000,
+    currency: "GHS",
+    category: "Sneakers",
+    rating: 5.0,
+    reviewCount: 1200,
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
+  },
 ];
 
 const mockTestimonials = [
