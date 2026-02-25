@@ -62,7 +62,7 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
   const [basicInfo, setBasicInfo] = useState<MerchantBasicInfoData | null>(null);
   const [storeInfo, setStoreInfo] = useState<MerchantStoreInfoData | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>("");
-  
+
   // Auth hooks
   const { registerMerchant, isLoading: isRegistering, error: authError, clearError } = useAuth();
   const {
@@ -80,18 +80,18 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
     submitVerification,
     error: verificationError,
   } = useMerchantVerification();
-  
+
   // Verification state
   const [idType, setIdType] = useState<string>("");
   const [idNumber, setIdNumber] = useState<string>("");
   const [frontIdImage, setFrontIdImage] = useState<string | null>(null);
   const [backIdImage, setBackIdImage] = useState<string | null>(null);
   const [selfieImage, setSelfieImage] = useState<string | null>(null);
-  
+
   const frontIdInputRef = useRef<HTMLInputElement>(null);
   const backIdInputRef = useRef<HTMLInputElement>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Combined loading state
   const isLoading = isRegistering || isUploadingFiles;
 
@@ -166,7 +166,7 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
 
   const handleSubmitVerification = async () => {
     if (!basicInfo || !storeInfo) return;
-    
+
     clearError();
 
     try {
@@ -192,9 +192,12 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
         await submitVerification({
           idType,
           idNumber,
+          frontIdImage,
+          backIdImage,
+          selfieImage
         });
       }
-      
+
       // Redirect is handled in AuthContext
     } catch (err) {
       // Error is already handled in AuthContext
@@ -247,8 +250,8 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
                 (step <= 4 && step === s) || (step > 4 && s === 3)
                   ? "border-[#2C3466] bg-[#2C3466]"
                   : (step <= 4 && step > s) || (step > 4 && s < 3)
-                  ? "border-[#2C3466] bg-transparent"
-                  : "border-gray-300 bg-transparent"
+                    ? "border-[#2C3466] bg-transparent"
+                    : "border-gray-300 bg-transparent"
               )}
             >
               {((step <= 4 && step === s) || (step > 4 && s === 3)) && (
@@ -312,14 +315,14 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
   };
 
   // Upload Zone Component
-  const UploadZone = ({ 
-    label, 
-    image, 
-    inputRef, 
-    onUpload 
-  }: { 
-    label: string; 
-    image: string | null; 
+  const UploadZone = ({
+    label,
+    image,
+    inputRef,
+    onUpload
+  }: {
+    label: string;
+    image: string | null;
     inputRef: React.RefObject<HTMLInputElement | null>;
     onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   }) => (
