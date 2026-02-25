@@ -31,6 +31,12 @@ export const API_ENDPOINTS = {
     UPLOAD_SELFIE: "/auth/merchant/upload-selfie",
   },
 
+  // Know Your Customer (Verification)
+  KYC: {
+    STATUS: "/kyc/status",
+    SUBMIT: "/kyc/submit",
+  },
+
   // Users
   USERS: {
     ME: "/users/me",
