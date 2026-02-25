@@ -74,7 +74,7 @@ function SalesChart({ data }: { data: number[] }) {
     const max = Math.max(...data);
 
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 col-span-1 lg:col-span-2">
+        <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100 col-span-1 lg:col-span-2 overflow-hidden">
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h2 className="text-base font-bold text-slate-900">Sales Overview</h2>
@@ -84,21 +84,23 @@ function SalesChart({ data }: { data: number[] }) {
                     <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg">2025</span>
                 </div>
             </div>
-            <div className="flex items-end gap-2 h-48">
-                {data.map((v, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                        <div className="w-full relative group">
-                            <div
-                                className="w-full rounded-t-lg bg-gradient-to-t from-[#1A53C8] to-[#306CFE] hover:from-[#306CFE] hover:to-[#8AABEE] transition-all duration-300 cursor-pointer"
-                                style={{ height: `${(v / max) * 160}px` }}
-                            />
-                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                GH¢{(v * 1000).toLocaleString()}
+            <div className="overflow-x-auto pb-2 scrollbar-hide">
+                <div className="flex items-end gap-2 h-48 min-w-[500px] md:min-w-0">
+                    {data.map((v, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                            <div className="w-full relative group">
+                                <div
+                                    className="w-full rounded-t-lg bg-gradient-to-t from-[#1A53C8] to-[#306CFE] hover:from-[#306CFE] hover:to-[#8AABEE] transition-all duration-300 cursor-pointer"
+                                    style={{ height: `${(v / max) * 160}px` }}
+                                />
+                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                    GH¢{(v * 1000).toLocaleString()}
+                                </div>
                             </div>
+                            <span className="text-[9px] text-slate-400 font-medium">{months[i]}</span>
                         </div>
-                        <span className="text-[9px] text-slate-400 font-medium">{months[i]}</span>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
         </div>
     );
@@ -172,9 +174,9 @@ function RecentOrders() {
                     View all <Eye className="w-3.5 h-3.5" />
                 </a>
             </div>
-            <div className="divide-y divide-slate-50">
+            <div className="divide-y divide-slate-50 overflow-x-auto">
                 {recentOrdersData.map(order => (
-                    <div key={order.id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors">
+                    <div key={order.id} className="flex items-center gap-4 px-4 md:px-6 py-4 hover:bg-slate-50/50 transition-colors min-w-[400px] md:min-w-0">
                         <div className="w-9 h-9 rounded-xl bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
                             <ShoppingCart className="w-4 h-4 text-[#1A53C8]" />
                         </div>
@@ -182,10 +184,12 @@ function RecentOrders() {
                             <p className="text-sm font-semibold text-slate-900 truncate">{order.product}</p>
                             <p className="text-xs text-slate-400 truncate">{order.customer} · {order.id}</p>
                         </div>
-                        <p className="text-sm font-bold text-slate-900 flex-shrink-0">{order.amount}</p>
-                        <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg flex-shrink-0 ${order.statusColor}`}>
-                            {order.status}
-                        </span>
+                        <div className="text-right flex-shrink-0">
+                            <p className="text-sm font-bold text-slate-900">{order.amount}</p>
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md inline-block mt-1 ${order.statusColor}`}>
+                                {order.status}
+                            </span>
+                        </div>
                     </div>
                 ))}
             </div>

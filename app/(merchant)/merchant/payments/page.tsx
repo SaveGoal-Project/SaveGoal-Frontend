@@ -80,13 +80,14 @@ export default function MerchantPaymentsPage() {
                     <h1 className="text-2xl font-bold text-slate-900">Payments & Settlements</h1>
                     <p className="text-slate-500 text-sm mt-1">Manage your funds and payout history</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" className="gap-2 h-11 rounded-xl">
+                <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                    <Button variant="outline" className="gap-2 h-10 md:h-11 rounded-xl flex-1 sm:flex-none">
                         <Download className="w-4 h-4" />
-                        Export Statements
+                        <span className="hidden sm:inline">Export Statements</span>
+                        <span className="sm:hidden">Export</span>
                     </Button>
                     <Button
-                        className="bg-[#1A53C8] hover:bg-[#1542a1] text-white gap-2 h-11 px-6 rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+                        className="bg-[#1A53C8] hover:bg-[#1542a1] text-white gap-2 h-10 md:h-11 px-4 md:px-6 rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex-1 sm:flex-none"
                         onClick={handlePayout}
                         disabled={isSubmitting || (!!balance && parseFloat(balance.availableForPayout.replace(/[^0-9.]/g, '')) === 0)}
                     >
@@ -110,25 +111,25 @@ export default function MerchantPaymentsPage() {
                             {isBalanceLoading ? (
                                 <Skeleton className="h-12 w-48 bg-white/10" />
                             ) : (
-                                <h2 className="text-4xl font-bold tracking-tight">{balance?.currentBalance}</h2>
+                                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">{balance?.currentBalance}</h2>
                             )}
                         </div>
 
-                        <div className="mt-12 grid grid-cols-2 gap-8">
-                            <div>
-                                <p className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Available for Payout</p>
+                        <div className="mt-8 md:mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
+                            <div className="bg-white/10 p-3 rounded-xl lg:bg-transparent lg:p-0">
+                                <p className="text-blue-300 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Available for Payout</p>
                                 {isBalanceLoading ? (
                                     <Skeleton className="h-6 w-24 bg-white/10" />
                                 ) : (
-                                    <p className="text-xl font-bold">{balance?.availableForPayout}</p>
+                                    <p className="text-lg md:text-xl font-bold">{balance?.availableForPayout}</p>
                                 )}
                             </div>
-                            <div>
-                                <p className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Pending Settlement</p>
+                            <div className="bg-white/10 p-3 rounded-xl lg:bg-transparent lg:p-0">
+                                <p className="text-blue-300 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Pending Settlement</p>
                                 {isBalanceLoading ? (
                                     <Skeleton className="h-6 w-24 bg-white/10" />
                                 ) : (
-                                    <p className="text-xl font-bold text-blue-100">{balance?.pendingSettlement}</p>
+                                    <p className="text-lg md:text-xl font-bold text-blue-100">{balance?.pendingSettlement}</p>
                                 )}
                             </div>
                         </div>
@@ -176,20 +177,20 @@ export default function MerchantPaymentsPage() {
 
             {/* Transactions Section */}
             <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <h3 className="font-bold text-lg text-slate-900">Recent Transactions</h3>
                     <div className="flex items-center gap-2">
-                        <div className="relative">
+                        <div className="relative flex-1 sm:flex-none">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="Search ID, Ref..."
-                                className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-[#1A53C8]/10 focus:outline-none w-48 transition-all"
+                                placeholder="Search..."
+                                className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-[#1A53C8]/10 focus:outline-none w-full sm:w-40 transition-all"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs font-bold gap-1.5">
+                        <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs font-bold gap-1.5 shrink-0">
                             <Filter className="w-3 h-3" />
                             Filters
                         </Button>
@@ -215,25 +216,22 @@ export default function MerchantPaymentsPage() {
                             <div className="p-12 text-center text-slate-500">No transactions found.</div>
                         ) : (
                             transactions.map((tx) => (
-                                <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                                    <div className="flex items-center gap-4">
+                                <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors gap-3">
+                                    <div className="flex items-center gap-3 md:gap-4 min-w-0">
                                         {getTransactionIcon(tx.type)}
                                         <div className="min-w-0">
-                                            <p className="font-bold text-slate-900 text-sm truncate">{tx.description}</p>
-                                            <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 font-medium">
+                                            <p className="font-bold text-slate-900 text-xs md:text-sm truncate">{tx.description}</p>
+                                            <div className="flex flex-wrap items-center gap-x-2 text-[10px] md:text-[11px] text-slate-500 mt-0.5 font-medium">
                                                 <span>{tx.date}</span>
                                                 {tx.reference && (
-                                                    <>
-                                                        <span>•</span>
-                                                        <span className="text-[#1A53C8] font-bold">Ref: {tx.reference}</span>
-                                                    </>
+                                                    <span className="text-[#1A53C8] font-bold truncate">Ref: {tx.reference}</span>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-right shrink-0">
                                         <p className={cn(
-                                            "font-bold text-sm",
+                                            "font-bold text-xs md:text-sm",
                                             tx.amount.startsWith('+') ? "text-emerald-600" : "text-slate-900"
                                         )}>
                                             {tx.amount}

@@ -10,18 +10,18 @@ import {
     Settings,
     Store,
     CreditCard,
-    Check
+    Menu,
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/src/lib/utils';
-import { Button } from '@/src/components/ui/button';
 
 interface MerchantTopbarProps {
     title: string;
     subtitle?: string;
+    onMenuClick?: () => void;
 }
 
-export function MerchantTopbar({ title, subtitle }: MerchantTopbarProps) {
+export function MerchantTopbar({ title, subtitle, onMenuClick }: MerchantTopbarProps) {
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const notificationRef = useRef<HTMLDivElement>(null);
@@ -71,17 +71,27 @@ export function MerchantTopbar({ title, subtitle }: MerchantTopbarProps) {
     ];
 
     return (
-        <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white border-b border-slate-100 shadow-sm">
-            {/* Title */}
-            <div>
-                <h1 className="text-lg font-bold text-slate-900 leading-tight">{title}</h1>
-                {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+        <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 md:px-6 bg-white border-b border-slate-100 shadow-sm">
+            <div className="flex items-center gap-4">
+                {/* Mobile Menu Toggle */}
+                <button
+                    onClick={onMenuClick}
+                    className="p-2 -ml-2 text-slate-600 hover:bg-slate-50 rounded-xl lg:hidden transition-colors"
+                >
+                    <Menu className="w-6 h-6" />
+                </button>
+
+                {/* Title */}
+                <div className="min-w-0">
+                    <h1 className="text-base md:text-lg font-bold text-slate-900 leading-tight truncate">{title}</h1>
+                    {subtitle && <p className="text-[10px] md:text-xs text-slate-500 truncate">{subtitle}</p>}
+                </div>
             </div>
 
             {/* Right actions */}
-            <div className="flex items-center gap-3">
-                {/* Search */}
-                <div className="hidden md:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 w-56 focus-within:ring-2 focus-within:ring-[#1A53C8]/20 focus-within:border-[#1A53C8] transition-all">
+            <div className="flex items-center gap-2 md:gap-3">
+                {/* Search - Hidden on mobile, shown on desktop */}
+                <div className="hidden lg:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 w-56 focus-within:ring-2 focus-within:ring-[#1A53C8]/20 focus-within:border-[#1A53C8] transition-all">
                     <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
                     <input
                         type="text"
@@ -107,7 +117,7 @@ export function MerchantTopbar({ title, subtitle }: MerchantTopbarProps) {
 
                     {/* Notification Dropdown */}
                     {isNotificationsOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="absolute right-0 top-full mt-2 w-72 md:w-80 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                                 <h3 className="font-semibold text-slate-900">Notifications</h3>
                                 <button className="text-xs text-[#1A53C8] hover:underline">Mark all read</button>
@@ -130,11 +140,6 @@ export function MerchantTopbar({ title, subtitle }: MerchantTopbarProps) {
                                     </div>
                                 ))}
                             </div>
-                            <div className="p-3 bg-slate-50 text-center border-t border-slate-100">
-                                <Link href="/merchant/settings" className="text-xs font-medium text-slate-600 hover:text-[#1A53C8]">
-                                    View all notifications
-                                </Link>
-                            </div>
                         </div>
                     )}
                 </div>
@@ -144,16 +149,16 @@ export function MerchantTopbar({ title, subtitle }: MerchantTopbarProps) {
                     <button
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
                         className={cn(
-                            "flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors",
+                            "flex items-center gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-xl border transition-colors",
                             isProfileOpen
                                 ? "bg-slate-100 border-slate-300"
                                 : "bg-slate-50 border-slate-200 hover:bg-slate-100"
                         )}
                     >
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[10px] font-bold text-white shadow-sm flex-shrink-0">
                             M
                         </div>
-                        <span className="text-sm font-medium text-slate-700 hidden md:block">My Store</span>
+                        <span className="text-sm font-medium text-slate-700 hidden sm:block">My Store</span>
                         <ChevronDown className={cn(
                             "w-3.5 h-3.5 text-slate-400 transition-transform duration-200",
                             isProfileOpen && "rotate-180"
@@ -164,8 +169,8 @@ export function MerchantTopbar({ title, subtitle }: MerchantTopbarProps) {
                     {isProfileOpen && (
                         <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                             <div className="p-4 border-b border-slate-100">
-                                <p className="font-semibold text-slate-900">My Store</p>
-                                <p className="text-xs text-slate-500 truncate">merchant@unique-store.com</p>
+                                <p className="font-semibold text-slate-900 text-sm">My Store</p>
+                                <p className="text-[10px] text-slate-500 truncate">merchant@unique-store.com</p>
                             </div>
                             <div className="p-2 space-y-1">
                                 <Link href="/merchant/settings" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
