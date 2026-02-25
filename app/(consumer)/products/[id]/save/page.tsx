@@ -98,17 +98,35 @@ export default function CreateSavingsPlanPage() {
     }, [product, frequency]);
 
     const handleConfirm = async () => {
-        if (!product) return;
+        if (!product || !planDetails) return;
         setIsConfirming(true);
         try {
             let apiFrequency: SavingsFrequency = "WEEKLY";
             if (frequency === "biweekly") apiFrequency = "BIWEEKLY";
             if (frequency === "monthly") apiFrequency = "MONTHLY";
 
+            // Backend specific automated recurring logic
+            // Assuming the backend charges "monthlyAmount" automatically every "savingsDay"
+
+            // Calculate equivalent monthly footprint for automated debit:
+            let automatedMonthlyAmount = planDetails.perPayment; // If monthly
+            if (frequency === "weekly") {
+                automatedMonthlyAmount = planDetails.perPayment * 4; // Roughly 4 weeks a month
+            } else if (frequency === "biweekly") {
+                automatedMonthlyAmount = planDetails.perPayment * 2; // Roughly 2 biweeks a month
+            }
+
+            // Set savings day to today, capped at 28 to match backend restrictions
+            const today = new Date().getDate();
+            const savingsDay = today > 28 ? 28 : today;
+
             await create({
                 productId: String(product.id),
                 targetAmount: product.price,
                 frequency: apiFrequency,
+                isRecurring: true,
+                monthlyAmount: automatedMonthlyAmount,
+                savingsDay: savingsDay
             });
 
             router.push("/dashboard");

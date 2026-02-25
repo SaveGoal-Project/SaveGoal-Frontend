@@ -57,6 +57,9 @@ export interface CreateSavingsGoalRequest {
   name?: string; // used for the transformer shim since backend uses name
   targetAmount: number;
   frequency: SavingsFrequency;
+  isRecurring?: boolean;
+  monthlyAmount?: number;
+  savingsDay?: number;
 }
 
 // Cancel goal request

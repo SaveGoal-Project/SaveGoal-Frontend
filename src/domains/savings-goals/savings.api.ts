@@ -138,7 +138,10 @@ export async function createSavingsGoal(data: CreateSavingsGoalRequest): Promise
     const payload = {
         name: payloadName || "Savings Goal",
         targetAmount: data.targetAmount,
-        frequency: data.frequency,
+        productId: data.productId,
+        isRecurring: data.isRecurring,
+        monthlyAmount: data.monthlyAmount,
+        savingsDay: data.savingsDay,
     };
 
     const response = await apiClient.post<SavingsGoal>(API_ENDPOINTS.SAVINGS.CREATE, payload);
