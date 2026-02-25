@@ -68,8 +68,9 @@ export default function GoalDetailPage() {
       try {
         await cancel(goalId);
         router.push("/dashboard");
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to cancel goal:", err);
+        alert(err.message || "Failed to cancel goal. The backend may not support deleting active goals yet.");
       }
     }
   };
@@ -156,12 +157,12 @@ export default function GoalDetailPage() {
                 </p>
                 <span
                   className={`inline-block mt-1.5 px-3 py-0.5 rounded-full text-xs font-semibold ${goal.status === "ACTIVE"
-                      ? "bg-green-100 text-green-700"
-                      : goal.status === "COMPLETED"
-                        ? "bg-blue-100 text-blue-700"
-                        : goal.status === "PAUSED"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-red-100 text-red-700"
+                    ? "bg-green-100 text-green-700"
+                    : goal.status === "COMPLETED"
+                      ? "bg-blue-100 text-blue-700"
+                      : goal.status === "PAUSED"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
                     }`}
                 >
                   {goal.status.charAt(0) + goal.status.slice(1).toLowerCase()}

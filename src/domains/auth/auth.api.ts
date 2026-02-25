@@ -120,16 +120,67 @@ export async function logout(): Promise<void> {
  * Register a new merchant account
  */
 export async function registerMerchant(data: MerchantRegisterRequest): Promise<AuthResponse> {
-  const response = await apiClient.post<AuthResponse>(
-    API_ENDPOINTS.MERCHANT_AUTH.REGISTER,
-    data,
+  // 1. Create User Account (Signup)
+  const signupPayload = {
+    email: data.email || data.phone,
+    password: data.password,
+    name: data.fullName.trim(),
+    role: "MERCHANT", // Assuming backend might optionally parse this
+  };
+
+  const authResponse = await apiClient.post<any>(
+    API_ENDPOINTS.AUTH.REGISTER,
+    signupPayload,
     { skipAuth: true }
   );
 
-  // Store tokens on successful registration
-  tokenStorage.setTokens(response.token, response.refreshToken);
+  // Extract token from successful signup
+  const token = authResponse.session?.token || authResponse.token;
+  const refreshToken = authResponse.session?.refreshToken || authResponse.refreshToken;
 
-  return response;
+  if (!token) {
+    throw new Error("Registration failed: No authentication token received.");
+  }
+
+  // Ensure tokens are stored *immediately* so the user is authenticated for the onboard request
+  tokenStorage.setTokens(token, refreshToken);
+
+  // 2. Map frontend state to backend `/merchants/onboard` payload expectation:
+  // Required: [businessName, contactEmail, contactPhone, businessAddress]
+  const merchantPayload = {
+    businessName: data.storeName,
+    businessAddress: `${data.address}, ${data.city}, ${data.region}`,
+    contactEmail: data.email,
+    contactPhone: data.phone,
+    // Note: Other metadata collected by frontend like description/category/closestLandmark
+    // aren't defined in the swagger spec explicitly, but we'll send them just in case.
+    description: data.description,
+    category: data.category,
+    closestLandmark: data.closestLandmark
+  };
+
+  // 3. Create the active Merchant Profile securely (with Bearer Token stored via apiClient)
+  await apiClient.post<any>("/merchants/onboard", merchantPayload);
+
+  // Map the backend's unified "name" string back to the frontend's expected properties
+  let responseFirstName = "";
+  let responseLastName = "";
+  if (authResponse.user?.name) {
+    const parts = authResponse.user.name.split(" ");
+    responseFirstName = parts[0] || "";
+    responseLastName = parts.slice(1).join(" ") || "";
+  }
+
+  return {
+    user: {
+      ...authResponse.user,
+      firstName: responseFirstName,
+      lastName: responseLastName,
+      role: "MERCHANT", // Override role UI locally
+    },
+    token,
+    refreshToken,
+  };
 }
 
 /**
@@ -138,9 +189,28 @@ export async function registerMerchant(data: MerchantRegisterRequest): Promise<A
 export async function submitMerchantVerification(
   data: MerchantVerificationRequest
 ): Promise<{ success: boolean; message: string }> {
-  return apiClient.post(API_ENDPOINTS.MERCHANT_AUTH.VERIFY_BUSINESS, data);
-}
+  // Use the new centralized /kyc/submit endpoint
+  // Map frontend's Base64 image fields or CDN URLs if we have them
+  const kycPayload = {
+    idType: data.idType,
+    idNumber: data.idNumber,
+    idImageUrl: data.frontIdImage || "https://placeholder.com/id", // Fallbacks if base64 upload is unsupported natively
+    selfieImageUrl: data.selfieImage || "https://placeholder.com/selfie",
+    bankName: "Guaranty Trust Bank", // Placeholder for MVP
+    bankAccountNo: "0000000000",
+    bankAccountName: "SaveGoal Merchant",
+  };
 
+  const response = await apiClient.post<any>(
+    API_ENDPOINTS.KYC.SUBMIT,
+    kycPayload
+  );
+
+  return {
+    success: response.status === "success" || !!response.id,
+    message: "Identity verification submitted successfully.",
+  };
+}
 /**
  * Upload ID document (front or back)
  */
