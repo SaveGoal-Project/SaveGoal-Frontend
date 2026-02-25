@@ -12,10 +12,6 @@ import {
   uploadSelfie,
 } from "./auth.api";
 import {
-  PhoneVerificationRequest,
-  PhoneVerificationConfirmRequest,
-  ForgotPasswordRequest,
-  ResetPasswordRequest,
   MerchantVerificationRequest,
 } from "./auth.types";
 

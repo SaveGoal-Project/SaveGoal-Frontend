@@ -67,6 +67,7 @@ export async function updateUserProfile(
 }
 
 /** POST /users/me/password */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function changePassword(
   _data: ChangePasswordRequest
 ): Promise<{ success: boolean; message: string }> {
