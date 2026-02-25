@@ -210,6 +210,7 @@ export async function getSavedPaymentMethods(): Promise<SavedPaymentMethod[]> {
 }
 
 /** Delete saved payment method */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function deletePaymentMethod(
   methodId: string
 ): Promise<{ success: boolean }> {
@@ -218,6 +219,7 @@ export async function deletePaymentMethod(
 }
 
 /** Set default payment method */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function setDefaultPaymentMethod(
   methodId: string
 ): Promise<{ success: boolean }> {

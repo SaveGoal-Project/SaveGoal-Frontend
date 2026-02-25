@@ -80,12 +80,47 @@ const DEFAULT_PRODUCT: GoalProduct = {
     images: ["https://images.unsplash.com/photo-1579621970588-a3f5ce5ca1b1?w=800&q=80"], // Generic savings image
 };
 
+const LOCAL_STORAGE_MAP_KEY = "savegoal_mock_links";
+
+function getMockLink(goalId: string): string | null {
+    if (typeof window === "undefined") return null;
+    try {
+        const stored = localStorage.getItem(LOCAL_STORAGE_MAP_KEY);
+        if (!stored) return null;
+        const map = JSON.parse(stored);
+        return map[goalId] || null;
+    } catch {
+        return null;
+    }
+}
+
+function saveMockLink(goalId: string, mockProductId: string) {
+    if (typeof window === "undefined") return;
+    try {
+        const stored = localStorage.getItem(LOCAL_STORAGE_MAP_KEY);
+        const map = stored ? JSON.parse(stored) : {};
+        map[goalId] = mockProductId;
+        localStorage.setItem(LOCAL_STORAGE_MAP_KEY, JSON.stringify(map));
+    } catch {
+        // ignore
+    }
+}
+
 /**
  * Transforms a raw backend goal into the UI expected schema by injecting the product visuals.
  */
 function applyTransformerShim(rawGoal: SavingsGoal): SavingsGoal {
-    const goalName = rawGoal.name || rawGoal.product?.name || "Custom Savings Goal";
-    const mappedProduct = SHIM_CATALOG[goalName] || { ...DEFAULT_PRODUCT, name: goalName };
+    const linkedMockId = getMockLink(rawGoal.id);
+    let mappedProduct: GoalProduct | undefined;
+
+    if (linkedMockId) {
+        mappedProduct = Object.values(SHIM_CATALOG).find(p => p.id === linkedMockId);
+    }
+
+    if (!mappedProduct) {
+        const goalName = rawGoal.name || rawGoal.product?.name || "Custom Savings Goal";
+        mappedProduct = SHIM_CATALOG[goalName] || { ...DEFAULT_PRODUCT, name: goalName };
+    }
 
     return {
         ...rawGoal,
@@ -151,6 +186,12 @@ export async function createSavingsGoal(data: CreateSavingsGoalRequest): Promise
 
     const response = await apiClient.post<SavingsGoal>(API_ENDPOINTS.SAVINGS.CREATE, payload);
     const rawGoal = (response as unknown as Record<string, unknown>).data as SavingsGoal || response;
+
+    // Save mapping if it was based on a mock product
+    if (rawGoal.id && data.productId) {
+        saveMockLink(rawGoal.id, data.productId);
+    }
+
     return applyTransformerShim(rawGoal);
 }
 
