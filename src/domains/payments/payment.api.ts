@@ -11,19 +11,22 @@ import {
 
 export async function getPaymentHistory(): Promise<PaymentsListResponse> {
     const response = await apiClient.get<PaymentsListResponse>(API_ENDPOINTS.PAYMENTS.HISTORY);
-    return (response as any).data || response;
+    const res = response as unknown as { data?: PaymentsListResponse };
+    return res.data || (response as PaymentsListResponse);
 }
 
 export async function getPaymentById(paymentId: string): Promise<Payment> {
     // If the backend has an endpoint, map it. Otherwise mock or fallback.
     // There's no specific details endpoint listed in config, but assuming standard REST:
     const response = await apiClient.get<Payment>(`/payments/${paymentId}`);
-    return (response as any).data || response;
+    const res = response as unknown as { data?: Payment };
+    return res.data || (response as Payment);
 }
 
 export async function initiatePayment(data: InitiatePaymentRequest): Promise<InitiatePaymentResponse> {
     const response = await apiClient.post<InitiatePaymentResponse>(API_ENDPOINTS.PAYMENTS.INITIATE, data);
-    return (response as any).data || response;
+    const res = response as unknown as { data?: InitiatePaymentResponse };
+    return res.data || (response as InitiatePaymentResponse);
 }
 
 export async function getSavedPaymentMethods(): Promise<SavedPaymentMethod[]> {
@@ -31,11 +34,11 @@ export async function getSavedPaymentMethods(): Promise<SavedPaymentMethod[]> {
     return [];
 }
 
-export async function deletePaymentMethod(_methodId: string): Promise<{ success: boolean }> {
+export async function deletePaymentMethod(): Promise<{ success: boolean }> {
     return { success: true };
 }
 
-export async function setDefaultPaymentMethod(_methodId: string): Promise<{ success: boolean }> {
+export async function setDefaultPaymentMethod(): Promise<{ success: boolean }> {
     return { success: true };
 }
 
