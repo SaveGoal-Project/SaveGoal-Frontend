@@ -35,8 +35,11 @@ function formatDate(dateString: string | undefined) {
 }
 
 export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
+  const isGroup = goal.type === "GROUP";
+  const href = isGroup ? `/group-goals/${goal.id}` : `/goals/${goal.id}`;
+
   return (
-    <Link href={`/goals/${goal.id}`}>
+    <Link href={href}>
       <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer">
         {/* Top section: Image + Info */}
         <div className="flex gap-4 mb-4">
@@ -58,11 +61,20 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
           {/* Name + Frequency */}
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-bold text-gray-900 truncate">
-              {goal.product.name}
+              {isGroup ? goal.groupDetails?.name : goal.product?.name}
             </h3>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {formatFrequency(goal.frequency)}
-            </p>
+            {isGroup ? (
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold text-[#3b5bdb] bg-[#eef0ff] uppercase tracking-wider">
+                  Group Goal
+                </span>
+                <span className="text-xs text-gray-400 font-medium truncate">{goal.product?.name}</span>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 mt-0.5">
+                {formatFrequency(goal.frequency)}
+              </p>
+            )}
           </div>
         </div>
 
@@ -94,17 +106,25 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
         </div>
 
         {/* Next Payment bar */}
-        <div className="bg-[#eef0ff] rounded-lg px-4 py-3 flex justify-between items-center">
-          <div>
-            <p className="text-[11px] text-gray-500">Next Payment</p>
-            <p className="text-sm font-semibold text-gray-900">
-              {formatDate(goal.nextPaymentDate)}
+        {!isGroup && (
+          <div className="bg-[#eef0ff] rounded-lg px-4 py-3 flex justify-between items-center">
+            <div>
+              <p className="text-[11px] text-gray-500">Next Payment</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {formatDate(goal.nextPaymentDate)}
+              </p>
+            </div>
+            <p className="text-sm font-bold text-[#2d3369]">
+              GH¢ {(goal.nextPaymentAmount ?? 0).toLocaleString()}
             </p>
           </div>
-          <p className="text-sm font-bold text-[#2d3369]">
-            GH¢ {(goal.nextPaymentAmount ?? 0).toLocaleString()}
-          </p>
-        </div>
+        )}
+        {isGroup && goal.groupDetails?.myContribution !== undefined && (
+          <div className="bg-[#f8faff] rounded-lg px-4 py-3 flex justify-between items-center border border-gray-50">
+            <p className="text-xs text-gray-500 font-medium">Your Contribution</p>
+            <p className="text-sm font-bold text-gray-900">GH¢ {goal.groupDetails.myContribution.toLocaleString()}</p>
+          </div>
+        )}
       </div>
     </Link>
   );

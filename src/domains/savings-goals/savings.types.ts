@@ -44,6 +44,17 @@ export interface SavingsGoal {
   createdAt: string;
   updatedAt?: string;
   product: GoalProduct;
+  // --- Group Savings Additional Info ---
+  type?: "INDIVIDUAL" | "GROUP";
+  isGroupAdmin?: boolean;
+  groupDetails?: {
+    name: string;
+    description?: string;
+    membersCount: number;
+    contributionType: "FLEXIBLE" | "EQUAL";
+    targetDate?: string;
+    myContribution?: number;
+  };
 }
 
 // Savings Goal — detail shape (includes deposits)
@@ -57,6 +68,21 @@ export interface CreateSavingsGoalRequest {
   name?: string; // used for the transformer shim since backend uses name
   targetAmount: number;
   frequency: SavingsFrequency;
+}
+
+// Create group goal request
+export interface CreateGroupGoalRequest {
+  name: string;
+  description?: string;
+  productId: string;
+  contributionType: "FLEXIBLE" | "EQUAL";
+  targetDate?: string;
+}
+
+// Contribute to group goal request
+export interface ContributeToGroupRequest {
+  amount: number;
+  paymentMethod: string;
 }
 
 // Cancel goal request
