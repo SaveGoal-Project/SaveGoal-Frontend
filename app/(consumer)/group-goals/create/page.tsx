@@ -184,10 +184,10 @@ export default function CreateGroupGoalPage() {
                                     {filteredProducts.map(product => (
                                         <div
                                             key={product.id}
-                                            onClick={() => setSelectedProductId(product.id)}
+                                            onClick={() => setSelectedProductId(String(product.id))}
                                             className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedProductId === product.id
-                                                    ? "border-[#3b5bdb] bg-[#eef0ff] ring-1 ring-[#3b5bdb]"
-                                                    : "border-gray-200 hover:border-gray-300 bg-white"
+                                                ? "border-[#3b5bdb] bg-[#eef0ff] ring-1 ring-[#3b5bdb]"
+                                                : "border-gray-200 hover:border-gray-300 bg-white"
                                                 }`}
                                         >
                                             <div className="h-12 w-12 rounded-lg bg-gray-100 overflow-hidden relative shrink-0 border border-gray-100">
@@ -211,8 +211,8 @@ export default function CreateGroupGoalPage() {
                                 <div className="grid gap-3">
                                     {/* Flexible */}
                                     <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${contributionType === "FLEXIBLE"
-                                            ? "border-[#3b5bdb] bg-white ring-1 ring-[#3b5bdb]"
-                                            : "border-gray-200 bg-white hover:border-gray-300"
+                                        ? "border-[#3b5bdb] bg-white ring-1 ring-[#3b5bdb]"
+                                        : "border-gray-200 bg-white hover:border-gray-300"
                                         }`}>
                                         <div className={`h-5 w-5 rounded-full border-[1.5px] flex items-center justify-center shrink-0 ${contributionType === "FLEXIBLE" ? "border-[#3b5bdb]" : "border-gray-300"
                                             }`}>
@@ -234,8 +234,8 @@ export default function CreateGroupGoalPage() {
 
                                     {/* Equal */}
                                     <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${contributionType === "EQUAL"
-                                            ? "border-[#3b5bdb] bg-white ring-1 ring-[#3b5bdb]"
-                                            : "border-gray-200 bg-white hover:border-gray-300"
+                                        ? "border-[#3b5bdb] bg-white ring-1 ring-[#3b5bdb]"
+                                        : "border-gray-200 bg-white hover:border-gray-300"
                                         }`}>
                                         <div className={`h-5 w-5 rounded-full border-[1.5px] flex items-center justify-center shrink-0 ${contributionType === "EQUAL" ? "border-[#3b5bdb]" : "border-gray-300"
                                             }`}>
