@@ -106,7 +106,7 @@ export default function CreateSavingsPlanPage() {
             if (frequency === "monthly") apiFrequency = "MONTHLY";
 
             await create({
-                productId: product.id,
+                productId: String(product.id),
                 targetAmount: product.price,
                 frequency: apiFrequency,
             });
