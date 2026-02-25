@@ -8,11 +8,13 @@ import {
   DashboardStats,
   CancelGoalResponse,
   CreateSavingsGoalRequest,
+  CreateGroupGoalRequest,
+  ContributeToGroupRequest,
 } from "./savings.types";
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
-const mockGoals: SavingsGoal[] = [
+export const mockGoals: SavingsGoal[] = [
   {
     id: "goal-001",
     productId: "prod-001",
@@ -82,6 +84,7 @@ const mockGoals: SavingsGoal[] = [
     nextPaymentDate: "2026-02-05",
     nextPaymentAmount: 425,
     createdAt: "2026-01-15T12:00:00Z",
+    type: "INDIVIDUAL",
     product: {
       id: "prod-003",
       name: "Nike AirForce 1",
@@ -96,9 +99,44 @@ const mockGoals: SavingsGoal[] = [
       },
     },
   },
+  {
+    id: "goal-004", // The Group Goal matching the screenshot
+    productId: "prod-004",
+    userId: "user-001",
+    targetAmount: 250000,
+    currentAmount: 87500,
+    frequency: "FLEXIBLE",
+    status: "ACTIVE",
+    estimatedCompletionDate: "2026-12-15",
+    progress: 35,
+    createdAt: "2026-01-01T12:00:00Z",
+    type: "GROUP",
+    isGroupAdmin: true,
+    groupDetails: {
+      name: "Class of 2024 Bus Fund",
+      description: "Saving together for our graduation trip transportation",
+      membersCount: 5,
+      contributionType: "FLEXIBLE",
+      targetDate: "2026-12-15",
+      myContribution: 25000,
+    },
+    product: {
+      id: "prod-004",
+      name: "Toyota Hiace Bus",
+      price: 250000,
+      currency: "GHS",
+      images: [
+        "https://images.unsplash.com/photo-1544620347-c4fd09af9fe9?w=800&q=80",
+      ],
+      merchant: {
+        id: "merch-004",
+        businessName: "AutoMart Ghana",
+      },
+    }
+  },
 ];
 
-const mockGoalDetails: Record<string, SavingsGoalDetail> = {
+export const mockGoalDetails: Record<string, SavingsGoalDetail> = {
   "goal-001": {
     ...mockGoals[0],
     deposits: [
@@ -177,6 +215,27 @@ const mockGoalDetails: Record<string, SavingsGoalDetail> = {
     ...mockGoals[2],
     deposits: [],
   },
+  "goal-004": {
+    ...mockGoals[3],
+    deposits: [
+      {
+        id: "dep-009",
+        paymentId: "pay-009",
+        amount: 10000,
+        method: "Kofi Asante", // repurposed as contributor name for group goals
+        status: "COMPLETED",
+        createdAt: "2026-01-25T10:00:00Z",
+      },
+      {
+        id: "dep-010",
+        paymentId: "pay-010",
+        amount: 5000,
+        method: "Ama Mensah",
+        status: "COMPLETED",
+        createdAt: "2026-01-24T10:00:00Z",
+      }
+    ]
+  }
 };
 
 // ─── Mock Service Functions ──────────────────────────────────────────────────
@@ -240,6 +299,55 @@ export async function createSavingsGoal(
       currency: "GHS",
       images: [],
     },
+  };
+}
+
+/** POST /savings-goals/group */
+export async function createGroupGoal(
+  data: CreateGroupGoalRequest
+): Promise<SavingsGoal> {
+  await delay(800);
+  return {
+    id: `group-${Date.now()}`,
+    productId: data.productId,
+    userId: "user-001",
+    targetAmount: 0,
+    currentAmount: 0,
+    frequency: "FLEXIBLE",
+    status: "ACTIVE",
+    estimatedCompletionDate: data.targetDate || "2026-12-31",
+    progress: 0,
+    createdAt: new Date().toISOString(),
+    type: "GROUP",
+    isGroupAdmin: true,
+    groupDetails: {
+      name: data.name,
+      description: data.description,
+      membersCount: 1,
+      contributionType: data.contributionType,
+      targetDate: data.targetDate,
+      myContribution: 0,
+    },
+    product: {
+      id: data.productId,
+      name: "Group Goal Product",
+      price: 0,
+      currency: "GHS",
+      images: ["https://images.unsplash.com/photo-1544620347-c4fd09af9fe9?w=800&q=80"],
+    },
+  };
+}
+
+/** POST /savings-goals/:id/contribute */
+export async function contributeToGroupGoal(
+  goalId: string,
+  data: ContributeToGroupRequest
+): Promise<any> {
+  await delay(1200);
+  return {
+    success: true,
+    message: "Contribution successful",
+    amount: data.amount,
   };
 }
 
