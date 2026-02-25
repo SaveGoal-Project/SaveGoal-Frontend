@@ -151,6 +151,11 @@ export async function cancelSavingsGoal(goalId: string): Promise<CancelGoalRespo
     return (response as any).data || response;
 }
 
+export async function pauseSavingsGoal(goalId: string): Promise<any> {
+    const response = await apiClient.post<any>(API_ENDPOINTS.SAVINGS.PAUSE(goalId));
+    return (response as any).data || response;
+}
+
 export async function getDashboardStats(): Promise<DashboardStats> {
     // Try fetching goals directly to derive stats if there isn't a native dashboard endpoint
     try {

@@ -53,6 +53,7 @@ export const API_ENDPOINTS = {
     DETAILS: (id: string) => `/goals/${id}`,
     DEPOSIT: (id: string) => `/goals/${id}/deposit`,
     CANCEL: (id: string) => `/goals/${id}/cancel`,
+    PAUSE: (id: string) => `/goals/${id}/pause`,
   },
 
   // Payments

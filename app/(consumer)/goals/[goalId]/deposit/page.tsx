@@ -104,16 +104,26 @@ export default function DepositPage() {
     );
   }
 
-  const scheduledAmount = goal.nextPaymentAmount ?? 0;
-  const depositAmount = amountType === "scheduled" ? scheduledAmount : (parseFloat(customAmount) || 0);
-  const remaining = goal.targetAmount - goal.currentAmount;
-  const afterPayment = goal.currentAmount + depositAmount;
-  const remainingAfter = goal.targetAmount - afterPayment;
-  const afterPaymentPercent = Math.round((afterPayment / goal.targetAmount) * 100);
+  let scheduledAmount = goal.nextPaymentAmount ?? 0;
+  if (!scheduledAmount && goal.targetAmount > 0) {
+    let periods = 20; // default weekly
+    if (goal.frequency === "BIWEEKLY") periods = 10;
+    if (goal.frequency === "MONTHLY") periods = 5;
+    scheduledAmount = Math.ceil(goal.targetAmount / periods);
+  }
+
+  const depositAmountNum = amountType === "scheduled" ? scheduledAmount : (parseFloat(customAmount) || 0);
+  const currentAmountNum = parseFloat(goal.currentAmount as any) || 0;
+  const targetAmountNum = parseFloat(goal.targetAmount as any) || 0;
+
+  const remaining = Math.max(targetAmountNum - currentAmountNum, 0);
+  const afterPayment = currentAmountNum + depositAmountNum;
+  const remainingAfter = targetAmountNum - afterPayment;
+  const afterPaymentPercent = Math.min(Math.round((afterPayment / targetAmountNum) * 100), 100);
 
   const canSubmit =
-    depositAmount > 0 &&
-    depositAmount <= remaining &&
+    depositAmountNum > 0 &&
+    depositAmountNum <= remaining &&
     selectedMethod !== null &&
     (paymentMethods.find((m) => m.id === selectedMethod)?.requiresPhone
       ? phoneNumber.length >= 9
@@ -123,11 +133,17 @@ export default function DepositPage() {
     if (!canSubmit || !selectedMethod) return;
     setView("processing");
     try {
-      await initiate({
+      const payload: any = {
         savingsGoalId: goalId,
-        amount: depositAmount,
+        amount: depositAmountNum,
         method: selectedMethod,
-      });
+      };
+
+      if (paymentMethods.find((m) => m.id === selectedMethod)?.requiresPhone) {
+        payload.mobileNumber = phoneNumber;
+      }
+
+      await initiate(payload);
       setView("success");
     } catch {
       setView("form");
@@ -145,7 +161,7 @@ export default function DepositPage() {
           </h2>
           <p className="text-sm text-gray-500">
             Please wait while we process your deposit of{" "}
-            {formatCurrency(depositAmount)}
+            {formatCurrency(depositAmountNum)}
           </p>
           {selectedMethod && (
             <p className="text-sm text-gray-500 mt-2">
@@ -177,7 +193,7 @@ export default function DepositPage() {
             Payment Successful!
           </h2>
           <p className="text-gray-600 mb-1">
-            GHS {depositAmount.toLocaleString()} has been added to your savings
+            GHS {depositAmountNum.toLocaleString()} has been added to your savings
           </p>
           <p className="text-sm text-gray-400 mb-6">
             Transaction ID: {txnId}
@@ -249,20 +265,18 @@ export default function DepositPage() {
 
             {/* Scheduled Amount */}
             <label
-              className={`flex items-center justify-between border rounded-xl px-5 py-4 mb-4 cursor-pointer transition-colors ${
-                amountType === "scheduled"
+              className={`flex items-center justify-between border rounded-xl px-5 py-4 mb-4 cursor-pointer transition-colors ${amountType === "scheduled"
                   ? "border-[#3b5bdb] bg-[#f8f9ff]"
                   : "border-gray-200 hover:border-gray-300"
-              }`}
+                }`}
               onClick={() => setAmountType("scheduled")}
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    amountType === "scheduled"
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${amountType === "scheduled"
                       ? "border-[#3b5bdb]"
                       : "border-gray-300"
-                  }`}
+                    }`}
                 >
                   {amountType === "scheduled" && (
                     <div className="w-2.5 h-2.5 rounded-full bg-[#3b5bdb]" />
@@ -321,11 +335,10 @@ export default function DepositPage() {
                 <button
                   key={method.id}
                   onClick={() => setSelectedMethod(method.id)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
-                    selectedMethod === method.id
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${selectedMethod === method.id
                       ? "border-[#3b5bdb] bg-[#f8f9ff]"
                       : "border-gray-200 hover:border-gray-300"
-                  }`}
+                    }`}
                 >
                   <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center">
                     {method.icon}
@@ -401,7 +414,7 @@ export default function DepositPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Payment Amount</span>
                 <span className="text-sm font-bold text-gray-900">
-                  {formatCurrency(depositAmount)}
+                  {formatCurrency(depositAmountNum)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -417,7 +430,7 @@ export default function DepositPage() {
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm text-gray-500">Current Saved</span>
                   <span className="text-sm font-bold text-gray-900">
-                    {formatCurrency(goal.currentAmount)}
+                    {formatCurrency(currentAmountNum)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between mb-3">
