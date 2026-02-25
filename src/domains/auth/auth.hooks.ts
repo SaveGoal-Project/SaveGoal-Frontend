@@ -163,7 +163,7 @@ interface UseMerchantVerificationReturn {
   uploadFrontId: (file: File) => Promise<string>;
   uploadBackId: (file: File) => Promise<string>;
   uploadSelfieImage: (file: File) => Promise<string>;
-  submitVerification: (data: Omit<MerchantVerificationRequest, "frontIdImage" | "backIdImage" | "selfieImage">) => Promise<void>;
+  submitVerification: (data: MerchantVerificationRequest) => Promise<void>;
   reset: () => void;
 }
 
@@ -223,8 +223,9 @@ export function useMerchantVerification(): UseMerchantVerificationReturn {
   }, []);
 
   const submitVerification = useCallback(
-    async (data: Omit<MerchantVerificationRequest, "frontIdImage" | "backIdImage" | "selfieImage">) => {
-      if (!frontIdUrl || !backIdUrl || !selfieUrl) {
+    async (data: MerchantVerificationRequest) => {
+      // Validate that images are present in the incoming data
+      if (!data.frontIdImage || !data.backIdImage || !data.selfieImage) {
         setError("Please upload all required documents");
         throw new Error("Please upload all required documents");
       }
@@ -233,12 +234,7 @@ export function useMerchantVerification(): UseMerchantVerificationReturn {
       setError(null);
 
       try {
-        await submitMerchantVerification({
-          ...data,
-          frontIdImage: frontIdUrl,
-          backIdImage: backIdUrl,
-          selfieImage: selfieUrl,
-        });
+        await submitMerchantVerification(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to submit verification");
         throw err;
@@ -246,7 +242,7 @@ export function useMerchantVerification(): UseMerchantVerificationReturn {
         setIsLoading(false);
       }
     },
-    [frontIdUrl, backIdUrl, selfieUrl]
+    []
   );
 
   const reset = useCallback(() => {
