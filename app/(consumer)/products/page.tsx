@@ -137,7 +137,7 @@ export default function BrowseProductsPage() {
           {filteredProducts.map((product) => (
             <BrowseProductCard
               key={product.id}
-              id={product.id}
+              id={String(product.id)}
               name={product.name}
               brand={product.brand}
               price={product.price}
