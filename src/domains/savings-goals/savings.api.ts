@@ -103,7 +103,7 @@ export async function getSavingsGoals(): Promise<SavingsGoalsListResponse> {
     const response = await apiClient.get<SavingsGoalsListResponse | SavingsGoal[]>(API_ENDPOINTS.SAVINGS.LIST);
 
     // Handle backend responses that might be wrapped differently
-    const items = Array.isArray(response) ? response : response.items || (response as any).data || [];
+    const items = Array.isArray(response) ? response : response.items || (response as unknown as Record<string, unknown>).data as SavingsGoal[] || [];
 
     const transformedItems = items.map((goal: SavingsGoal) => applyTransformerShim(goal));
 
@@ -117,7 +117,8 @@ export async function getSavingsGoals(): Promise<SavingsGoalsListResponse> {
 
 export async function getSavingsGoalById(goalId: string): Promise<SavingsGoalDetail> {
     const response = await apiClient.get<SavingsGoalDetail>(API_ENDPOINTS.SAVINGS.DETAILS(goalId));
-    const rawGoal = (response as any).data || response;
+    const resRecord = response as unknown as Record<string, unknown>;
+    const rawGoal = (resRecord.data || response) as SavingsGoalDetail & { transactions?: unknown[]; deposits?: unknown[] };
 
     const transformed = applyTransformerShim(rawGoal);
 
@@ -135,28 +136,32 @@ export async function createSavingsGoal(data: CreateSavingsGoalRequest): Promise
         payloadName = matchedProduct ? matchedProduct.name : "Custom Goal";
     }
 
+    // Only send productId if it looks like a real UUID (length > 10).
+    // Otherwise it's from the mock data and will cause a 404 on the backend.
+    const validProductId = data.productId && data.productId.length > 10 ? data.productId : undefined;
+
     const payload = {
         name: payloadName || "Savings Goal",
         targetAmount: data.targetAmount,
-        productId: data.productId,
+        ...(validProductId && { productId: validProductId }),
         isRecurring: data.isRecurring,
         monthlyAmount: data.monthlyAmount,
         savingsDay: data.savingsDay,
     };
 
     const response = await apiClient.post<SavingsGoal>(API_ENDPOINTS.SAVINGS.CREATE, payload);
-    const rawGoal = (response as any).data || response;
+    const rawGoal = (response as unknown as Record<string, unknown>).data as SavingsGoal || response;
     return applyTransformerShim(rawGoal);
 }
 
 export async function cancelSavingsGoal(goalId: string): Promise<CancelGoalResponse> {
     const response = await apiClient.post<CancelGoalResponse>(API_ENDPOINTS.SAVINGS.CANCEL(goalId));
-    return (response as any).data || response;
+    return (response as unknown as Record<string, unknown>).data as CancelGoalResponse || response;
 }
 
-export async function pauseSavingsGoal(goalId: string): Promise<any> {
-    const response = await apiClient.post<any>(API_ENDPOINTS.SAVINGS.PAUSE(goalId));
-    return (response as any).data || response;
+export async function pauseSavingsGoal(goalId: string): Promise<unknown> {
+    const response = await apiClient.post<unknown>(API_ENDPOINTS.SAVINGS.PAUSE(goalId));
+    return (response as unknown as Record<string, unknown>).data || response;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
