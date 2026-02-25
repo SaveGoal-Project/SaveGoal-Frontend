@@ -7,8 +7,6 @@ import {
   DashboardStats,
   CreateSavingsGoalRequest,
   CancelGoalResponse,
-  CreateGroupGoalRequest,
-  ContributeToGroupRequest,
 } from "./savings.types";
 import {
   getSavingsGoals,
@@ -17,8 +15,6 @@ import {
   cancelSavingsGoal,
   pauseSavingsGoal,
   getDashboardStats,
-  createGroupGoal,
-  contributeToGroupGoal,
 } from "./savings.api";
 
 // ─── Hook: Fetch all savings goals ──────────────────────────────────────────
@@ -179,53 +175,5 @@ export function usePauseSavingsGoal() {
   }, []);
 
   return { pause, isLoading, error };
-}
-
-// ─── Hook: Create group goal ────────────────────────────────────────────────
-
-export function useCreateGroupGoal() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const create = useCallback(async (data: CreateGroupGoalRequest) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const goal = await createGroupGoal(data);
-      return goal;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create group goal";
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  return { create, isLoading, error };
-}
-
-// ─── Hook: Contribute to group goal ─────────────────────────────────────────
-
-export function useContributeToGroupGoal() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const contribute = useCallback(async (goalId: string, data: ContributeToGroupRequest) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await contributeToGroupGoal(goalId, data);
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to contribute to group";
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  return { contribute, isLoading, error };
 }
 

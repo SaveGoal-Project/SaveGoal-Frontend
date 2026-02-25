@@ -146,22 +146,6 @@ export async function createSavingsGoal(data: CreateSavingsGoalRequest): Promise
     return applyTransformerShim(rawGoal);
 }
 
-// TODO: Replace with real endpoint when backend supports group goals
-import {
-    createGroupGoal as mockCreateGroupGoal,
-    contributeToGroupGoal as mockContributeToGroupGoal
-} from "./savings.mock";
-import { CreateGroupGoalRequest, ContributeToGroupRequest } from "./savings.types";
-
-export async function createGroupGoal(data: CreateGroupGoalRequest): Promise<SavingsGoal> {
-    const rawGoal = await mockCreateGroupGoal(data);
-    return applyTransformerShim(rawGoal);
-}
-
-export async function contributeToGroupGoal(goalId: string, data: ContributeToGroupRequest): Promise<any> {
-    return await mockContributeToGroupGoal(goalId, data);
-}
-
 export async function cancelSavingsGoal(goalId: string): Promise<CancelGoalResponse> {
     const response = await apiClient.post<CancelGoalResponse>(API_ENDPOINTS.SAVINGS.CANCEL(goalId));
     return (response as any).data || response;
