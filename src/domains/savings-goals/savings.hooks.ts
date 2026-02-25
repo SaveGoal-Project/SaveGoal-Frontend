@@ -13,6 +13,7 @@ import {
   getSavingsGoalById,
   createSavingsGoal,
   cancelSavingsGoal,
+  pauseSavingsGoal,
   getDashboardStats,
 } from "./savings.api";
 
@@ -149,5 +150,30 @@ export function useCancelSavingsGoal() {
   }, []);
 
   return { cancel, isLoading, error, result };
+}
+
+// ─── Hook: Pause savings goal ──────────────────────────────────────────────
+
+export function usePauseSavingsGoal() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const pause = useCallback(async (goalId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await pauseSavingsGoal(goalId);
+      return data;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to pause goal";
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { pause, isLoading, error };
 }
 

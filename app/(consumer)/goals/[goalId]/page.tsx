@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useSavingsGoalDetail } from "@/src/domains/savings-goals/savings.hooks";
+import { useSavingsGoalDetail, useCancelSavingsGoal, usePauseSavingsGoal } from "@/src/domains/savings-goals/savings.hooks";
 import { Progress } from "@/src/components/ui/progress";
 import { ArrowLeft, Plus, Pause, Trash2 } from "lucide-react";
 import Image from "next/image";
@@ -48,7 +48,31 @@ export default function GoalDetailPage() {
   const params = useParams();
   const router = useRouter();
   const goalId = params.goalId as string;
-  const { goal, isLoading, error } = useSavingsGoalDetail(goalId);
+  const { goal, isLoading, error, refetch } = useSavingsGoalDetail(goalId);
+  const { cancel, isLoading: isCanceling } = useCancelSavingsGoal();
+  const { pause, isLoading: isPausing } = usePauseSavingsGoal();
+
+  const handlePause = async () => {
+    if (confirm("Are you sure you want to pause this savings goal?")) {
+      try {
+        await pause(goalId);
+        refetch();
+      } catch (err) {
+        console.error("Failed to pause goal:", err);
+      }
+    }
+  };
+
+  const handleCancel = async () => {
+    if (confirm("Are you sure you want to completely cancel this goal? It will be removed from your active goals.")) {
+      try {
+        await cancel(goalId);
+        router.push("/dashboard");
+      } catch (err) {
+        console.error("Failed to cancel goal:", err);
+      }
+    }
+  };
 
   if (isLoading) {
     return (
@@ -131,15 +155,14 @@ export default function GoalDetailPage() {
                   {formatFrequency(goal.frequency)}
                 </p>
                 <span
-                  className={`inline-block mt-1.5 px-3 py-0.5 rounded-full text-xs font-semibold ${
-                    goal.status === "ACTIVE"
+                  className={`inline-block mt-1.5 px-3 py-0.5 rounded-full text-xs font-semibold ${goal.status === "ACTIVE"
                       ? "bg-green-100 text-green-700"
                       : goal.status === "COMPLETED"
-                      ? "bg-blue-100 text-blue-700"
-                      : goal.status === "PAUSED"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
+                        ? "bg-blue-100 text-blue-700"
+                        : goal.status === "PAUSED"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
+                    }`}
                 >
                   {goal.status.charAt(0) + goal.status.slice(1).toLowerCase()}
                 </span>
@@ -250,13 +273,22 @@ export default function GoalDetailPage() {
                 <Plus className="h-4 w-4" />
                 Make Deposit
               </Link>
-              <button className="flex items-center justify-center gap-2 w-full border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg py-3 text-sm font-semibold transition-colors">
+              <button
+                onClick={handlePause}
+                disabled={isPausing || goal.status !== "ACTIVE"}
+                className={`flex items-center justify-center gap-2 w-full border border-gray-300 text-gray-700 rounded-lg py-3 text-sm font-semibold transition-colors
+                  ${goal.status !== "ACTIVE" ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-gray-50'}`}
+              >
                 <Pause className="h-4 w-4" />
-                Pause Savings
+                {isPausing ? "Pausing..." : goal.status === "PAUSED" ? "Paused" : "Pause Savings"}
               </button>
-              <button className="flex items-center justify-center gap-2 w-full border border-red-300 text-red-600 hover:bg-red-50 rounded-lg py-3 text-sm font-semibold transition-colors">
+              <button
+                onClick={handleCancel}
+                disabled={isCanceling}
+                className="flex items-center justify-center gap-2 w-full border border-red-300 text-red-600 hover:bg-red-50 rounded-lg py-3 text-sm font-semibold transition-colors disabled:opacity-50"
+              >
                 <Trash2 className="h-4 w-4" />
-                Cancel Goal
+                {isCanceling ? "Canceling..." : "Cancel Goal"}
               </button>
             </div>
           </div>

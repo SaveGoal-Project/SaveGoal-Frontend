@@ -34,6 +34,7 @@ export interface InitiatePaymentRequest {
   savingsGoalId: string;
   amount: number;
   method: PaymentMethod;
+  mobileNumber?: string;
 }
 
 // Initiate payment response
