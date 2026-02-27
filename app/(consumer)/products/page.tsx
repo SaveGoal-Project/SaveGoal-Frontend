@@ -36,7 +36,7 @@ export default function BrowseProductsPage() {
         items.sort((a, b) => b.price - a.price);
         break;
       case "Newest":
-        items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        items.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
         break;
       default:
         break;

@@ -44,7 +44,7 @@ export default function MerchantProductsPage() {
 
     const filteredProducts = products.filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -172,7 +172,7 @@ export default function MerchantProductsPage() {
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0">
                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                                                    <img src={product.image || undefined} alt={product.name} className="w-full h-full object-cover" />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="font-bold text-slate-900 truncate max-w-[200px]">{product.name}</p>
@@ -189,12 +189,12 @@ export default function MerchantProductsPage() {
                                             {product.formattedPrice || `GH¢${product.price.toLocaleString()}`}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`text-sm font-semibold ${product.stock === 0 ? 'text-red-600' : product.stock < 10 ? 'text-amber-600' : 'text-slate-900'}`}>
+                                            <span className={`text-sm font-semibold ${(product.stock ?? 0) === 0 ? 'text-red-600' : (product.stock ?? 0) < 10 ? 'text-amber-600' : 'text-slate-900'}`}>
                                                 {product.stock} in stock
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            {getStatusBadge(product.status)}
+                                            {getStatusBadge(product.status || 'Active')}
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-1">

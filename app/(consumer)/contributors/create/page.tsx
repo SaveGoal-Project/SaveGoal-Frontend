@@ -26,7 +26,7 @@ function toGoalProduct(p: Product): GoalProduct {
         price: p.price,
         currency: `GH₵`,
         images: p.image ? [p.image] : [],
-        merchant: { id: p.merchantProfileId, businessName: p.merchant?.businessName || "Merchant" },
+        merchant: { id: p.merchantProfileId || p.id, businessName: p.merchant?.businessName || "Merchant" },
     };
 }
 
