@@ -58,6 +58,7 @@ function normalizeGoal(rawGoal: SavingsGoal): SavingsGoal {
     return {
         ...rawGoal,
         product,
+        category: (rawGoal as unknown as Record<string, unknown>).category as SavingsGoal['category'] || undefined,
         progress: rawGoal.progress || (rawGoal.targetAmount > 0 ? (rawGoal.currentAmount / rawGoal.targetAmount) * 100 : 0),
     };
 }
@@ -98,6 +99,7 @@ export async function createSavingsGoal(data: CreateSavingsGoalRequest): Promise
         name: data.name || "Savings Goal",
         targetAmount: data.targetAmount,
         ...(data.productId && { productId: data.productId }),
+        ...(data.category && { category: data.category }),
         isRecurring: data.isRecurring,
         monthlyAmount: data.monthlyAmount,
         savingsDay: data.savingsDay,

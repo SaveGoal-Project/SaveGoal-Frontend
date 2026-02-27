@@ -1,48 +1,94 @@
 import React from "react";
 import Image from "next/image";
 import { Crown } from "lucide-react";
+import { Progress } from "@/src/components/ui/progress";
 
-export function GroupDashboardHeader() {
+export interface GroupDashboardHeaderProps {
+    name: string;
+    description?: string;
+    status: string;
+    image?: string | null;
+    merchantName?: string;
+    productName?: string;
+    currentAmount: number;
+    targetAmount: number;
+    contributorsCount: number;
+    isOwner?: boolean;
+}
+
+function formatCurrency(amount: number) {
+    return `GH₵${amount.toLocaleString()}`;
+}
+
+export function GroupDashboardHeader({
+    name,
+    description,
+    status,
+    image,
+    merchantName,
+    productName,
+    currentAmount,
+    targetAmount,
+    contributorsCount,
+    isOwner = true,
+}: GroupDashboardHeaderProps) {
+    const remaining = Math.max(0, targetAmount - currentAmount);
+    const progress = targetAmount > 0 ? Math.round((currentAmount / targetAmount) * 100) : 0;
+
     return (
         <div className="bg-white border text-gray-900 border-gray-200 rounded-2xl p-6 sm:p-8 shadow-sm w-full relative">
 
-            {/* Top Right Active Badge */}
+            {/* Top Right Status Badge */}
             <div className="absolute top-6 right-6">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700">
-                    Active
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${status === "ACTIVE" ? "bg-green-100 text-green-700"
+                        : status === "COMPLETED" ? "bg-blue-100 text-blue-700"
+                            : "bg-gray-100 text-gray-600"
+                    }`}>
+                    {status.charAt(0) + status.slice(1).toLowerCase()}
                 </span>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-6 mb-8 mt-2">
                 {/* Product Image */}
                 <div className="w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-50">
-                    <Image
-                        src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80"
-                        alt="Bus"
-                        fill
-                        className="object-cover"
-                    />
+                    {image ? (
+                        <Image
+                            src={image}
+                            alt={productName || name}
+                            fill
+                            className="object-cover"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300" />
+                    )}
                 </div>
 
                 {/* Group Details */}
                 <div className="flex flex-col justify-center flex-1">
                     <div className="flex items-center gap-3 mb-1">
                         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                            Class of 2024 Bus Fund
+                            {name}
                         </h1>
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#fff5d6] text-[#b8860b] border border-[#ffe082]">
-                            <Crown className="w-3.5 h-3.5" />
-                            Admin
-                        </span>
+                        {isOwner && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#fff5d6] text-[#b8860b] border border-[#ffe082]">
+                                <Crown className="w-3.5 h-3.5" />
+                                Admin
+                            </span>
+                        )}
                     </div>
 
-                    <p className="text-gray-500 font-medium text-sm sm:text-base mb-2">
-                        Saving together for our graduation trip transportation
-                    </p>
+                    {description && (
+                        <p className="text-gray-500 font-medium text-sm sm:text-base mb-2">
+                            {description}
+                        </p>
+                    )}
 
-                    <p className="text-[#1a53c8] font-medium text-sm">
-                        AutoMart Ghana <span className="text-gray-400 mx-1">•</span> Toyota Hiace Bus
-                    </p>
+                    {(merchantName || productName) && (
+                        <p className="text-[#1a53c8] font-medium text-sm">
+                            {merchantName && <>{merchantName} <span className="text-gray-400 mx-1">•</span></>}
+                            {productName}
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -50,11 +96,9 @@ export function GroupDashboardHeader() {
             <div className="w-full mb-8">
                 <div className="flex justify-between items-center text-sm font-bold text-gray-700 mb-2">
                     <span>Group Progress</span>
-                    <span className="text-gray-900">35%</span>
+                    <span className="text-gray-900">{progress}%</span>
                 </div>
-                <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#1a53c8] rounded-full w-[35%]" />
-                </div>
+                <Progress value={progress} className="h-3 bg-gray-100" />
             </div>
 
             <div className="h-px bg-gray-100 w-full mb-8" />
@@ -66,7 +110,7 @@ export function GroupDashboardHeader() {
                         Total Saved
                     </span>
                     <span className="text-xl sm:text-2xl font-bold text-green-600">
-                        GH₵87,500
+                        {formatCurrency(currentAmount)}
                     </span>
                 </div>
 
@@ -75,7 +119,7 @@ export function GroupDashboardHeader() {
                         Target
                     </span>
                     <span className="text-xl sm:text-2xl font-bold text-gray-900">
-                        GH₵250,000
+                        {formatCurrency(targetAmount)}
                     </span>
                 </div>
 
@@ -84,16 +128,16 @@ export function GroupDashboardHeader() {
                         Remaining
                     </span>
                     <span className="text-xl sm:text-2xl font-bold text-green-600">
-                        GH₵162,500
+                        {formatCurrency(remaining)}
                     </span>
                 </div>
 
                 <div className="flex flex-col gap-1 md:border-l border-gray-100">
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Members
+                        Contributors
                     </span>
                     <span className="text-xl sm:text-2xl font-bold text-gray-900">
-                        5
+                        {contributorsCount}
                     </span>
                 </div>
             </div>

@@ -35,8 +35,12 @@ function formatDate(dateString: string | undefined) {
 }
 
 export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
+  const href = goal.category === "CONTRIBUTION"
+    ? `/contributors/${goal.id}`
+    : `/goals/${goal.id}`;
+
   return (
-    <Link href={`/goals/${goal.id}`}>
+    <Link href={href}>
       <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer">
         {/* Top section: Image + Info */}
         <div className="flex gap-4 mb-4">

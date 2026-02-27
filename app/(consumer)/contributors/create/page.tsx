@@ -71,10 +71,11 @@ export default function CreateContributorGoalPage() {
                 productId: selectedProduct.id,
                 targetAmount: selectedProduct.price,
                 frequency: contributionType === "equal" ? "MONTHLY" : "FLEXIBLE",
+                category: "CONTRIBUTION",
                 ...(targetDate && { deadline: targetDate }),
             });
-            // Redirect to the new goal's detail page on the dashboard
-            router.push(`/goals/${newGoal.id}`);
+            // Redirect to the contributor goal's detail page
+            router.push(`/contributors/${newGoal.id}`);
         } catch {
             // Error is already captured in the hook's `createError` state
         }
