@@ -1,27 +1,37 @@
-export type ProductStatus = 'Active' | 'Low Stock' | 'Out of Stock' | 'Draft' | 'Inactive';
+// Product types — covers both backend API responses and merchant UI needs
 
 export interface Product {
-    id: number | string;
+    id: string;
     name: string;
-    brand: string;
-    merchantId: string;
-    merchantName: string;
+    description?: string | null;
     price: number;
-    formattedPrice?: string;
-    category: string;
-    image: string;
-    images: string[];
-    stock: number;
-    status: ProductStatus;
-    rating: number;
-    reviewCount: number;
-    description: string;
-    sku?: string;
-    specifications: {
-        label: string;
-        value: string;
-    }[];
+    currency?: string;
+    image?: string | null;
+    images?: string[];
+    stock?: number | null;
+    isAvailable?: boolean;
+    metadata?: Record<string, unknown> | null;
     createdAt?: string;
+    updatedAt?: string;
+
+    // Backend relation (from GET /api/products)
+    merchantProfileId?: string;
+    merchant?: {
+        businessName: string;
+        isVerified?: boolean;
+    };
+
+    // Merchant UI fields (used by merchant dashboard pages)
+    brand?: string;
+    merchantId?: string;
+    merchantName?: string;
+    formattedPrice?: string;
+    category?: string;
+    sku?: string;
+    status?: string;
+    rating?: number;
+    reviewCount?: number;
+    specifications?: { label: string; value: string }[];
 }
 
 export interface ProductStats {
@@ -31,12 +41,22 @@ export interface ProductStats {
     lowStock: number;
 }
 
-export interface CreateProductRequest {
+export interface ProductListResponse {
+    status: string;
+    data: Product[];
+}
+
+export interface ProductDetailResponse {
+    status: string;
+    data: Product;
+}
+
+export interface CreateProductData {
     name: string;
-    description: string;
-    category: string;
-    price: string;
-    stock: number;
-    sku: string;
-    images: string[];
+    description?: string;
+    category?: string;
+    price: string | number;
+    sku?: string;
+    stock?: number;
+    images?: string[];
 }

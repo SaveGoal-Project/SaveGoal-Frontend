@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Users, Search, Calendar, ArrowRight, Loader2, AlertCircle } from "lucide-react";
@@ -13,30 +13,27 @@ import { ContributionTypeCard } from "@/src/components/contributors/Contribution
 import { GroupSavingsRules } from "@/src/components/contributors/GroupSavingsRules";
 import { GoalProduct } from "@/src/domains/savings-goals/savings.types";
 import { useCreateSavingsGoal } from "@/src/domains/savings-goals/savings.hooks";
-import { mockProducts, MockProduct } from "@/src/domains/products/products.mock";
+import { useProducts } from "@/src/domains/products/products.hooks";
+import type { Product } from "@/src/domains/products/products.types";
 
 type ContributionType = "flexible" | "equal";
 
-/** Map a MockProduct to the GoalProduct shape used by ProductSelectCard */
-function toGoalProduct(mp: MockProduct): GoalProduct {
+/** Map a backend Product to the GoalProduct shape used by ProductSelectCard */
+function toGoalProduct(p: Product): GoalProduct {
     return {
-        id: String(mp.id),
-        name: mp.name,
-        price: mp.price,
+        id: p.id,
+        name: p.name,
+        price: p.price,
         currency: `GH₵`,
-        images: mp.images,
-        merchant: { id: mp.brand.toLowerCase(), businessName: mp.brand },
+        images: p.image ? [p.image] : [],
+        merchant: { id: p.merchantProfileId || p.id, businessName: p.merchant?.businessName || "Merchant" },
     };
 }
 
 export default function CreateContributorGoalPage() {
     const router = useRouter();
     const { create, isLoading: isCreating, error: createError } = useCreateSavingsGoal();
-
-    // Product catalog
-    const [products, setProducts] = useState<GoalProduct[]>([]);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+    const { products: rawProducts, isLoading: isLoadingProducts } = useProducts();
 
     // Form State
     const [step, setStep] = useState<1 | 2>(1);
@@ -45,18 +42,10 @@ export default function CreateContributorGoalPage() {
     const [selectedProduct, setSelectedProduct] = useState<GoalProduct | null>(null);
     const [contributionType, setContributionType] = useState<ContributionType | null>(null);
     const [targetDate, setTargetDate] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
 
-    // Load products on mount
-    useEffect(() => {
-        setIsLoadingProducts(true);
-        // Using mock products for now (consistent with the rest of the app).
-        // Replace with apiClient.get(API_ENDPOINTS.PRODUCTS.LIST) when backend products API is ready.
-        const timer = setTimeout(() => {
-            setProducts(mockProducts.map(toGoalProduct));
-            setIsLoadingProducts(false);
-        }, 300);
-        return () => clearTimeout(timer);
-    }, []);
+    // Map backend products to GoalProduct shape
+    const products = rawProducts.map(toGoalProduct);
 
     // Filter products by search
     const filteredProducts = searchQuery

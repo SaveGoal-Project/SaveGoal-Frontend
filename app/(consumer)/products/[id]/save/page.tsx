@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Clock, CalendarDays, Info } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import {
-    getProductById,
-    type MockProduct,
-} from "@/src/domains/products/products.mock";
+import { useProduct } from "@/src/domains/products/products.hooks";
 import { useCreateSavingsGoal } from "@/src/domains/savings-goals/savings.hooks";
 import { SavingsFrequency } from "@/src/domains/savings-goals/savings.types";
 
@@ -20,28 +17,11 @@ export default function CreateSavingsPlanPage() {
     const router = useRouter();
     const productId = params.id as string;
 
-    const [product, setProduct] = useState<MockProduct | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const { product, isLoading } = useProduct(productId);
     const [frequency, setFrequency] = useState<Frequency>("weekly");
     const [isConfirming, setIsConfirming] = useState(false);
 
     const { create } = useCreateSavingsGoal();
-
-    const fetchProduct = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const data = await getProductById(productId);
-            if (data) {
-                setProduct(data);
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    }, [productId]);
-
-    useEffect(() => {
-        fetchProduct();
-    }, [fetchProduct]);
 
     const planDetails = useMemo(() => {
         if (!product) return null;
@@ -105,23 +85,18 @@ export default function CreateSavingsPlanPage() {
             if (frequency === "biweekly") apiFrequency = "BIWEEKLY";
             if (frequency === "monthly") apiFrequency = "MONTHLY";
 
-            // Backend specific automated recurring logic
-            // Assuming the backend charges "monthlyAmount" automatically every "savingsDay"
-
-            // Calculate equivalent monthly footprint for automated debit:
-            let automatedMonthlyAmount = planDetails.perPayment; // If monthly
+            let automatedMonthlyAmount = planDetails.perPayment;
             if (frequency === "weekly") {
-                automatedMonthlyAmount = planDetails.perPayment * 4; // Roughly 4 weeks a month
+                automatedMonthlyAmount = planDetails.perPayment * 4;
             } else if (frequency === "biweekly") {
-                automatedMonthlyAmount = planDetails.perPayment * 2; // Roughly 2 biweeks a month
+                automatedMonthlyAmount = planDetails.perPayment * 2;
             }
 
-            // Set savings day to today, capped at 28 to match backend restrictions
             const today = new Date().getDate();
             const savingsDay = today > 28 ? 28 : today;
 
             await create({
-                productId: String(product.id),
+                productId: product.id,
                 targetAmount: product.price,
                 frequency: apiFrequency,
                 isRecurring: true,
@@ -132,7 +107,6 @@ export default function CreateSavingsPlanPage() {
             router.push("/dashboard");
         } catch (error) {
             console.error("Failed to create savings plan:", error);
-            // Optionally could display an error toast here
         } finally {
             setIsConfirming(false);
         }
@@ -203,12 +177,16 @@ export default function CreateSavingsPlanPage() {
                         {/* Product Info Row */}
                         <div className="flex items-center gap-4">
                             <div className="relative w-[80px] h-[60px] rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
-                                <Image
-                                    src={product.image}
-                                    alt={product.name}
-                                    fill
-                                    className="object-cover"
-                                />
+                                {product.image ? (
+                                    <Image
+                                        src={product.image}
+                                        alt={product.name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-b from-gray-100 to-gray-200" />
+                                )}
                             </div>
                             <div>
                                 <h3 className="text-base font-bold text-black">

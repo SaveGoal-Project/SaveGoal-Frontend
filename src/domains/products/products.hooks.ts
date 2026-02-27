@@ -1,20 +1,22 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Product, ProductStats, CreateProductRequest } from "./products.types";
-import { fetchProducts, fetchProduct, fetchProductStats, addProduct } from "./products.api";
+import { useState, useEffect, useCallback } from "react";
+import type { Product, ProductStats, CreateProductData } from "./products.types";
+import { getProducts, getProductById, createProduct, getProductStats } from "./products.api";
+
+// ─── Hook: Fetch all products ─────────────────────────────────────────────
 
 export function useProducts() {
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const loadProducts = useCallback(async () => {
+    const fetchProducts = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const result = await fetchProducts();
-            setProducts(result);
+            const data = await getProducts();
+            setProducts(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load products");
         } finally {
@@ -23,49 +25,79 @@ export function useProducts() {
     }, []);
 
     useEffect(() => {
-        loadProducts();
-    }, [loadProducts]);
+        fetchProducts();
+    }, [fetchProducts]);
 
-    return { products, isLoading, error, refetch: loadProducts };
+    return { products, isLoading, error, refetch: fetchProducts };
 }
+
+// ─── Hook: Fetch single product ───────────────────────────────────────────
 
 export function useProduct(id: string) {
     const [product, setProduct] = useState<Product | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const loadProduct = useCallback(async () => {
+    const fetchProduct = useCallback(async () => {
         if (!id) return;
         setIsLoading(true);
         setError(null);
         try {
-            const result = await fetchProduct(id);
-            setProduct(result);
+            const data = await getProductById(id);
+            setProduct(data);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load product");
+            setError(
+                err instanceof Error ? err.message : "Failed to load product details"
+            );
         } finally {
             setIsLoading(false);
         }
     }, [id]);
 
     useEffect(() => {
-        loadProduct();
-    }, [loadProduct]);
+        fetchProduct();
+    }, [fetchProduct]);
 
-    return { product, isLoading, error, refetch: loadProduct };
+    return { product, isLoading, error, refetch: fetchProduct };
 }
+
+// ─── Hook: Create a product (Merchant) ────────────────────────────────────
+
+export function useCreateProduct() {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const create = useCallback(async (data: CreateProductData): Promise<Product> => {
+        setIsSubmitting(true);
+        setError(null);
+        try {
+            const product = await createProduct(data);
+            return product;
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to create product";
+            setError(message);
+            throw err;
+        } finally {
+            setIsSubmitting(false);
+        }
+    }, []);
+
+    return { create, isSubmitting, error };
+}
+
+// ─── Hook: Fetch product stats (Merchant dashboard) ───────────────────────
 
 export function useProductStats() {
     const [stats, setStats] = useState<ProductStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const loadStats = useCallback(async () => {
+    const fetchStats = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const result = await fetchProductStats();
-            setStats(result);
+            const data = await getProductStats();
+            setStats(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load product stats");
         } finally {
@@ -74,30 +106,8 @@ export function useProductStats() {
     }, []);
 
     useEffect(() => {
-        loadStats();
-    }, [loadStats]);
+        fetchStats();
+    }, [fetchStats]);
 
-    return { stats, isLoading, error, refetch: loadStats };
-}
-
-export function useCreateProduct() {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const create = async (data: CreateProductRequest) => {
-        setIsSubmitting(true);
-        setError(null);
-        try {
-            const result = await addProduct(data);
-            return result;
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Failed to create product";
-            setError(message);
-            throw new Error(message);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    return { create, isSubmitting, error };
+    return { stats, isLoading, error, refetch: fetchStats };
 }
