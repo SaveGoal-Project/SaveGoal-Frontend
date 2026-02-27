@@ -86,7 +86,7 @@ export const API_ENDPOINTS = {
 
   // Admin
   ADMIN: {
-    LOGIN: "/auth/admin/login",
+    LOGIN: "/auth/email/signin",
     DASHBOARD: "/admin/dashboard",
     USERS: {
       LIST: "/admin/users",

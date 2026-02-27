@@ -58,13 +58,13 @@ const defaultAuthContext: AuthContextType = {
   isAuthenticated: false,
   isLoading: true,
   error: null,
-  login: async () => {},
-  adminLogin: async () => {},
-  register: async () => {},
-  registerMerchant: async () => {},
-  logout: async () => {},
-  clearError: () => {},
-  refreshUser: async () => {},
+  login: async () => { },
+  adminLogin: async () => { },
+  register: async () => { },
+  registerMerchant: async () => { },
+  logout: async () => { },
+  clearError: () => { },
+  refreshUser: async () => { },
 };
 
 // Create context
@@ -182,6 +182,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           response = await apiAdminLogin(credentials);
         }
 
+        // Store tokens once here (admin.api.ts no longer stores them)
         tokenStorage.setTokens(response.token, response.refreshToken);
         setState({
           user: response.user,
