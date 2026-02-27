@@ -20,7 +20,7 @@ type ContributionType = "flexible" | "equal";
 /** Map a MockProduct to the GoalProduct shape used by ProductSelectCard */
 function toGoalProduct(mp: MockProduct): GoalProduct {
     return {
-        id: mp.id,
+        id: String(mp.id),
         name: mp.name,
         price: mp.price,
         currency: `GH₵`,
