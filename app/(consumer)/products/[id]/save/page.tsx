@@ -96,6 +96,7 @@ export default function CreateSavingsPlanPage() {
             const savingsDay = today > 28 ? 28 : today;
 
             await create({
+                name: product.name,
                 productId: product.id,
                 targetAmount: product.price,
                 frequency: apiFrequency,
