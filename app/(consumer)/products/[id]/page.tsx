@@ -199,7 +199,7 @@ export default function ProductDetailPage() {
                         {/* Price */}
                         <div className="flex items-baseline gap-3">
                             <span className="text-3xl md:text-4xl font-bold text-[#3d4a99]">
-                                GH¢{product.price.toLocaleString()}
+                                {product.formattedPrice || `GH¢${product.price.toLocaleString()}`}
                             </span>
                             <span className="text-sm text-gray-400">Total Price</span>
                         </div>

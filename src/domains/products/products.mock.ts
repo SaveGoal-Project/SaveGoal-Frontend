@@ -1,238 +1,150 @@
-// Mock product data — shared across browse and detail pages
-// Replace with actual API calls when backend is ready
+import { Product, ProductStats } from "./products.types";
 
-export interface MockProduct {
-    id: string;
-    name: string;
-    brand: string;
-    price: number;
-    currency: string;
-    category: string;
-    rating: number;
-    reviewCount: number;
-    image: string;
-    images: string[];
-    description: string;
-    specifications: { label: string; value: string }[];
-}
+const delay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
-function delay(ms: number = 400): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export const mockProducts: MockProduct[] = [
+export const mockProducts: Product[] = [
     {
         id: "1",
-        name: "Apple MacBook Pro",
+        name: "Apple MacBook Pro 14\"",
         brand: "APPLE",
-        price: 10000,
-        currency: "GHS",
+        merchantId: "m_123",
+        merchantName: "Elite Electronics",
+        price: 14500,
+        formattedPrice: "GH¢14,500.00",
         category: "Electronics",
-        rating: 5.0,
-        reviewCount: 1200,
-        image:
-            "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca4",
         images: [
-            "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80",
-            "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&q=80",
-            "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80",
+            "https://images.unsplash.com/photo-1517336714731-489689fd1ca4",
+            "https://images.unsplash.com/photo-1517336714731-489689fd1ca4"
         ],
-        description:
-            "The most powerful MacBook Pro ever. With the blazing-fast M2 Pro chip, up to 22 hours of battery life, and a stunning Liquid Retina XDR display, it's the ultimate pro notebook.",
+        stock: 12,
+        status: "Active",
+        rating: 4.8,
+        reviewCount: 24,
+        sku: "APP-MBP-14",
+        description: "The most powerful MacBook Pro ever. With the blazing-fast M2 Pro chip.",
         specifications: [
-            { label: "CPU", value: "Apple M2 Pro (12 cores)" },
-            { label: "GPU", value: "19-core GPU" },
-            { label: "Storage", value: "512GB SSD" },
-            { label: "Display", value: '16" Liquid Retina XDR' },
-        ],
+            { label: "Processor", value: "M2 Pro" },
+            { label: "RAM", value: "16GB" },
+            { label: "Storage", value: "512GB SSD" }
+        ]
     },
     {
         id: "2",
-        name: "Water Bottle",
-        brand: "MELCOM",
-        price: 10000,
-        currency: "GHS",
-        category: "Health",
-        rating: 5.0,
-        reviewCount: 1200,
-        image:
-            "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&q=80",
+        name: "Sony PlayStation 5",
+        brand: "SONY",
+        merchantId: "m_123",
+        merchantName: "Elite Electronics",
+        price: 7200,
+        formattedPrice: "GH¢7,200.00",
+        category: "Electronics",
+        image: "https://images.unsplash.com/photo-1606813907291-d86efa9b94db",
         images: [
-            "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&q=80",
-            "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=800&q=80",
-            "https://images.unsplash.com/photo-1570831739435-6601aa3fa4fb?w=800&q=80",
+            "https://images.unsplash.com/photo-1606813907291-d86efa9b94db"
         ],
-        description:
-            "Premium insulated water bottle that keeps your drinks cold for 24 hours or hot for 12 hours. Made with BPA-free, food-grade stainless steel.",
+        stock: 5,
+        status: "Low Stock",
+        rating: 5.0,
+        reviewCount: 42,
+        sku: "SON-PS5-DS",
+        description: "Experience lightning-fast loading with an ultra-high speed SSD.",
         specifications: [
-            { label: "Material", value: "Stainless Steel" },
-            { label: "Capacity", value: "750ml" },
-            { label: "Insulation", value: "Double-wall vacuum" },
-            { label: "Weight", value: "350g" },
-        ],
+            { label: "Category", value: "Console" },
+            { label: "Storage", value: "825GB" },
+            { label: "HDR", value: "Supported" }
+        ]
     },
     {
         id: "3",
-        name: "Apple Series 3",
-        brand: "TELEFONICA",
-        price: 10000,
-        currency: "GHS",
+        name: "Canon EOS R5",
+        brand: "CANON",
+        merchantId: "m_123",
+        merchantName: "Elite Electronics",
+        price: 35000,
+        formattedPrice: "GH¢35,000.00",
         category: "Electronics",
-        rating: 5.0,
-        reviewCount: 1200,
-        image:
-            "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32",
         images: [
-            "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80",
-            "https://images.unsplash.com/photo-1551816230-ef5deaed4a26?w=800&q=80",
-            "https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=800&q=80",
+            "https://images.unsplash.com/photo-1516035069371-29a1b244cc32"
         ],
-        description:
-            "Stay connected, active, and healthy with Apple Watch Series 3. Make calls, send texts, and get directions with cellular. Track your workout and daily activity.",
+        stock: 0,
+        status: "Out of Stock",
+        rating: 4.9,
+        reviewCount: 15,
+        sku: "CAN-R5-BODY",
+        description: "Professional full-frame mirrorless camera.",
         specifications: [
-            { label: "Display", value: "OLED Retina" },
-            { label: "Connectivity", value: "GPS + Cellular" },
-            { label: "Water Resistance", value: "50m" },
-            { label: "Battery", value: "Up to 18 hours" },
-        ],
+            { label: "Resolution", value: "45MP" },
+            { label: "Video", value: "8K Raw" }
+        ]
     },
     {
         id: "4",
-        name: "Adidas Sneakers",
-        brand: "ADIDAS",
-        price: 10000,
-        currency: "GHS",
-        category: "Sneakers",
-        rating: 5.0,
-        reviewCount: 1200,
-        image:
-            "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
-        images: [
-            "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
-            "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&q=80",
-            "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&q=80",
-        ],
-        description:
-            "Iconic Adidas sneakers combining classic style with modern comfort technology. Featuring Boost cushioning and a breathable Primeknit upper.",
-        specifications: [
-            { label: "Material", value: "Primeknit Upper" },
-            { label: "Sole", value: "Boost Cushioning" },
-            { label: "Closure", value: "Lace-up" },
-            { label: "Style", value: "Athletic / Casual" },
-        ],
-    },
-    {
-        id: "5",
-        name: "Sony PlayStation 5",
-        brand: "Sony",
-        price: 7000,
-        currency: "GHS",
-        category: "Electronics",
-        rating: 5.0,
-        reviewCount: 1200,
-        image:
-            "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=800&q=80",
-        images: [
-            "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=800&q=80",
-            "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=800&q=80",
-            "https://images.unsplash.com/photo-1622297845775-5ff3fef71d13?w=800&q=80",
-        ],
-        description:
-            "Experience lightning-fast loading with the PS5's ultra-high speed SSD, deeper immersion with haptic feedback, and a whole new generation of incredible PlayStation games.",
-        specifications: [
-            { label: "CPU", value: "AMD Zen 2 (8 cores)" },
-            { label: "GPU", value: "10.28 TFLOPs" },
-            { label: "Storage", value: "825GB SSD" },
-            { label: "Resolution", value: "Up to 8K" },
-        ],
-    },
-    {
-        id: "6",
-        name: "Long Sleeve Shirt",
-        brand: "MELCOM",
-        price: 1000,
-        currency: "GHS",
-        category: "Clothing",
-        rating: 5.0,
-        reviewCount: 1200,
-        image:
-            "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&q=80",
-        images: [
-            "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&q=80",
-            "https://images.unsplash.com/photo-1598033129183-c4f50c736c10?w=800&q=80",
-            "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&q=80",
-        ],
-        description:
-            "Classic long sleeve shirt crafted from premium cotton. Perfect for both casual and semi-formal occasions with a comfortable regular fit.",
-        specifications: [
-            { label: "Material", value: "100% Cotton" },
-            { label: "Fit", value: "Regular" },
-            { label: "Care", value: "Machine Washable" },
-            { label: "Closure", value: "Button Front" },
-        ],
-    },
-    {
-        id: "7",
-        name: 'LG 50" Television',
-        brand: "TELEFONICA",
-        price: 10000,
-        currency: "GHS",
-        category: "Electronics",
-        rating: 5.0,
-        reviewCount: 1200,
-        image:
-            "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&q=80",
-        images: [
-            "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&q=80",
-            "https://images.unsplash.com/photo-1461151304267-38535e780c79?w=800&q=80",
-            "https://images.unsplash.com/photo-1509281373149-e957c6296406?w=800&q=80",
-        ],
-        description:
-            'Experience stunning 4K visuals on this 50" LG Smart TV. Featuring webOS for seamless streaming, AI-powered picture optimization, and Dolby Audio for immersive sound.',
-        specifications: [
-            { label: "Display", value: '50" 4K UHD' },
-            { label: "Smart TV", value: "webOS" },
-            { label: "Audio", value: "Dolby Audio" },
-            { label: "Connectivity", value: "HDMI x3, USB x2" },
-        ],
-    },
-    {
-        id: "8",
         name: "Nike Air Force 1",
         brand: "NIKE",
-        price: 10000,
-        currency: "GHS",
+        merchantId: "m_123",
+        merchantName: "Elite Electronics",
+        price: 1200,
+        formattedPrice: "GH¢1,200.00",
         category: "Sneakers",
-        rating: 5.0,
-        reviewCount: 1200,
-        image:
-            "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a",
         images: [
-            "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&q=80",
-            "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&q=80",
-            "https://images.unsplash.com/photo-1600269452121-4f2416e55c28?w=800&q=80",
+            "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a"
         ],
-        description:
-            "The Nike Air Force 1 — a timeless sneaker icon since 1982. Featuring Nike Air cushioning, a padded collar, and a durable rubber outsole.",
+        stock: 45,
+        status: "Active",
+        rating: 4.7,
+        reviewCount: 89,
+        sku: "NIK-AF1-WHT",
+        description: "Classic style meets modern comfort.",
         specifications: [
-            { label: "Material", value: "Leather Upper" },
-            { label: "Sole", value: "Air Cushioning" },
-            { label: "Closure", value: "Lace-up" },
-            { label: "Style", value: "Lifestyle" },
-        ],
-    },
+            { label: "Material", value: "Leather" },
+            { label: "Color", value: "White" }
+        ]
+    }
 ];
 
-/** GET /products/:id */
-export async function getProductById(
-    id: string
-): Promise<MockProduct | undefined> {
-    await delay(300);
-    return mockProducts.find((p) => p.id === id);
+export const mockProductStats: ProductStats = {
+    totalProducts: 48,
+    activeProducts: 42,
+    outOfStock: 3,
+    lowStock: 3
+};
+
+export async function getProducts(): Promise<Product[]> {
+    await delay(600);
+    return mockProducts;
 }
 
-/** GET /products */
-export async function getProducts(): Promise<MockProduct[]> {
+export async function getProduct(id: string): Promise<Product | null> {
+    await delay(400);
+    return mockProducts.find(p => p.id === id) || null;
+}
+
+// Aliases for backward compatibility
+export const getProductById = getProduct;
+export type MockProduct = Product;
+
+export async function getProductStats(): Promise<ProductStats> {
     await delay(300);
-    return mockProducts;
+    return mockProductStats;
+}
+
+export async function createProduct(data: any): Promise<Product> {
+    await delay(1000);
+    const newProduct: Product = {
+        id: Math.random().toString(36).substr(2, 9),
+        brand: data.brand || "Unknown",
+        ...data,
+        price: typeof data.price === 'string' ? parseFloat(data.price.replace(/[^0-9.]/g, '')) : data.price,
+        formattedPrice: `GH¢${data.price}`,
+        merchantId: "m_123",
+        merchantName: "Elite Electronics",
+        status: "Active",
+        rating: 0,
+        reviewCount: 0,
+        images: data.images || [],
+        specifications: data.specifications || []
+    };
+    return newProduct;
 }
