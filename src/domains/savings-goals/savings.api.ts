@@ -10,125 +10,55 @@ import {
     GoalProduct,
 } from "./savings.types";
 
-// --- GOAL TRANSFORMER SHIM ---
-// The current backend accepts and returns a generic string `name` for a goal instead of a `productId`.
-// This shim provides a mock catalog to map string names back to product image visuals in the UI.
-const SHIM_CATALOG: Record<string, GoalProduct> = {
-    "Apple MacBook Pro": {
-        id: "1",
-        name: "Apple MacBook Pro",
-        price: 10000,
-        currency: "GHS",
-        images: ["https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80"],
-    },
-    "Water Bottle": {
-        id: "2",
-        name: "Water Bottle",
-        price: 10000,
-        currency: "GHS",
-        images: ["https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&q=80"],
-    },
-    "Apple Series 3": {
-        id: "3",
-        name: "Apple Series 3",
-        price: 10000,
-        currency: "GHS",
-        images: ["https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80"],
-    },
-    "Adidas Sneakers": {
-        id: "4",
-        name: "Adidas Sneakers",
-        price: 10000,
-        currency: "GHS",
-        images: ["https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80"],
-    },
-    "Sony PlayStation 5": {
-        id: "5",
-        name: "Sony PlayStation 5",
-        price: 7000,
-        currency: "GHS",
-        images: ["https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=800&q=80"],
-    },
-    "Long Sleeve Shirt": {
-        id: "6",
-        name: "Long Sleeve Shirt",
-        price: 1000,
-        currency: "GHS",
-        images: ["https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&q=80"],
-    },
-    "LG 50\" Television": {
-        id: "7",
-        name: "LG 50\" Television",
-        price: 10000,
-        currency: "GHS",
-        images: ["https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&q=80"],
-    },
-    "Nike Air Force 1": {
-        id: "8",
-        name: "Nike Air Force 1",
-        price: 10000,
-        currency: "GHS",
-        images: ["https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&q=80"],
-    },
-};
-
 const DEFAULT_PRODUCT: GoalProduct = {
     id: "unknown",
     name: "Custom Savings Goal",
     price: 0,
     currency: "GHS",
-    images: ["https://images.unsplash.com/photo-1579621970588-a3f5ce5ca1b1?w=800&q=80"], // Generic savings image
+    images: ["https://images.unsplash.com/photo-1579621970588-a3f5ce5ca1b1?w=800&q=80"],
 };
 
-const LOCAL_STORAGE_MAP_KEY = "savegoal_mock_links";
-
-function getMockLink(goalId: string): string | null {
-    if (typeof window === "undefined") return null;
-    try {
-        const stored = localStorage.getItem(LOCAL_STORAGE_MAP_KEY);
-        if (!stored) return null;
-        const map = JSON.parse(stored);
-        return map[goalId] || null;
-    } catch {
-        return null;
-    }
-}
-
-function saveMockLink(goalId: string, mockProductId: string) {
-    if (typeof window === "undefined") return;
-    try {
-        const stored = localStorage.getItem(LOCAL_STORAGE_MAP_KEY);
-        const map = stored ? JSON.parse(stored) : {};
-        map[goalId] = mockProductId;
-        localStorage.setItem(LOCAL_STORAGE_MAP_KEY, JSON.stringify(map));
-    } catch {
-        // ignore
-    }
-}
-
 /**
- * Transforms a raw backend goal into the UI expected schema by injecting the product visuals.
+ * Transforms a raw backend goal into the UI-expected schema.
+ * The backend now returns goals with a `product` relation (including `merchant`),
+ * so we map the real product data into the GoalProduct shape.
  */
-function applyTransformerShim(rawGoal: SavingsGoal): SavingsGoal {
-    const linkedMockId = getMockLink(rawGoal.id);
-    let mappedProduct: GoalProduct | undefined;
+function normalizeGoal(rawGoal: SavingsGoal): SavingsGoal {
+    // The backend includes `product` when the goal has a productId.
+    // Map it into the GoalProduct shape the UI expects.
+    const backendProduct = rawGoal.product as (GoalProduct & { image?: string; merchant?: { businessName?: string } }) | undefined | null;
 
-    if (linkedMockId) {
-        mappedProduct = Object.values(SHIM_CATALOG).find(p => p.id === linkedMockId);
-    }
+    let product: GoalProduct;
 
-    if (!mappedProduct) {
-        const goalName = rawGoal.name || rawGoal.product?.name || "Custom Savings Goal";
-        mappedProduct = SHIM_CATALOG[goalName] || { ...DEFAULT_PRODUCT, name: goalName };
+    if (backendProduct && backendProduct.name) {
+        product = {
+            id: backendProduct.id || DEFAULT_PRODUCT.id,
+            name: backendProduct.name,
+            price: Number(backendProduct.price) || rawGoal.targetAmount || 0,
+            currency: backendProduct.currency || "GHS",
+            // Backend has single `image` field, UI expects `images[]`
+            images: backendProduct.images?.length
+                ? backendProduct.images
+                : backendProduct.image
+                    ? [backendProduct.image]
+                    : DEFAULT_PRODUCT.images,
+            merchant: backendProduct.merchant
+                ? { id: backendProduct.id, businessName: backendProduct.merchant.businessName || "Merchant" }
+                : undefined,
+        };
+    } else {
+        // Fallback for goals without a linked product
+        product = {
+            ...DEFAULT_PRODUCT,
+            name: rawGoal.name || "Savings Goal",
+            price: rawGoal.targetAmount || 0,
+        };
     }
 
     return {
         ...rawGoal,
-        product: {
-            ...mappedProduct,
-            price: rawGoal.targetAmount || mappedProduct.price,
-        },
-        progress: rawGoal.progress || (rawGoal.currentAmount / rawGoal.targetAmount) * 100 || 0,
+        product,
+        progress: rawGoal.progress || (rawGoal.targetAmount > 0 ? (rawGoal.currentAmount / rawGoal.targetAmount) * 100 : 0),
     };
 }
 
@@ -140,7 +70,7 @@ export async function getSavingsGoals(): Promise<SavingsGoalsListResponse> {
     // Handle backend responses that might be wrapped differently
     const items = Array.isArray(response) ? response : response.items || (response as unknown as Record<string, unknown>).data as SavingsGoal[] || [];
 
-    const transformedItems = items.map((goal: SavingsGoal) => applyTransformerShim(goal));
+    const transformedItems = items.map((goal: SavingsGoal) => normalizeGoal(goal));
 
     return {
         items: transformedItems,
@@ -155,7 +85,7 @@ export async function getSavingsGoalById(goalId: string): Promise<SavingsGoalDet
     const resRecord = response as unknown as Record<string, unknown>;
     const rawGoal = (resRecord.data || response) as SavingsGoalDetail & { transactions?: unknown[]; deposits?: unknown[] };
 
-    const transformed = applyTransformerShim(rawGoal);
+    const transformed = normalizeGoal(rawGoal);
 
     return {
         ...transformed,
@@ -164,21 +94,10 @@ export async function getSavingsGoalById(goalId: string): Promise<SavingsGoalDet
 }
 
 export async function createSavingsGoal(data: CreateSavingsGoalRequest): Promise<SavingsGoal> {
-    // If we only have a productId, map it to a name for the backend payload
-    let payloadName = data.name;
-    if (!payloadName && data.productId) {
-        const matchedProduct = Object.values(SHIM_CATALOG).find((p) => p.id === data.productId);
-        payloadName = matchedProduct ? matchedProduct.name : "Custom Goal";
-    }
-
-    // Only send productId if it looks like a real UUID (length > 10).
-    // Otherwise it's from the mock data and will cause a 404 on the backend.
-    const validProductId = data.productId && data.productId.length > 10 ? data.productId : undefined;
-
     const payload = {
-        name: payloadName || "Savings Goal",
+        name: data.name || "Savings Goal",
         targetAmount: data.targetAmount,
-        ...(validProductId && { productId: validProductId }),
+        ...(data.productId && { productId: data.productId }),
         isRecurring: data.isRecurring,
         monthlyAmount: data.monthlyAmount,
         savingsDay: data.savingsDay,
@@ -187,12 +106,7 @@ export async function createSavingsGoal(data: CreateSavingsGoalRequest): Promise
     const response = await apiClient.post<SavingsGoal>(API_ENDPOINTS.SAVINGS.CREATE, payload);
     const rawGoal = (response as unknown as Record<string, unknown>).data as SavingsGoal || response;
 
-    // Save mapping if it was based on a mock product
-    if (rawGoal.id && data.productId) {
-        saveMockLink(rawGoal.id, data.productId);
-    }
-
-    return applyTransformerShim(rawGoal);
+    return normalizeGoal(rawGoal);
 }
 
 export async function cancelSavingsGoal(goalId: string): Promise<CancelGoalResponse> {
@@ -206,7 +120,6 @@ export async function pauseSavingsGoal(goalId: string): Promise<unknown> {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-    // Try fetching goals directly to derive stats if there isn't a native dashboard endpoint
     try {
         const goalsResp = await getSavingsGoals();
         const activeGoals = goalsResp.items.filter((g) => g.status === "ACTIVE");
@@ -224,7 +137,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         };
     } catch (error) {
         console.error("Failed to derive dashboard stats:", error);
-        // Fallback safe values
         return {
             totalSaved: 0,
             activeGoals: 0,

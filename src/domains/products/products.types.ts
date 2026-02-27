@@ -1,42 +1,30 @@
-export type ProductStatus = 'Active' | 'Low Stock' | 'Out of Stock' | 'Draft' | 'Inactive';
+// Product types — mirrors the backend's Product model from Prisma
 
 export interface Product {
-    id: number | string;
+    id: string;
+    merchantProfileId: string;
     name: string;
-    brand: string;
-    merchantId: string;
-    merchantName: string;
-    price: number;
-    formattedPrice?: string;
-    category: string;
-    image: string;
-    images: string[];
-    stock: number;
-    status: ProductStatus;
-    rating: number;
-    reviewCount: number;
-    description: string;
-    sku?: string;
-    specifications: {
-        label: string;
-        value: string;
-    }[];
-    createdAt?: string;
+    description: string | null;
+    price: number; // Converted from Decimal
+    currency: string;
+    image: string | null;
+    stock: number | null;
+    isAvailable: boolean;
+    metadata: Record<string, unknown> | null;
+    createdAt: string;
+    updatedAt: string;
+    merchant: {
+        businessName: string;
+        isVerified: boolean;
+    };
 }
 
-export interface ProductStats {
-    totalProducts: number;
-    activeProducts: number;
-    outOfStock: number;
-    lowStock: number;
+export interface ProductListResponse {
+    status: string;
+    data: Product[];
 }
 
-export interface CreateProductRequest {
-    name: string;
-    description: string;
-    category: string;
-    price: string;
-    stock: number;
-    sku: string;
-    images: string[];
+export interface ProductDetailResponse {
+    status: string;
+    data: Product;
 }
