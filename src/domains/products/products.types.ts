@@ -1,22 +1,44 @@
-// Product types — mirrors the backend's Product model from Prisma
+// Product types — covers both backend API responses and merchant UI needs
 
 export interface Product {
     id: string;
-    merchantProfileId: string;
     name: string;
-    description: string | null;
-    price: number; // Converted from Decimal
-    currency: string;
-    image: string | null;
-    stock: number | null;
-    isAvailable: boolean;
-    metadata: Record<string, unknown> | null;
-    createdAt: string;
-    updatedAt: string;
-    merchant: {
+    description?: string | null;
+    price: number;
+    currency?: string;
+    image?: string | null;
+    images?: string[];
+    stock?: number | null;
+    isAvailable?: boolean;
+    metadata?: Record<string, unknown> | null;
+    createdAt?: string;
+    updatedAt?: string;
+
+    // Backend relation (from GET /api/products)
+    merchantProfileId?: string;
+    merchant?: {
         businessName: string;
-        isVerified: boolean;
+        isVerified?: boolean;
     };
+
+    // Merchant UI fields (used by merchant dashboard pages)
+    brand?: string;
+    merchantId?: string;
+    merchantName?: string;
+    formattedPrice?: string;
+    category?: string;
+    sku?: string;
+    status?: string;
+    rating?: number;
+    reviewCount?: number;
+    specifications?: { label: string; value: string }[];
+}
+
+export interface ProductStats {
+    totalProducts: number;
+    activeProducts: number;
+    outOfStock: number;
+    lowStock: number;
 }
 
 export interface ProductListResponse {
@@ -27,4 +49,14 @@ export interface ProductListResponse {
 export interface ProductDetailResponse {
     status: string;
     data: Product;
+}
+
+export interface CreateProductData {
+    name: string;
+    description?: string;
+    category?: string;
+    price: string | number;
+    sku?: string;
+    stock?: number;
+    images?: string[];
 }
