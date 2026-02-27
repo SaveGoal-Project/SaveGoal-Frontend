@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,46 +11,19 @@ import {
     ShieldCheck,
     Truck,
     RotateCcw,
-    Check,
     Calculator,
     ChevronRight,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import {
-    getProductById,
-    type MockProduct,
-} from "@/src/domains/products/products.mock";
+import { useProduct } from "@/src/domains/products/products.hooks";
 
 export default function ProductDetailPage() {
     const params = useParams();
     const router = useRouter();
     const productId = params.id as string;
 
-    const [product, setProduct] = useState<MockProduct | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [selectedImage, setSelectedImage] = useState(0);
+    const { product, isLoading } = useProduct(productId);
     const [isWishlisted, setIsWishlisted] = useState(false);
-
-    const fetchProduct = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const data = await getProductById(productId);
-            if (data) {
-                setProduct(data);
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    }, [productId]);
-
-    useEffect(() => {
-        fetchProduct();
-    }, [fetchProduct]);
-
-    const formatReviewCount = (count: number) => {
-        if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
-        return count.toString();
-    };
 
     // Savings calculator logic
     const calculatePayment = (
@@ -105,6 +78,10 @@ export default function ProductDetailPage() {
         );
     }
 
+    // Build images array from single image
+    const images = product.image ? [product.image] : [];
+    const brand = product.merchant?.businessName || "Merchant";
+
     const weeklyPlan = calculatePayment(product.price, "weekly");
     const biweeklyPlan = calculatePayment(product.price, "biweekly");
     const monthlyPlan = calculatePayment(product.price, "monthly");
@@ -121,13 +98,6 @@ export default function ProductDetailPage() {
                         Products
                     </Link>
                     <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
-                    <Link
-                        href="/products"
-                        className="text-[#3d4a99] hover:underline font-medium"
-                    >
-                        {product.category}
-                    </Link>
-                    <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
                     <span className="text-gray-500">{product.name}</span>
                 </nav>
 
@@ -137,34 +107,19 @@ export default function ProductDetailPage() {
                     <div className="space-y-4">
                         {/* Main Image */}
                         <div className="relative w-full aspect-[4/3] bg-white rounded-2xl overflow-hidden border border-gray-100">
-                            <Image
-                                src={product.images[selectedImage] || product.image}
-                                alt={product.name}
-                                fill
-                                className="object-cover"
-                                priority
-                            />
-                        </div>
-
-                        {/* Thumbnail Gallery */}
-                        <div className="flex gap-3">
-                            {product.images.map((img, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => setSelectedImage(index)}
-                                    className={`relative w-[100px] h-[80px] rounded-xl overflow-hidden border-2 transition-all ${selectedImage === index
-                                            ? "border-[#3d4a99] ring-2 ring-[#3d4a99]/20"
-                                            : "border-gray-200 hover:border-gray-300"
-                                        }`}
-                                >
-                                    <Image
-                                        src={img}
-                                        alt={`${product.name} view ${index + 1}`}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                </button>
-                            ))}
+                            {images.length > 0 ? (
+                                <Image
+                                    src={images[0]}
+                                    alt={product.name}
+                                    fill
+                                    className="object-cover"
+                                    priority
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-100 to-gray-200">
+                                    <div className="w-16 h-16 bg-gray-300 rounded-lg" />
+                                </div>
+                            )}
                         </div>
 
                         {/* Trust Badges */}
@@ -192,17 +147,17 @@ export default function ProductDetailPage() {
 
                     {/* Right Column — Product Info */}
                     <div className="space-y-6">
-                        {/* Top Row: Category + Actions */}
+                        {/* Top Row: Actions */}
                         <div className="flex items-start justify-between">
                             <span className="bg-[#3d4a99]/10 text-[#3d4a99] text-xs font-semibold px-4 py-1.5 rounded-full border border-[#3d4a99]/20">
-                                {product.category}
+                                {brand}
                             </span>
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setIsWishlisted(!isWishlisted)}
                                     className={`w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all ${isWishlisted
-                                            ? "border-red-400 bg-red-50 text-red-500"
-                                            : "border-gray-200 bg-white text-gray-400 hover:border-gray-300"
+                                        ? "border-red-400 bg-red-50 text-red-500"
+                                        : "border-gray-200 bg-white text-gray-400 hover:border-gray-300"
                                         }`}
                                 >
                                     <Heart
@@ -225,21 +180,18 @@ export default function ProductDetailPage() {
                             <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 bg-[#3d4a99]/10 rounded-lg flex items-center justify-center">
                                     <span className="text-[#3d4a99] text-[10px] font-bold">
-                                        {product.brand.charAt(0)}
+                                        {brand.charAt(0)}
                                     </span>
                                 </div>
                                 <span className="text-sm font-medium text-[#3d4a99]">
-                                    {product.brand}
+                                    {brand}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Star className="h-4 w-4 fill-[#ffce31] text-[#ffce31]" />
                                 <span className="text-sm text-gray-600">
-                                    <span className="font-medium">{product.rating}</span>
-                                    <span className="text-gray-400">
-                                        {" "}
-                                        rating ({formatReviewCount(product.reviewCount)} reviews)
-                                    </span>
+                                    <span className="font-medium">5.0</span>
+                                    <span className="text-gray-400"> rating</span>
                                 </span>
                             </div>
                         </div>
@@ -253,27 +205,11 @@ export default function ProductDetailPage() {
                         </div>
 
                         {/* Description */}
-                        <p className="text-sm text-gray-500 leading-relaxed">
-                            {product.description}
-                        </p>
-
-                        {/* Specifications */}
-                        <div className="space-y-3">
-                            <h3 className="text-base font-bold text-black">Specifications</h3>
-                            <div className="grid grid-cols-2 gap-3">
-                                {product.specifications.map((spec, index) => (
-                                    <div key={index} className="flex items-start gap-2">
-                                        <Check className="h-4 w-4 text-[#3d4a99] mt-0.5 shrink-0" />
-                                        <div>
-                                            <p className="text-xs text-gray-400">{spec.label}</p>
-                                            <p className="text-sm font-semibold text-black">
-                                                {spec.value}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        {product.description && (
+                            <p className="text-sm text-gray-500 leading-relaxed">
+                                {product.description}
+                            </p>
+                        )}
 
                         {/* Savings Plan Calculator Card */}
                         <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5 shadow-sm">
