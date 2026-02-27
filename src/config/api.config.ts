@@ -62,6 +62,13 @@ export const API_ENDPOINTS = {
     PAUSE: (id: string) => `/goals/${id}/pause`,
   },
 
+  // Public Goals (contributions)
+  PUBLIC_GOALS: {
+    DETAILS: (id: string) => `/goals/public/${id}`,
+    CONTRIBUTIONS: (id: string) => `/goals/public/${id}/contributions`,
+    CONTRIBUTE: (id: string) => `/goals/public/${id}/contribute`,
+  },
+
   // Payments
   PAYMENTS: {
     INITIATE: "/payments/initiate",
