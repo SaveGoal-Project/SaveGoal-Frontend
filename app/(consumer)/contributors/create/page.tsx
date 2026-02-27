@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Users, Search, Calendar, ArrowRight } from "lucide-react";
+import { Users, Search, Calendar, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Button } from "@/src/components/ui/button";
@@ -12,47 +12,31 @@ import { ProductSelectCard } from "@/src/components/contributors/ProductSelectCa
 import { ContributionTypeCard } from "@/src/components/contributors/ContributionTypeCard";
 import { GroupSavingsRules } from "@/src/components/contributors/GroupSavingsRules";
 import { GoalProduct } from "@/src/domains/savings-goals/savings.types";
-
-// Mock data matching the screenshot
-const MOCK_PRODUCTS: GoalProduct[] = [
-    {
-        id: "prod-1",
-        name: "Product Name",
-        price: 1250,
-        currency: "GH₵",
-        images: ["https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80"],
-        merchant: { id: "m-1", businessName: "Telefonica" },
-    },
-    {
-        id: "prod-2",
-        name: "Product Name",
-        price: 1250,
-        currency: "GH₵",
-        images: ["https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80"],
-        merchant: { id: "m-1", businessName: "Telefonica" },
-    },
-    {
-        id: "prod-3",
-        name: "Product Name",
-        price: 1250,
-        currency: "GH₵",
-        images: ["https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&q=80"],
-        merchant: { id: "m-1", businessName: "Telefonica" },
-    },
-    {
-        id: "prod-4",
-        name: "Product Name",
-        price: 1250,
-        currency: "GH₵",
-        images: ["https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=800&q=80"],
-        merchant: { id: "m-1", businessName: "Telefonica" },
-    },
-];
+import { useCreateSavingsGoal } from "@/src/domains/savings-goals/savings.hooks";
+import { mockProducts, MockProduct } from "@/src/domains/products/products.mock";
 
 type ContributionType = "flexible" | "equal";
 
+/** Map a MockProduct to the GoalProduct shape used by ProductSelectCard */
+function toGoalProduct(mp: MockProduct): GoalProduct {
+    return {
+        id: mp.id,
+        name: mp.name,
+        price: mp.price,
+        currency: `GH₵`,
+        images: mp.images,
+        merchant: { id: mp.brand.toLowerCase(), businessName: mp.brand },
+    };
+}
+
 export default function CreateContributorGoalPage() {
     const router = useRouter();
+    const { create, isLoading: isCreating, error: createError } = useCreateSavingsGoal();
+
+    // Product catalog
+    const [products, setProducts] = useState<GoalProduct[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
     // Form State
     const [step, setStep] = useState<1 | 2>(1);
@@ -62,18 +46,49 @@ export default function CreateContributorGoalPage() {
     const [contributionType, setContributionType] = useState<ContributionType | null>(null);
     const [targetDate, setTargetDate] = useState("");
 
+    // Load products on mount
+    useEffect(() => {
+        setIsLoadingProducts(true);
+        // Using mock products for now (consistent with the rest of the app).
+        // Replace with apiClient.get(API_ENDPOINTS.PRODUCTS.LIST) when backend products API is ready.
+        const timer = setTimeout(() => {
+            setProducts(mockProducts.map(toGoalProduct));
+            setIsLoadingProducts(false);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Filter products by search
+    const filteredProducts = searchQuery
+        ? products.filter((p) =>
+            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.merchant?.businessName.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        : products;
+
     const handleReviewClick = () => {
         if (!groupName || !selectedProduct) {
-            alert("Please enter a group name and select a product.");
             return;
         }
         setStep(2);
     };
 
-    const handleCreateGroup = () => {
-        // In a real app, send actual API request here.
-        // For now, redirect to the new group's dashboard.
-        router.push("/contributors/class-of-2024");
+    const handleCreateGroup = async () => {
+        if (!selectedProduct || !groupName) return;
+
+        try {
+            const newGoal = await create({
+                name: groupName,
+                productId: selectedProduct.id,
+                targetAmount: selectedProduct.price,
+                frequency: contributionType === "equal" ? "MONTHLY" : "FLEXIBLE",
+                ...(targetDate && { deadline: targetDate }),
+            });
+            // Redirect to the new goal's detail page on the dashboard
+            router.push(`/goals/${newGoal.id}`);
+        } catch {
+            // Error is already captured in the hook's `createError` state
+        }
     };
 
     return (
@@ -99,6 +114,14 @@ export default function CreateContributorGoalPage() {
                             </p>
                         </div>
                     </div>
+
+                    {/* Creation error banner */}
+                    {createError && (
+                        <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-6">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                            <span>{createError}</span>
+                        </div>
+                    )}
 
                     {step === 1 ? (
                         /* STEP 1 FORM */
@@ -145,24 +168,35 @@ export default function CreateContributorGoalPage() {
                                     <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                     <Input
                                         placeholder="search products..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
                                         className="h-11 pl-10 border-gray-300 rounded-full bg-gray-50 placeholder:text-gray-400"
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                                    {MOCK_PRODUCTS.map((prod) => (
-                                        <ProductSelectCard
-                                            key={prod.id}
-                                            product={prod}
-                                            isSelected={selectedProduct?.id === prod.id}
-                                            onSelect={setSelectedProduct}
-                                        />
-                                    ))}
-                                    <div className="col-span-1 sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 opacity-30 mt-2">
-                                        <div className="h-16 border-2 border-dashed border-gray-300 rounded-xl" />
-                                        <div className="h-16 border-2 border-dashed border-gray-300 rounded-xl hidden sm:block" />
+                                {isLoadingProducts ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                                        {[...Array(4)].map((_, i) => (
+                                            <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />
+                                        ))}
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                                        {filteredProducts.map((prod) => (
+                                            <ProductSelectCard
+                                                key={prod.id}
+                                                product={prod}
+                                                isSelected={selectedProduct?.id === prod.id}
+                                                onSelect={setSelectedProduct}
+                                            />
+                                        ))}
+                                        {filteredProducts.length === 0 && (
+                                            <p className="col-span-2 text-sm text-gray-400 text-center py-6">
+                                                No products found
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Contribution Type */}
@@ -243,7 +277,7 @@ export default function CreateContributorGoalPage() {
                                     </div>
                                     <div className="flex flex-col flex-1 min-w-0">
                                         <span className="text-[10px] text-[#1a53c8] font-medium uppercase tracking-wider truncate mb-0.5">
-                                            {selectedProduct.merchant?.businessName || "Telefonica"}
+                                            {selectedProduct.merchant?.businessName || "Merchant"}
                                         </span>
                                         <span className="text-sm font-semibold text-gray-900 truncate">
                                             {selectedProduct.name}
@@ -267,14 +301,47 @@ export default function CreateContributorGoalPage() {
                                 </p>
                             </div>
 
+                            {/* Target Date Summary */}
+                            {targetDate && (
+                                <>
+                                    <div className="h-px bg-gray-100 my-4" />
+                                    <div className="space-y-1">
+                                        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                                            Target Date
+                                        </span>
+                                        <p className="text-sm font-bold text-gray-900">
+                                            {new Date(targetDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+
                             <GroupSavingsRules />
 
-                            <Button
-                                onClick={handleCreateGroup}
-                                className="w-full h-12 bg-[#1a53c8] hover:bg-[#1442a3] text-white text-[15px] font-bold rounded-lg transition-all"
-                            >
-                                Create Goal Group
-                            </Button>
+                            <div className="flex gap-3">
+                                <Button
+                                    onClick={() => setStep(1)}
+                                    variant="outline"
+                                    disabled={isCreating}
+                                    className="flex-1 h-12 border-gray-200 text-gray-700 font-semibold rounded-lg"
+                                >
+                                    Back
+                                </Button>
+                                <Button
+                                    onClick={handleCreateGroup}
+                                    disabled={isCreating}
+                                    className="flex-[2] h-12 bg-[#1a53c8] hover:bg-[#1442a3] text-white text-[15px] font-bold rounded-lg transition-all"
+                                >
+                                    {isCreating ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                            Creating...
+                                        </>
+                                    ) : (
+                                        "Create Goal Group"
+                                    )}
+                                </Button>
+                            </div>
 
                         </div>
                     )}
