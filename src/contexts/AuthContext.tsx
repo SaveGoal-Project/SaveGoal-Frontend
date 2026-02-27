@@ -182,6 +182,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           response = await apiAdminLogin(credentials);
         }
 
+        // Store tokens once here (admin.api.ts no longer stores them)
         tokenStorage.setTokens(response.token, response.refreshToken);
         setState({
           user: response.user,
