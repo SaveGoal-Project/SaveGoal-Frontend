@@ -2,6 +2,8 @@
 
 export type GoalStatus = "ACTIVE" | "COMPLETED" | "CANCELLED" | "PAUSED";
 
+export type GoalCategory = "PERSONAL" | "CONTRIBUTION" | "SNBL";
+
 export type SavingsFrequency = "WEEKLY" | "BIWEEKLY" | "MONTHLY" | "FLEXIBLE";
 
 // Product summary embedded in goal responses
@@ -37,6 +39,7 @@ export interface SavingsGoal {
   currentAmount: number;
   frequency: SavingsFrequency;
   status: GoalStatus;
+  category?: GoalCategory;
   estimatedCompletionDate: string;
   progress: number;
   nextPaymentDate?: string;
@@ -54,9 +57,10 @@ export interface SavingsGoalDetail extends SavingsGoal {
 // Create goal request
 export interface CreateSavingsGoalRequest {
   productId?: string;
-  name?: string; // used for the transformer shim since backend uses name
+  name?: string;
   targetAmount: number;
   frequency: SavingsFrequency;
+  category?: GoalCategory;
   isRecurring?: boolean;
   monthlyAmount?: number;
   savingsDay?: number;
