@@ -71,6 +71,7 @@ export default function GroupDashboardPage() {
     const [contributeStep, setContributeStep] = useState<ContributeStep>("amount");
     const [amount, setAmount] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("");
+    const [paymentDetails, setPaymentDetails] = useState("");
     const [isInviteOpen, setIsInviteOpen] = useState(false);
 
     const TABS: TabType[] = ["Activity", "Members", "Contributions"];
@@ -81,7 +82,7 @@ export default function GroupDashboardPage() {
     };
 
     const handleConfirmPayment = () => {
-        if (!paymentMethod) return;
+        if (!paymentMethod || !paymentDetails.trim()) return;
         setContributeStep("processing");
         setTimeout(() => {
             setContributeStep("success");
@@ -92,6 +93,21 @@ export default function GroupDashboardPage() {
         setContributeStep("amount");
         setAmount("");
         setPaymentMethod("");
+        setPaymentDetails("");
+    };
+
+    // Contextual label/placeholder for the payment details input
+    const getPaymentFieldInfo = () => {
+        switch (paymentMethod) {
+            case "mtn":
+            case "telecel":
+            case "at":
+                return { label: "Phone Number", placeholder: "e.g. 024 XXX XXXX" };
+            case "card":
+                return { label: "Card Number", placeholder: "e.g. 4111 1111 1111 1111" };
+            default:
+                return { label: "Payment Details", placeholder: "Enter your details" };
+        }
     };
 
     // Derive share URL
@@ -447,11 +463,29 @@ export default function GroupDashboardPage() {
                                     ))}
                                 </div>
 
+                                {/* Payment Details Input — appears after selecting a method */}
+                                {paymentMethod && (
+                                    <div className="w-full text-left space-y-2 mb-8">
+                                        <label className="text-sm font-extrabold text-gray-900">
+                                            {getPaymentFieldInfo().label}
+                                        </label>
+                                        <div className="relative flex items-center h-14 border-2 border-gray-200 rounded-xl focus-within:border-[#1a53c8] focus-within:ring-1 focus-within:ring-[#1a53c8] transition-all bg-white px-4">
+                                            <input
+                                                type="text"
+                                                value={paymentDetails}
+                                                onChange={(e) => setPaymentDetails(e.target.value)}
+                                                placeholder={getPaymentFieldInfo().placeholder}
+                                                className="flex-1 bg-transparent border-none outline-none font-bold text-lg text-gray-900 placeholder:text-gray-300 placeholder:font-medium"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="w-full flex gap-3">
                                     <Button onClick={() => setContributeStep("amount")} variant="outline" className="flex-1 h-12 border-2 border-gray-200 text-[#1a53c8] font-extrabold rounded-xl hover:bg-gray-50 hover:text-[#1442a3] transition-colors">
                                         Back
                                     </Button>
-                                    <Button onClick={handleConfirmPayment} disabled={!paymentMethod} className="flex-[2] h-12 bg-[#1a53c8] hover:bg-[#1442a3] text-white font-extrabold rounded-xl shadow-md transition-all">
+                                    <Button onClick={handleConfirmPayment} disabled={!paymentMethod || !paymentDetails.trim()} className="flex-[2] h-12 bg-[#1a53c8] hover:bg-[#1442a3] text-white font-extrabold rounded-xl shadow-md transition-all">
                                         Confirm Payment
                                     </Button>
                                 </div>
