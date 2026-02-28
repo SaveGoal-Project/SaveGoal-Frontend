@@ -66,9 +66,12 @@ export default function CreateContributorGoalPage() {
         if (!selectedProduct || !groupName) return;
 
         try {
+            // NOTE: We intentionally do NOT send productId here.
+            // The backend overrides category to 'SNBL' when productId is present,
+            // which would break contribution goal routing. Instead, we send the
+            // product price as targetAmount and store product info in the description.
             const newGoal = await create({
                 name: groupName,
-                productId: selectedProduct.id,
                 targetAmount: selectedProduct.price,
                 frequency: contributionType === "equal" ? "MONTHLY" : "FLEXIBLE",
                 category: "CONTRIBUTION",
