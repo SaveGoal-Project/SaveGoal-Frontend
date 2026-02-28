@@ -74,6 +74,13 @@ export default function GroupDashboardPage() {
     const [paymentDetails, setPaymentDetails] = useState("");
     const [isInviteOpen, setIsInviteOpen] = useState(false);
 
+    // Card-specific state
+    const [cardType, setCardType] = useState<"visa" | "mastercard" | "">("");
+    const [cardNumber, setCardNumber] = useState("");
+    const [cardExpiry, setCardExpiry] = useState("");
+    const [cardCvv, setCardCvv] = useState("");
+    const [cardName, setCardName] = useState("");
+
     const TABS: TabType[] = ["Activity", "Members", "Contributions"];
 
     const handleContinueToPayment = () => {
@@ -82,7 +89,12 @@ export default function GroupDashboardPage() {
     };
 
     const handleConfirmPayment = () => {
-        if (!paymentMethod || !paymentDetails.trim()) return;
+        if (!paymentMethod) return;
+        if (paymentMethod === "card") {
+            if (!cardType || cardNumber.replace(/\s/g, "").length < 16 || cardExpiry.length < 5 || cardCvv.length < 3 || !cardName.trim()) return;
+        } else {
+            if (!paymentDetails.trim()) return;
+        }
         setContributeStep("processing");
         setTimeout(() => {
             setContributeStep("success");
@@ -94,21 +106,43 @@ export default function GroupDashboardPage() {
         setAmount("");
         setPaymentMethod("");
         setPaymentDetails("");
+        setCardType("");
+        setCardNumber("");
+        setCardExpiry("");
+        setCardCvv("");
+        setCardName("");
     };
 
-    // Contextual label/placeholder for the payment details input
-    const getPaymentFieldInfo = () => {
+    // Phone number label for mobile money methods
+    const getMomoLabel = () => {
         switch (paymentMethod) {
-            case "mtn":
-            case "telecel":
-            case "at":
-                return { label: "Phone Number", placeholder: "e.g. 024 XXX XXXX" };
-            case "card":
-                return { label: "Card Number", placeholder: "e.g. 4111 1111 1111 1111" };
-            default:
-                return { label: "Payment Details", placeholder: "Enter your details" };
+            case "mtn": return "MTN Mobile Money Number";
+            case "telecel": return "Telecel Cash Number";
+            case "at": return "AT Money Number";
+            default: return "Phone Number";
         }
     };
+
+    // Format card number with spaces every 4 digits
+    const handleCardNumberChange = (value: string) => {
+        const digits = value.replace(/\D/g, "").slice(0, 16);
+        const formatted = digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+        setCardNumber(formatted);
+    };
+
+    // Format expiry as MM/YY
+    const handleExpiryChange = (value: string) => {
+        const digits = value.replace(/\D/g, "").slice(0, 4);
+        if (digits.length >= 3) {
+            setCardExpiry(`${digits.slice(0, 2)}/${digits.slice(2)}`);
+        } else {
+            setCardExpiry(digits);
+        }
+    };
+
+    // Card form validity check
+    const isCardFormValid = cardType && cardNumber.replace(/\s/g, "").length === 16 && cardExpiry.length === 5 && cardCvv.length >= 3 && cardName.trim().length > 0;
+    const isPaymentValid = paymentMethod === "card" ? isCardFormValid : paymentDetails.trim().length > 0;
 
     // Derive share URL
     const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/contributors/${goalId}` : "";
@@ -463,21 +497,139 @@ export default function GroupDashboardPage() {
                                     ))}
                                 </div>
 
-                                {/* Payment Details Input — appears after selecting a method */}
-                                {paymentMethod && (
+                                {/* Mobile Money: Phone Number Input */}
+                                {paymentMethod && paymentMethod !== "card" && (
                                     <div className="w-full text-left space-y-2 mb-8">
                                         <label className="text-sm font-extrabold text-gray-900">
-                                            {getPaymentFieldInfo().label}
+                                            {getMomoLabel()}
                                         </label>
                                         <div className="relative flex items-center h-14 border-2 border-gray-200 rounded-xl focus-within:border-[#1a53c8] focus-within:ring-1 focus-within:ring-[#1a53c8] transition-all bg-white px-4">
                                             <input
-                                                type="text"
+                                                type="tel"
                                                 value={paymentDetails}
                                                 onChange={(e) => setPaymentDetails(e.target.value)}
-                                                placeholder={getPaymentFieldInfo().placeholder}
+                                                placeholder="e.g. 024 XXX XXXX"
                                                 className="flex-1 bg-transparent border-none outline-none font-bold text-lg text-gray-900 placeholder:text-gray-300 placeholder:font-medium"
                                             />
                                         </div>
+                                    </div>
+                                )}
+
+                                {/* Bank Cards: Visa / Mastercard sub-selection + card form */}
+                                {paymentMethod === "card" && (
+                                    <div className="w-full space-y-5 mb-8">
+                                        {/* Card Type Sub-selector */}
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-extrabold text-gray-900">Select Card Type</label>
+                                            <div className="flex gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setCardType("visa"); setCardNumber(""); }}
+                                                    className={`flex-1 flex items-center justify-center gap-2.5 p-3.5 border-2 rounded-xl transition-all ${cardType === "visa"
+                                                            ? "border-[#1a53c8] bg-blue-50/30 ring-1 ring-[#1a53c8]"
+                                                            : "border-gray-200 hover:border-gray-300"
+                                                        }`}
+                                                >
+                                                    <div className="w-10 h-7 rounded bg-[#1a1f71] flex items-center justify-center">
+                                                        <span className="text-white font-extrabold text-[10px] italic tracking-wide">VISA</span>
+                                                    </div>
+                                                    <span className="font-bold text-sm text-gray-900">Visa</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setCardType("mastercard"); setCardNumber(""); }}
+                                                    className={`flex-1 flex items-center justify-center gap-2.5 p-3.5 border-2 rounded-xl transition-all ${cardType === "mastercard"
+                                                            ? "border-[#1a53c8] bg-blue-50/30 ring-1 ring-[#1a53c8]"
+                                                            : "border-gray-200 hover:border-gray-300"
+                                                        }`}
+                                                >
+                                                    <div className="w-10 h-7 rounded bg-gradient-to-r from-[#eb001b] to-[#f79e1b] flex items-center justify-center relative overflow-hidden">
+                                                        <div className="absolute w-4 h-4 rounded-full bg-[#eb001b] opacity-90 -left-0.5" />
+                                                        <div className="absolute w-4 h-4 rounded-full bg-[#f79e1b] opacity-90 left-2" />
+                                                    </div>
+                                                    <span className="font-bold text-sm text-gray-900">Mastercard</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Card Form — appears after selecting card type */}
+                                        {cardType && (
+                                            <div className="space-y-4 animate-in fade-in duration-200">
+                                                {/* Cardholder Name */}
+                                                <div className="space-y-1.5">
+                                                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Cardholder Name</label>
+                                                    <div className="flex items-center h-12 border-2 border-gray-200 rounded-xl focus-within:border-[#1a53c8] focus-within:ring-1 focus-within:ring-[#1a53c8] transition-all bg-white px-4">
+                                                        <input
+                                                            type="text"
+                                                            value={cardName}
+                                                            onChange={(e) => setCardName(e.target.value)}
+                                                            placeholder="Name on card"
+                                                            className="flex-1 bg-transparent border-none outline-none font-semibold text-gray-900 placeholder:text-gray-300 placeholder:font-medium"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Card Number */}
+                                                <div className="space-y-1.5">
+                                                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Card Number</label>
+                                                    <div className="flex items-center h-12 border-2 border-gray-200 rounded-xl focus-within:border-[#1a53c8] focus-within:ring-1 focus-within:ring-[#1a53c8] transition-all bg-white px-4">
+                                                        <input
+                                                            type="text"
+                                                            inputMode="numeric"
+                                                            value={cardNumber}
+                                                            onChange={(e) => handleCardNumberChange(e.target.value)}
+                                                            placeholder={cardType === "visa" ? "4XXX XXXX XXXX XXXX" : "5XXX XXXX XXXX XXXX"}
+                                                            className="flex-1 bg-transparent border-none outline-none font-mono font-semibold text-gray-900 tracking-wider placeholder:text-gray-300 placeholder:font-medium placeholder:tracking-wider"
+                                                        />
+                                                        {/* Card brand indicator */}
+                                                        <div className="flex-shrink-0 ml-2">
+                                                            {cardType === "visa" ? (
+                                                                <div className="w-8 h-5 rounded bg-[#1a1f71] flex items-center justify-center">
+                                                                    <span className="text-white font-extrabold text-[7px] italic tracking-wide">VISA</span>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="w-8 h-5 rounded bg-gradient-to-r from-[#eb001b] to-[#f79e1b] flex items-center justify-center relative overflow-hidden">
+                                                                    <div className="absolute w-3 h-3 rounded-full bg-[#eb001b] opacity-90 -left-0.5" />
+                                                                    <div className="absolute w-3 h-3 rounded-full bg-[#f79e1b] opacity-90 left-1.5" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Expiry + CVV row */}
+                                                <div className="flex gap-3">
+                                                    <div className="flex-1 space-y-1.5">
+                                                        <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Expiry Date</label>
+                                                        <div className="flex items-center h-12 border-2 border-gray-200 rounded-xl focus-within:border-[#1a53c8] focus-within:ring-1 focus-within:ring-[#1a53c8] transition-all bg-white px-4">
+                                                            <input
+                                                                type="text"
+                                                                inputMode="numeric"
+                                                                value={cardExpiry}
+                                                                onChange={(e) => handleExpiryChange(e.target.value)}
+                                                                placeholder="MM/YY"
+                                                                maxLength={5}
+                                                                className="flex-1 bg-transparent border-none outline-none font-mono font-semibold text-gray-900 text-center tracking-widest placeholder:text-gray-300 placeholder:font-medium"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 space-y-1.5">
+                                                        <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">CVV</label>
+                                                        <div className="flex items-center h-12 border-2 border-gray-200 rounded-xl focus-within:border-[#1a53c8] focus-within:ring-1 focus-within:ring-[#1a53c8] transition-all bg-white px-4">
+                                                            <input
+                                                                type="password"
+                                                                inputMode="numeric"
+                                                                value={cardCvv}
+                                                                onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                                                                placeholder="•••"
+                                                                maxLength={4}
+                                                                className="flex-1 bg-transparent border-none outline-none font-mono font-semibold text-gray-900 text-center tracking-[0.3em] placeholder:text-gray-300"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -485,7 +637,7 @@ export default function GroupDashboardPage() {
                                     <Button onClick={() => setContributeStep("amount")} variant="outline" className="flex-1 h-12 border-2 border-gray-200 text-[#1a53c8] font-extrabold rounded-xl hover:bg-gray-50 hover:text-[#1442a3] transition-colors">
                                         Back
                                     </Button>
-                                    <Button onClick={handleConfirmPayment} disabled={!paymentMethod || !paymentDetails.trim()} className="flex-[2] h-12 bg-[#1a53c8] hover:bg-[#1442a3] text-white font-extrabold rounded-xl shadow-md transition-all">
+                                    <Button onClick={handleConfirmPayment} disabled={!paymentMethod || !isPaymentValid} className="flex-[2] h-12 bg-[#1a53c8] hover:bg-[#1442a3] text-white font-extrabold rounded-xl shadow-md transition-all">
                                         Confirm Payment
                                     </Button>
                                 </div>
