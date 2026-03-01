@@ -289,3 +289,270 @@ export interface AdminDashboardStats {
   totalFundsSaved: number;
   pendingRefunds: number;
 }
+
+// ════════════════════════════════════════════
+// BACKEND RESPONSE TYPES
+// These mirror the actual shapes returned by
+// the backend admin API (Prisma models).
+// ════════════════════════════════════════════
+
+// ── Dashboard ────────────────────────
+export interface BackendDashboardResponse {
+  overview: {
+    totalUsers: number;
+    totalMerchants: number;
+    activeGoals: number;
+    completedGoals: number;
+    totalSavedGHS: number | string;
+    totalTransactions: number;
+    totalWalletBalanceGHS: number | string;
+    pendingPayouts: number;
+  };
+  kyc: {
+    pending: number;
+    verified: number;
+    failed: number;
+    total: number;
+  };
+  trends: {
+    newUsersLast7Days: number;
+    transactionsLast7Days: number;
+    dailyDeposits: { date: string; amount: number | string; count: number }[];
+    dailyUsers: { date: string; count: number }[];
+  };
+}
+
+export interface BackendActivityItem {
+  type: "USER_JOINED" | "TRANSACTION" | "KYC_UPDATE";
+  message: string;
+  user: string;
+  email?: string;
+  amount?: number | string;
+  transactionType?: string;
+  status?: string;
+  kycStatus?: string;
+  timestamp: string;
+}
+
+// ── Users ────────────────────────
+export interface BackendProfile {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  address?: string;
+  occupation?: string;
+  profilePic?: string;
+  kycStatus: "PENDING" | "VERIFIED" | "FAILED" | "EXPIRED";
+  kycNote?: string;
+  kycVerifiedAt?: string;
+  kycVerifiedBy?: string;
+  idType?: string;
+  idNumber?: string;
+  idImageUrl?: string;
+  selfieImageUrl?: string;
+  selfieVerified: boolean;
+  selfieMatchScore?: number;
+  selfieReviewNote?: string;
+  bankName?: string;
+  bankAccountNo?: string;
+  bankAccountName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BackendWallet {
+  id: string;
+  userId: string;
+  currency: string;
+  balance: number | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BackendGoal {
+  id: string;
+  userId: string;
+  name: string;
+  description?: string;
+  targetAmount: number | string;
+  currentAmount: number | string;
+  currency: string;
+  deadline?: string;
+  status: "ACTIVE" | "COMPLETED" | "ARCHIVED" | "CANCELLED";
+  category: "PERSONAL" | "CONTRIBUTION" | "SNBL";
+  productId?: string;
+  isRecurring: boolean;
+  monthlyAmount?: number | string;
+  savingsDay?: number;
+  lastAutoDebitDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BackendSession {
+  id: string;
+  createdAt: string;
+  expiresAt: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export interface BackendUser {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  image?: string;
+  phone?: string;
+  role: "CONSUMER" | "MERCHANT" | "ADMIN";
+  createdAt: string;
+  updatedAt: string;
+  profile?: BackendProfile | null;
+  wallet?: BackendWallet | null;
+}
+
+export interface BackendUserListResponse {
+  users: BackendUser[];
+  pagination: BackendPagination;
+}
+
+export interface BackendPagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface BackendUserDetail extends BackendUser {
+  goals: BackendGoal[];
+  sessions: BackendSession[];
+  notifications: BackendNotification[];
+  transactions: BackendTransaction[];
+}
+
+export interface BackendNotification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  category: "TRANSACTION" | "SECURITY" | "GOAL_UPDATE" | "SYSTEM";
+  isRead: boolean;
+  metadata?: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Merchants ────────────────────────
+export interface BackendMerchantProfile {
+  id: string;
+  userId: string;
+  businessName: string;
+  registrationNo?: string;
+  contactEmail: string;
+  contactPhone: string;
+  businessAddress: string;
+  bankName?: string;
+  bankAccountNo?: string;
+  bankAccountName?: string;
+  isVerified: boolean;
+  balance: number | string;
+  createdAt: string;
+  updatedAt: string;
+  user: { name: string; email: string };
+  _count: { products: number; transactions: number };
+}
+
+// ── Transactions ────────────────────────
+export interface BackendTransaction {
+  id: string;
+  walletId: string;
+  merchantProfileId?: string;
+  goalId?: string;
+  type: "DEPOSIT" | "WITHDRAWAL" | "GOAL_FUNDING" | "GOAL_WITHDRAWAL" | "MERCHANT_PAYOUT" | "AUTOMATED_SAVINGS" | "PUBLIC_CONTRIBUTION";
+  amount: number | string;
+  currency: string;
+  reference?: string;
+  status: "PENDING" | "COMPLETED" | "FAILED" | "CANCELLED";
+  metadata?: unknown;
+  createdAt: string;
+  updatedAt: string;
+  wallet?: { user?: { name: string; email?: string } };
+  goal?: { name: string } | null;
+  merchant?: BackendMerchantProfile | null;
+}
+
+export interface BackendTransactionListResponse {
+  transactions: BackendTransaction[];
+  pagination: BackendPagination;
+}
+
+// ── KYC ────────────────────────
+export interface BackendKycSubmission {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  kycStatus: "PENDING" | "VERIFIED" | "FAILED" | "EXPIRED";
+  kycNote?: string;
+  idType?: string;
+  idNumber?: string;
+  idImageUrl?: string;
+  selfieImageUrl?: string;
+  selfieVerified: boolean;
+  selfieMatchScore?: number;
+  selfieReviewNote?: string;
+  kycVerifiedAt?: string;
+  updatedAt: string;
+  user: { name: string; email: string; phone?: string; createdAt: string };
+}
+
+export interface BackendKycDetail extends BackendKycSubmission {
+  dateOfBirth?: string;
+  address?: string;
+  occupation?: string;
+  profilePic?: string;
+  bankName?: string;
+  bankAccountNo?: string;
+  bankAccountName?: string;
+}
+
+export interface BackendKycListResponse {
+  profiles: BackendKycSubmission[];
+  pagination: BackendPagination;
+}
+
+// ── Payouts ────────────────────────
+export interface BackendPayout extends BackendTransaction {
+  wallet: { user: { name: string; email: string } };
+}
+
+// ── Request Types (Mutations) ────────────────────────
+export interface SuspendUserRequest {
+  suspend: boolean;
+}
+
+export interface UpdateUserRoleRequest {
+  role: "CONSUMER" | "MERCHANT" | "ADMIN";
+}
+
+export interface VerifyMerchantRequest {
+  isVerified: boolean;
+}
+
+export interface VerifyKycRequest {
+  status: "VERIFIED" | "FAILED";
+  note?: string;
+}
+
+export interface ReviewSelfieRequest {
+  verified: boolean;
+  matchScore?: number;
+  note?: string;
+}
+
+export interface ProcessPayoutRequest {
+  status: "COMPLETED" | "FAILED";
+  note?: string;
+}

@@ -94,23 +94,50 @@ export const API_ENDPOINTS = {
   // Admin
   ADMIN: {
     LOGIN: "/auth/email/signin",
+    // Dashboard & Activity
     DASHBOARD: "/admin/dashboard",
+    STATS: "/admin/stats",
+    ACTIVITY: "/admin/activity",
+    // User Management
     USERS: {
       LIST: "/admin/users",
+      SEARCH: "/admin/users/search",
       DETAILS: (id: string) => `/admin/users/${id}`,
+      SUSPEND: (id: string) => `/admin/users/${id}/suspend`,
+      ROLE: (id: string) => `/admin/users/${id}/role`,
     },
+    // Merchant Management
     MERCHANTS: {
       LIST: "/admin/merchants",
       DETAILS: (id: string) => `/admin/merchants/${id}`,
+      VERIFY: (id: string) => `/admin/merchants/${id}/verify`,
     },
+    // KYC Management
+    KYC: {
+      PENDING: "/admin/kyc/pending",
+      ALL: "/admin/kyc/all",
+      DETAIL: (userId: string) => `/admin/kyc/${userId}/detail`,
+      VERIFY: (userId: string) => `/admin/kyc/${userId}/verify`,
+      SELFIE: (userId: string) => `/admin/kyc/${userId}/selfie`,
+    },
+    // Payouts
+    PAYOUTS: {
+      PENDING: "/admin/payouts/pending",
+      PROCESS: (id: string) => `/admin/payouts/${id}/process`,
+    },
+    // Transactions
+    TRANSACTIONS: "/admin/transactions",
+    // Plans (mapped from goals — no dedicated backend endpoint yet)
     PLANS: {
       LIST: "/admin/plans",
       DETAILS: (id: string) => `/admin/plans/${id}`,
     },
+    // Payments (legacy — use TRANSACTIONS for real data)
     PAYMENTS: {
       LIST: "/admin/payments",
       DETAILS: (id: string) => `/admin/payments/${id}`,
     },
+    // ── Features without backend endpoints (keep for future use) ──
     DISPUTES: {
       LIST: "/admin/disputes",
       DETAILS: (id: string) => `/admin/disputes/${id}`,
