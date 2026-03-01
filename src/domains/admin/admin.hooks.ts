@@ -63,15 +63,16 @@ function useMutation<TArgs extends unknown[], TResult = void>(
   const [error, setError] = useState<string | null>(null);
 
   const mutate = useCallback(
-    async (...args: TArgs): Promise<TResult | undefined> => {
+    async (...args: TArgs): Promise<TResult> => {
       setIsLoading(true);
       setError(null);
       try {
         const result = await mutationFn(...args);
         return result;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-        return undefined;
+        const msg = err instanceof Error ? err.message : "An error occurred";
+        setError(msg);
+        throw new Error(msg); // Throw so caller can show exact error
       } finally {
         setIsLoading(false);
       }

@@ -169,12 +169,12 @@ export default function AdminRolesPage() {
               </button>
               <button
                 onClick={async () => {
-                  const result = await updateRoleMutation.mutate(editingRole.id, editingRole.name, editingRole.permissions);
-                  if (result !== undefined) {
+                  try {
+                    await updateRoleMutation.mutate(editingRole.id, editingRole.name, editingRole.permissions);
                     setToast({ message: "Role updated successfully", type: "success" });
                     refetch();
-                  } else {
-                    setToast({ message: "Failed to update role", type: "error" });
+                  } catch (err: any) {
+                    setToast({ message: err.message || "Failed to update role", type: "error" });
                   }
                   setEditingRole(null);
                 }}
@@ -197,12 +197,12 @@ export default function AdminRolesPage() {
           confirmVariant="danger"
           isLoading={deleteRoleMutation.isLoading}
           onConfirm={async () => {
-            const result = await deleteRoleMutation.mutate(deleteConfirm);
-            if (result !== undefined) {
+            try {
+              await deleteRoleMutation.mutate(deleteConfirm);
               setToast({ message: "Role deleted successfully", type: "success" });
               refetch();
-            } else {
-              setToast({ message: "Failed to delete role", type: "error" });
+            } catch (err: any) {
+              setToast({ message: err.message || "Failed to delete role", type: "error" });
             }
             setDeleteConfirm(null);
           }}

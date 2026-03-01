@@ -171,12 +171,12 @@ export default function CreateRolePage() {
                                 setToast({ message: "Please select at least one permission", type: "error" });
                                 return;
                             }
-                            const result = await createRoleMutation.mutate(roleName.trim(), selectedPerms);
-                            if (result !== undefined) {
+                            try {
+                                await createRoleMutation.mutate(roleName.trim(), selectedPerms);
                                 setToast({ message: "Role created successfully", type: "success" });
                                 setTimeout(() => router.push("/admin/roles"), 1000);
-                            } else {
-                                setToast({ message: "Failed to create role", type: "error" });
+                            } catch (err: any) {
+                                setToast({ message: err.message || "Failed to create role", type: "error" });
                             }
                         }}
                         disabled={createRoleMutation.isLoading}
