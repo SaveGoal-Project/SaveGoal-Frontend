@@ -20,10 +20,11 @@ export default function AdminAuditPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [viewingEntry, setViewingEntry] = useState<AdminAuditLog | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const params = useMemo(
-    () => ({ page: currentPage, pageSize: 6, search: searchQuery }),
-    [currentPage, searchQuery]
+    () => ({ page: currentPage, pageSize: 6, search: searchQuery, status: statusFilter || undefined }),
+    [currentPage, searchQuery, statusFilter]
   );
   const { data, isLoading, error, refetch } = useAdminAuditLogs(params);
 
@@ -89,12 +90,18 @@ export default function AdminAuditPage() {
             <input
               type="search"
               placeholder="Search by Name, Email, or phone..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="w-full h-10 pl-10 pr-4 rounded-lg border border-gray-200 bg-gray-50 text-sm placeholder:text-gray-400 focus:outline-none focus:border-[#0754FF] focus:ring-1 focus:ring-[#0754FF] focus:bg-white transition-colors"
             />
           </div>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-400" />
-            <select className="h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm text-gray-500">
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm text-gray-500"
+            >
               <option>All Statuses</option>
               <option>Success</option>
               <option>Failed</option>
@@ -169,29 +176,42 @@ export default function AdminAuditPage() {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
-          <p className="text-sm text-gray-500">Showing 6 of 120 logs</p>
-          <div className="flex items-center gap-1">
-            <button className="px-4 py-2 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              Previous
-            </button>
-            {[1, 2, 3].map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={cn(
-                  "w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors",
-                  currentPage === page ? "bg-[#0754FF] text-white" : "text-gray-600 border border-gray-200 hover:bg-gray-50"
-                )}
-              >
-                {page}
-              </button>
-            ))}
-            <button className="px-4 py-2 text-sm font-medium text-white bg-[#0754FF] rounded-lg hover:bg-[#0643cc] transition-colors">
-              Next
-            </button>
-          </div>
-        </div>
+        {(() => {
+          const totalPages = Math.max(1, Math.ceil(total / 6));
+          return (
+            <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
+              <p className="text-sm text-gray-500">Showing {audits.length} of {total.toLocaleString()} logs</p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={cn(
+                      "w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors",
+                      currentPage === page ? "bg-[#0754FF] text-white" : "text-gray-600 border border-gray-200 hover:bg-gray-50"
+                    )}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#0754FF] rounded-lg hover:bg-[#0643cc] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* View Details Modal */}
@@ -200,7 +220,7 @@ export default function AdminAuditPage() {
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 shadow-xl">
             {/* Modal Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Create New Role</h2>
+              <h2 className="text-xl font-bold text-gray-900">Audit Log Details</h2>
               <button
                 onClick={() => setViewingEntry(null)}
                 className="text-red-500 hover:text-red-600 transition-colors"
