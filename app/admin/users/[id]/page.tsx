@@ -36,14 +36,14 @@ export default function AdminUserDetailPage() {
 
     const handleSuspendToggle = async () => {
         const newStatus = isSuspended ? "Active" : "Suspended";
-        const result = await updateStatus(id, newStatus);
-        setShowConfirm(false);
-        if (result !== undefined) {
+        try {
+            await updateStatus(id, newStatus);
             setToast({ message: `User ${newStatus === "Suspended" ? "suspended" : "reactivated"} successfully`, type: "success" });
             refetch();
-        } else {
-            setToast({ message: "Failed to update user status", type: "error" });
+        } catch (err: any) {
+            setToast({ message: err.message || "Failed to update user status", type: "error" });
         }
+        setShowConfirm(false);
     };
 
     if (isLoading) return <AdminLoadingSkeleton />;
