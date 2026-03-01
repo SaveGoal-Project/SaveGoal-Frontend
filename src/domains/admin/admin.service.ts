@@ -1,7 +1,8 @@
 /**
  * Admin Service Layer
  * Centralized data-fetching functions for all admin domains.
- * Currently uses mock data; swap to real API calls when backend is ready.
+ * Backend-supported features use real API calls via admin.api.ts + transformers.
+ * Features without backend support still use mock data.
  */
 
 import type {
@@ -26,7 +27,10 @@ import type {
     PaginationParams,
 } from "./admin.types";
 
-// ── Helpers ────────────────────────
+import * as api from "./admin.api";
+import * as transform from "./admin.transformers";
+
+// ── Helpers (for mock-only sections) ────────────────────────
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms));
 
 function paginate<T>(items: T[], params: PaginationParams): PaginatedResponse<T> {
@@ -51,235 +55,217 @@ function paginate<T>(items: T[], params: PaginationParams): PaginatedResponse<T>
 }
 
 // ═══════════════════════════════════
-// DASHBOARD
+// DASHBOARD  ✅ CONNECTED TO BACKEND
 // ═══════════════════════════════════
 export async function fetchDashboardStats(): Promise<AdminDashboardStats> {
-    await delay();
-    return {
-        totalUsers: 1400,
-        activeSavingsPlans: 451400,
-        totalFundsSaved: 50_000_000,
-        pendingRefunds: 100,
-    };
+    const backendData = await api.getDashboardStats();
+    return transform.transformDashboardStats(backendData);
 }
 
 // ═══════════════════════════════════
-// USERS
+// USERS  ✅ CONNECTED TO BACKEND
 // ═══════════════════════════════════
-const MOCK_USERS: AdminUserRow[] = [
-    { id: "u1", name: "Amina Okoro", email: "amina@email.com", phone: "020 000 1234", plans: 3, savedAmount: "GH₵ 5,000", status: "Active", kycStatus: "Verified", joined: "Jan 12, 2026" },
-    { id: "u2", name: "Kwame Asante", email: "kwame@email.com", phone: "024 555 6789", plans: 2, savedAmount: "GH₵ 3,200", status: "Active", kycStatus: "Verified", joined: "Feb 1, 2026" },
-    { id: "u3", name: "Pearl Grey", email: "pearl@email.com", phone: "027 111 4567", plans: 1, savedAmount: "GH₵ 1,500", status: "Suspended", kycStatus: "Pending", joined: "Dec 15, 2025" },
-    { id: "u4", name: "Samuel Adjei", email: "samuel@email.com", phone: "050 222 3344", plans: 4, savedAmount: "GH₵ 8,000", status: "Active", kycStatus: "Verified", joined: "Nov 5, 2025" },
-    { id: "u5", name: "Elsie White", email: "elsie@email.com", phone: "020 333 5566", plans: 2, savedAmount: "GH₵ 2,800", status: "Active", kycStatus: "Rejected", joined: "Jan 20, 2026" },
-    { id: "u6", name: "Kofi Mensah", email: "kofi@email.com", phone: "024 444 7788", plans: 1, savedAmount: "GH₵ 1,200", status: "Pending", kycStatus: "Pending", joined: "Feb 10, 2026" },
-    { id: "u7", name: "Grace Owusu", email: "grace@email.com", phone: "027 555 9900", plans: 5, savedAmount: "GH₵ 12,000", status: "Active", kycStatus: "Verified", joined: "Oct 8, 2025" },
-];
-
 export async function fetchUsers(params: PaginationParams = {}): Promise<PaginatedResponse<AdminUserRow>> {
-    await delay();
-    let filtered = [...MOCK_USERS];
-    if (params.status && params.status !== "All") {
-        filtered = filtered.filter((u) => u.status === params.status);
+    const page = params.page || 1;
+    const limit = params.pageSize || 10;
+
+    // If search is active, use search endpoint
+    if (params.search) {
+        const result = await api.searchUsers(params.search, {
+            role: undefined,
+            kycStatus: params.status !== "All" ? params.status : undefined,
+            page,
+            limit,
+        });
+        return {
+            data: result.users.map(transform.transformUserRow),
+            total: result.pagination.total,
+            page: result.pagination.page,
+            pageSize: result.pagination.limit,
+        };
     }
-    return paginate(filtered, params);
+
+    const result = await api.listUsers(page, limit);
+    let rows = result.users.map(transform.transformUserRow);
+
+    // Client-side status filter (backend doesn't support status filter on list)
+    if (params.status && params.status !== "All") {
+        rows = rows.filter((u) => u.status === params.status);
+    }
+
+    return {
+        data: rows,
+        total: result.pagination.total,
+        page: result.pagination.page,
+        pageSize: result.pagination.limit,
+    };
 }
 
 export async function fetchUserById(id: string): Promise<AdminUserDetail> {
-    await delay();
-    const row = MOCK_USERS.find((u) => u.id === id) || MOCK_USERS[0];
-    return {
-        id: row.id,
-        name: row.name,
-        email: row.email,
-        phone: "+233 24 000 0000",
-        initial: row.name.charAt(0),
-        location: "Accra, Ghana",
-        joined: row.joined,
-        status: row.status,
-        kycStatus: row.kycStatus,
-        kycVerified: row.kycStatus === "Verified",
-        totalSaved: row.savedAmount,
-        activePlans: row.plans,
-        completedPlans: 2,
-        totalTransactions: 24,
-        personal: {
-            fullName: row.name,
-            phone: "+233 24 000 0000",
-            joinDate: row.joined,
-            email: row.email,
-        },
-        financial: {
-            funds: row.savedAmount,
-            status: "Dependable",
-            joinDate: row.joined,
-            totalSavings: row.savedAmount,
-        },
-        savingsPlans: [
-            { id: "sp1", product: "iPhone 15 Pro", target: "GHS 5,000", goal: "GHS 3,800", with: "60%", targetAmount: "GH\u20b5 8,000", savedAmount: "GH\u20b5 5,000", progress: 60, status: "On Track", nextPayment: "Mar 1, 2026" },
-            { id: "sp2", product: "MacBook Air M3", target: "GHS 12,000", goal: "GHS 3,600", with: "30%", targetAmount: "GH\u20b5 12,000", savedAmount: "GH\u20b5 3,600", progress: 30, status: "Behind", nextPayment: "Mar 5, 2026" },
-            { id: "sp3", product: "Galaxy S24 Plus", target: "GHS 4,800", goal: "GHS 3,500", with: "72%", targetAmount: "GH\u20b5 4,800", savedAmount: "GH\u20b5 3,500", progress: 72, status: "On Track", nextPayment: "Mar 10, 2026" },
-            { id: "sp4", product: "iPhone 14", target: "GHS 3,800", goal: "GHS 3,200", with: "85%", targetAmount: "GH\u20b5 3,800", savedAmount: "GH\u20b5 3,200", progress: 85, status: "On Track", nextPayment: "Mar 15, 2026" },
-            { id: "sp5", product: "Phone 1 Ultra", target: "GHS 4,800", goal: "GHS 4,800", with: "100%", targetAmount: "GH\u20b5 4,800", savedAmount: "GH\u20b5 4,800", progress: 100, status: "Completed", nextPayment: "N/A" },
-        ],
-        recentTransactions: [
-            { id: "t1", type: "Deposit", amount: "GH\u20b5 500", date: "Feb 20, 2026", status: "Success", method: "Mobile Money" },
-            { id: "t2", type: "Deposit", amount: "GH\u20b5 500", date: "Feb 15, 2026", status: "Success", method: "Mobile Money" },
-            { id: "t3", type: "Withdrawal", amount: "GH\u20b5 200", date: "Feb 10, 2026", status: "Success", method: "Bank Transfer" },
-        ],
-    };
+    const backendDetail = await api.getUserDetail(id);
+    return transform.transformUserDetail(backendDetail);
 }
 
 export async function updateUserStatus(id: string, status: "Active" | "Suspended"): Promise<void> {
-    await delay(500);
-    // Mock: In production, this would call the API
+    const suspend = status === "Suspended";
+    await api.suspendUser(id, suspend);
 }
 
 // ═══════════════════════════════════
-// MERCHANTS
+// MERCHANTS  ✅ CONNECTED TO BACKEND
 // ═══════════════════════════════════
-const MOCK_MERCHANTS: AdminMerchantRow[] = [
-    { id: "m1", businessName: "TechHaven Ltd", owner: "Pearl Grey", revenue: "GH₵ 15,000", totalOrders: 1200, products: 48, status: "Active", rating: 4.8, initial: "T", initialColor: "bg-blue-500" },
-    { id: "m2", businessName: "GadgetWorld GH", owner: "Grace Owusu", revenue: "GH₵ 12,000", totalOrders: 890, products: 35, status: "Active", rating: 4.5, initial: "G", initialColor: "bg-green-500" },
-    { id: "m3", businessName: "PhoneFix Pro", owner: "Kwame Adjei", revenue: "GH₵ 8,500", totalOrders: 560, products: 22, status: "Pending", rating: 4.2, initial: "P", initialColor: "bg-purple-500" },
-    { id: "m4", businessName: "Pearl's Parlour", owner: "Pearl Ena", revenue: "GH₵ 6,200", totalOrders: 340, products: 15, status: "Active", rating: 4.0, initial: "P", initialColor: "bg-amber-500" },
-];
-
 export async function fetchMerchants(params: PaginationParams = {}): Promise<PaginatedResponse<AdminMerchantRow>> {
-    await delay();
-    return paginate(MOCK_MERCHANTS, params);
+    const merchants = await api.listMerchants();
+    const rows = merchants.map((m, i) => transform.transformMerchantRow(m, i));
+
+    // Client-side filtering & pagination (backend returns all)
+    let filtered = [...rows];
+    if (params.search) {
+        const q = params.search.toLowerCase();
+        filtered = filtered.filter((m) =>
+            m.businessName.toLowerCase().includes(q) ||
+            m.owner.toLowerCase().includes(q)
+        );
+    }
+    if (params.status && params.status !== "All") {
+        filtered = filtered.filter((m) => m.status === params.status);
+    }
+
+    const page = params.page || 1;
+    const pageSize = params.pageSize || 10;
+    const start = (page - 1) * pageSize;
+
+    return {
+        data: filtered.slice(start, start + pageSize),
+        total: filtered.length,
+        page,
+        pageSize,
+    };
 }
 
 export async function fetchMerchantById(id: string): Promise<AdminMerchantDetail> {
-    await delay();
-    const row = MOCK_MERCHANTS.find((m) => m.id === id) || MOCK_MERCHANTS[0];
-    return {
-        id: row.id,
-        name: row.owner,
-        businessName: row.businessName,
-        email: "contact@" + row.businessName.toLowerCase().replace(/\s/g, "") + ".com",
-        phone: "0200798766",
-        initial: row.initial,
-        status: row.status,
-        kycStatus: "KYC Verified",
-        storeInfo: {
-            businessName: row.businessName,
-            fullName: row.owner,
-            address: "Tema Com. 16",
-            landmark: "Tema Habour",
-        },
-        financialStatus: {
-            totalEarned: "GHS 90,000",
-            totalWithdrawn: "GHS 50,000",
-            lastPayoutDate: "Jan 16, 2026",
-            status: "Active",
-        },
-        kycDocuments: [
-            { name: "National ID (Front)", status: "Verified", date: "Jan 20, 2026" },
-            { name: "National ID (Back)", status: "Verified", date: "Jan 20, 2026" },
-            { name: "Selfie Verification", status: "Verified", date: "Jan 20, 2026" },
-        ],
-    };
+    // Backend doesn't have a single-merchant detail endpoint yet. 
+    // Fetch from list and transform.
+    const merchants = await api.listMerchants();
+    const merchant = merchants.find((m) => m.id === id);
+    if (!merchant) throw new Error("Merchant not found");
+    return transform.transformMerchantDetail(merchant);
 }
 
 export async function updateMerchantStatus(id: string, status: "Active" | "Suspended"): Promise<void> {
-    await delay(500);
+    const isVerified = status === "Active";
+    await api.verifyMerchant(id, isVerified);
 }
 
 // ═══════════════════════════════════
-// PLANS
+// PLANS  ✅ CONNECTED (Goals → Plans)
 // ═══════════════════════════════════
-const MOCK_PLANS: AdminPlanRow[] = [
-    { id: "p1", planId: "SNBL-1240", user: "Pearl Ena", product: "iPhone 15 Pro", progressPercent: 75, progressCurrent: 6, progressTotal: 8, nextPayment: "Mar 1, 2026", status: "Active", type: "Individual" },
-    { id: "p2", planId: "SNBL-1241", user: "Elsie Grey", product: "MacBook Air M3", progressPercent: 45, progressCurrent: 3, progressTotal: 6, nextPayment: "Mar 5, 2026", status: "Active", type: "Individual" },
-    { id: "p3", planId: "SNBL-1242", user: "Eli White", product: "Samsung Galaxy S24", progressPercent: 100, progressCurrent: 10, progressTotal: 10, nextPayment: "—", status: "Completed", type: "Group" },
-    { id: "p4", planId: "SNBL-1243", user: "Kofi Mensah", product: "AirPods Pro", progressPercent: 20, progressCurrent: 1, progressTotal: 5, nextPayment: "Mar 10, 2026", status: "Active", type: "Individual" },
-    { id: "p5", planId: "SNBL-1244", user: "Amina Okoro", product: "PlayStation 5", progressPercent: 10, progressCurrent: 1, progressTotal: 8, nextPayment: "Mar 15, 2026", status: "Defaulted", type: "Individual" },
-    { id: "p6", planId: "SNBL-1245", user: "Grace Owusu", product: "Dell XPS 15", progressPercent: 60, progressCurrent: 3, progressTotal: 5, nextPayment: "Mar 3, 2026", status: "Active", type: "Group" },
-    { id: "p7", planId: "SNBL-1246", user: "Samuel Adjei", product: "iPad Pro M4", progressPercent: 90, progressCurrent: 9, progressTotal: 10, nextPayment: "Mar 20, 2026", status: "Active", type: "Individual" },
-];
-
 export async function fetchPlans(params: PaginationParams = {}): Promise<PaginatedResponse<AdminPlanRow>> {
-    await delay();
-    let filtered = [...MOCK_PLANS];
+    // Fetch all users to get goals with user names
+    const page = params.page || 1;
+    const limit = params.pageSize || 10;
+
+    // Use the transactions endpoint to get goal-related data
+    // For now, we fetch users and extract goals from each
+    const usersResult = await api.listUsers(1, 100); // Get a larger set
+    const planRows: AdminPlanRow[] = [];
+
+    for (const user of usersResult.users) {
+        // Get user detail to access goals
+        try {
+            const detail = await api.getUserDetail(user.id);
+            for (const goal of detail.goals) {
+                planRows.push(transform.transformGoalToPlanRow(goal, user.name));
+            }
+        } catch {
+            // Skip users we can't access
+        }
+    }
+
+    // Client-side filtering
+    let filtered = [...planRows];
     if (params.status && params.status !== "All") {
         filtered = filtered.filter((p) => p.status === params.status);
     }
-    return paginate(filtered, params);
+    if (params.search) {
+        const q = params.search.toLowerCase();
+        filtered = filtered.filter((p) =>
+            p.user.toLowerCase().includes(q) ||
+            p.product.toLowerCase().includes(q) ||
+            p.planId.toLowerCase().includes(q)
+        );
+    }
+
+    const start = (page - 1) * limit;
+    return {
+        data: filtered.slice(start, start + limit),
+        total: filtered.length,
+        page,
+        pageSize: limit,
+    };
 }
 
 export async function fetchPlanById(id: string): Promise<AdminPlanDetail> {
-    await delay();
-    const row = MOCK_PLANS.find((p) => p.id === id) || MOCK_PLANS[0];
-    return {
-        id: row.id,
-        planId: row.planId,
-        status: row.status,
-        targetAmount: "GH₵ 8,000",
-        amountSaved: "GH₵ 5,000",
-        remaining: "GH₵ 3,000",
-        nextPayment: row.nextPayment,
-        progressPercent: row.progressPercent,
-        expectedDate: "June 15, 2026",
-        monthlyContribution: "GH₵ 1,000",
-        startDate: "Jan 15, 2026",
-        user: { Name: row.user, Email: "user@email.com", Phone: "020 000 1234", Location: "Accra, Ghana" },
-        product: { Name: row.product, Price: "GH₵ 8,000", Merchant: "TechHaven Ltd" },
-        riskScore: "Low",
-        paymentHistory: [
-            { date: "Feb 15, 2026", amount: "GH₵ 1,000", method: "Mobile Money", status: "Success" },
-            { date: "Jan 15, 2026", amount: "GH₵ 1,000", method: "Mobile Money", status: "Success" },
-        ],
-    };
+    // Find the goal across users
+    const usersResult = await api.listUsers(1, 100);
+    for (const user of usersResult.users) {
+        try {
+            const detail = await api.getUserDetail(user.id);
+            const goal = detail.goals.find(g => g.id === id);
+            if (goal) {
+                const goalTxs = detail.transactions.filter(t => t.goalId === id);
+                return transform.transformGoalToPlanDetail(
+                    goal,
+                    { Name: user.name, Email: user.email, Phone: user.phone || "—", Location: "Ghana" },
+                    goalTxs
+                );
+            }
+        } catch {
+            continue;
+        }
+    }
+    throw new Error("Plan not found");
 }
 
 // ═══════════════════════════════════
-// PAYMENTS
+// PAYMENTS  ✅ CONNECTED TO BACKEND
 // ═══════════════════════════════════
-const MOCK_PAYMENTS: AdminPaymentRow[] = [
-    { id: "pay1", transactionId: "TXN-2001", user: "Pearl Ena", plan: "SNBL-1240", amount: "GH₵ 5,000", date: "Feb 20, 2024", status: "Completed", method: "Mobile Money" },
-    { id: "pay2", transactionId: "TXN-2002", user: "Elsie Grey", plan: "SNBL-1241", amount: "GH₵ 3,200", date: "Feb 19, 2024", status: "Completed", method: "Bank Transfer" },
-    { id: "pay3", transactionId: "TXN-2003", user: "Eli White", plan: "SNBL-1242", amount: "GH₵ 1,500", date: "Feb 18, 2024", status: "Refunded", method: "Mobile Money" },
-    { id: "pay4", transactionId: "TXN-2004", user: "Kofi Mensah", plan: "SNBL-1243", amount: "GH₵ 800", date: "Feb 17, 2024", status: "Failed", method: "Card" },
-    { id: "pay5", transactionId: "TXN-2005", user: "Amina Okoro", plan: "SNBL-1244", amount: "GH₵ 2,100", date: "Feb 16, 2024", status: "Completed", method: "Mobile Money" },
-    { id: "pay6", transactionId: "TXN-2006", user: "Grace Owusu", plan: "SNBL-1245", amount: "GH₵ 4,500", date: "Feb 15, 2024", status: "Completed", method: "Bank Transfer" },
-    { id: "pay7", transactionId: "TXN-2007", user: "Samuel Adjei", plan: "SNBL-1246", amount: "GH₵ 6,000", date: "Feb 14, 2024", status: "Completed", method: "Mobile Money" },
-];
-
 export async function fetchPayments(params: PaginationParams = {}): Promise<PaginatedResponse<AdminPaymentRow>> {
-    await delay();
-    let filtered = [...MOCK_PAYMENTS];
+    const page = params.page || 1;
+    const limit = params.pageSize || 10;
+
+    // Map frontend status to backend status
+    let statusFilter: string | undefined;
     if (params.status && params.status !== "All") {
-        filtered = filtered.filter((p) => p.status === params.status);
+        const statusMap: Record<string, string> = {
+            "Completed": "COMPLETED",
+            "Failed": "FAILED",
+            "Refunded": "CANCELLED",
+        };
+        statusFilter = statusMap[params.status] || undefined;
     }
-    return paginate(filtered, params);
+
+    const result = await api.listTransactions(page, limit, { status: statusFilter });
+    const rows = result.transactions.map(transform.transformTransactionToPaymentRow);
+
+    return {
+        data: rows,
+        total: result.pagination.total,
+        page: result.pagination.page,
+        pageSize: result.pagination.limit,
+    };
 }
 
 export async function fetchPaymentById(id: string): Promise<AdminPaymentDetail> {
-    await delay();
-    const row = MOCK_PAYMENTS.find((p) => p.id === id) || MOCK_PAYMENTS[0];
-    return {
-        id: row.id,
-        transactionId: row.transactionId,
-        amount: row.amount,
-        fee: "GH₵ 50",
-        nextAmount: "GH₵ 1,000",
-        status: row.status,
-        userInfo: { Name: row.user, Email: "user@email.com", Phone: "020 000 1234", Plan: row.plan },
-        paymentDetails: { Method: row.method, Provider: "MTN Mobile Money", Account: "020****1234", Reference: row.transactionId, IP: "102.89.23.45", Location: "Accra, Ghana", Device: "iPhone 15" },
-        savingsPlan: { "Plan ID": row.plan, Product: "iPhone 15 Pro", Progress: "75%", "Next Date": "Mar 1, 2026" },
-        riskAnalysis: { score: "Low", checks: [{ label: "Identity Verified", status: "Passed" }, { label: "Amount Threshold", status: "Passed" }, { label: "Velocity Check", status: "Passed" }] },
-        timeline: [
-            { label: "Payment Initiated", time: row.date + " 10:00", status: "completed" },
-            { label: "Processing", time: row.date + " 10:01", status: "completed" },
-            { label: "Verified", time: row.date + " 10:02", status: "completed" },
-            { label: "Completed", time: row.date + " 10:03", status: "completed" },
-        ],
-    };
+    // Fetch from transactions list to find the specific one
+    const result = await api.listTransactions(1, 100);
+    const tx = result.transactions.find(t => t.id === id);
+    if (!tx) throw new Error("Payment not found");
+    return transform.transformTransactionToPaymentDetail(tx);
 }
 
 // ═══════════════════════════════════
-// DISPUTES
+// DISPUTES  ⏳ MOCK (no backend yet)
 // ═══════════════════════════════════
 const MOCK_DISPUTES: AdminDisputeRow[] = [
     { id: "d1", disputeId: "DIS-2001", user: "Pearl Ena", merchant: "Pearl's Parlour", amount: "GH₵ 5,000", reason: "Product not received", status: "Escalated", priority: "High" },
@@ -319,7 +305,7 @@ export async function resolveDispute(id: string, resolution: string): Promise<vo
 }
 
 // ═══════════════════════════════════
-// RISK
+// RISK  ⏳ MOCK (no backend yet)
 // ═══════════════════════════════════
 const MOCK_RISK_ENTITIES: AdminRiskEntity[] = [
     { name: "Pearl Ena", reason: "Multiple failed MoMo attempts", score: 70, status: "In Review" },
@@ -359,7 +345,7 @@ export async function fetchRiskEntityById(id: string): Promise<AdminRiskDetail> 
 }
 
 // ═══════════════════════════════════
-// ANALYTICS
+// ANALYTICS  ⏳ MOCK (no backend yet)
 // ═══════════════════════════════════
 export async function fetchAnalytics(): Promise<AdminAnalyticsData> {
     await delay();
@@ -407,7 +393,7 @@ export async function fetchAnalytics(): Promise<AdminAnalyticsData> {
 }
 
 // ═══════════════════════════════════
-// SYSTEM HEALTH
+// SYSTEM HEALTH  ⏳ MOCK (no backend yet)
 // ═══════════════════════════════════
 export async function fetchSystemHealth(): Promise<AdminSystemHealth> {
     await delay();
@@ -430,7 +416,7 @@ export async function fetchSystemHealth(): Promise<AdminSystemHealth> {
 }
 
 // ═══════════════════════════════════
-// ROLES
+// ROLES  ⏳ MOCK (no backend yet)
 // ═══════════════════════════════════
 const MOCK_ROLES: AdminRole[] = [
     { id: "r1", name: "Super Admin", users: 2, permissions: ["Full System Access", "User Management", "Merchant Approval", "Financial Operations", "Risk Override", "System Configuration"] },
@@ -460,7 +446,7 @@ export async function deleteRole(id: string): Promise<void> {
 }
 
 // ═══════════════════════════════════
-// AUDIT LOGS
+// AUDIT LOGS  ⏳ MOCK (DB model exists, no API endpoint yet)
 // ═══════════════════════════════════
 const MOCK_AUDIT_LOGS: AdminAuditLog[] = [
     { id: "a1", timestamp: "2024-02-10 14:35:22", adminName: "John Smith", adminRole: "Super Admin", action: "User Account Suspended", target: "Amina Okoro (USER-1240)", severity: "High score", status: "Success", ip: "102.89.23.45", sessionId: "sess_a8f3d2e1b9c4", details: "This action was performed as part of routine compliance review. The target account was flagged due to suspicious transaction patterns detected by the automated risk system. No further action required at this time." },
