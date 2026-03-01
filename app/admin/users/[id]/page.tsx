@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/src/lib/utils";
-import { ArrowLeft, ShieldAlert } from "lucide-react";
-import { useAdminUserDetail } from "@/src/domains/admin/admin.hooks";
-import { AdminLoadingSkeleton, AdminErrorState } from "@/src/components/admin/AdminFeedback";
+import { ArrowLeft, ShieldAlert, ShieldCheck } from "lucide-react";
+import { useAdminUserDetail, useUpdateUserStatus } from "@/src/domains/admin/admin.hooks";
+import { AdminLoadingSkeleton, AdminErrorState, AdminToast, AdminConfirmDialog } from "@/src/components/admin/AdminFeedback";
 
 const TABS = [
     "Risk Level",
@@ -28,6 +28,23 @@ export default function AdminUserDetailPage() {
     const id = params.id as string;
     const [activeTab, setActiveTab] = useState("Savings Plans");
     const { data: user, isLoading, error, refetch } = useAdminUserDetail(id);
+    const { mutate: updateStatus, isLoading: suspendLoading } = useUpdateUserStatus();
+    const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+    const [showConfirm, setShowConfirm] = useState(false);
+
+    const isSuspended = user?.status === "Suspended";
+
+    const handleSuspendToggle = async () => {
+        const newStatus = isSuspended ? "Active" : "Suspended";
+        const result = await updateStatus(id, newStatus);
+        setShowConfirm(false);
+        if (result !== undefined) {
+            setToast({ message: `User ${newStatus === "Suspended" ? "suspended" : "reactivated"} successfully`, type: "success" });
+            refetch();
+        } else {
+            setToast({ message: "Failed to update user status", type: "error" });
+        }
+    };
 
     if (isLoading) return <AdminLoadingSkeleton />;
     if (error || !user) return <AdminErrorState message={error || "User not found"} onRetry={refetch} />;
@@ -36,6 +53,18 @@ export default function AdminUserDetailPage() {
 
     return (
         <div className="space-y-6">
+            {toast && <AdminToast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+            {showConfirm && (
+                <AdminConfirmDialog
+                    title={isSuspended ? "Reactivate User" : "Suspend User"}
+                    message={isSuspended ? `Are you sure you want to reactivate ${user.name}?` : `Are you sure you want to suspend ${user.name}? They will lose access to their account.`}
+                    confirmLabel={isSuspended ? "Reactivate" : "Suspend"}
+                    confirmVariant={isSuspended ? "primary" : "danger"}
+                    isLoading={suspendLoading}
+                    onConfirm={handleSuspendToggle}
+                    onCancel={() => setShowConfirm(false)}
+                />
+            )}
             {/* Back Link */}
             <Link
                 href="/admin/users"
@@ -67,9 +96,15 @@ export default function AdminUserDetailPage() {
                             <p className="text-sm text-gray-500 mt-0.5">{user.email}</p>
                         </div>
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors">
-                        <ShieldAlert className="h-4 w-4" />
-                        Suspend
+                    <button
+                        onClick={() => setShowConfirm(true)}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors",
+                            isSuspended ? "bg-green-600 hover:bg-green-700" : "bg-red-500 hover:bg-red-600"
+                        )}
+                    >
+                        {isSuspended ? <ShieldCheck className="h-4 w-4" /> : <ShieldAlert className="h-4 w-4" />}
+                        {isSuspended ? "Unsuspend" : "Suspend"}
                     </button>
                 </div>
 

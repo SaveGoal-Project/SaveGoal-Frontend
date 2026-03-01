@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus } from "lucide-react";
+import { useCreateRole } from "@/src/domains/admin/admin.hooks";
+import { AdminToast } from "@/src/components/admin/AdminFeedback";
 
 interface PermissionCategory {
     title: string;
@@ -58,8 +61,11 @@ const INITIAL_CATEGORIES: PermissionCategory[] = [
 ];
 
 export default function CreateRolePage() {
+    const router = useRouter();
     const [roleName, setRoleName] = useState("");
     const [categories, setCategories] = useState<PermissionCategory[]>(INITIAL_CATEGORIES);
+    const createRoleMutation = useCreateRole();
+    const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
     const togglePermission = (catIdx: number, permIdx: number) => {
         setCategories((prev) =>
@@ -95,14 +101,18 @@ export default function CreateRolePage() {
                         Manage admin roles and assign permissions for granular access control.
                     </p>
                 </div>
-                <button className="flex items-center gap-2 px-5 py-2.5 bg-[#0754FF] text-white text-sm font-bold rounded-lg hover:bg-[#0643cc] transition-colors">
+                <button
+                    onClick={() => document.getElementById("create-role-form")?.scrollIntoView({ behavior: "smooth" })}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#0754FF] text-white text-sm font-bold rounded-lg hover:bg-[#0643cc] transition-colors"
+                >
                     <Plus className="h-4 w-4" />
                     Create New Role
                 </button>
             </div>
 
             {/* Create New Role Form */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-8">
+            <div id="create-role-form" className="bg-white rounded-2xl border border-gray-100 p-8">
+                {toast && <AdminToast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Create New Role</h2>
 
                 {/* Role Name */}
@@ -150,8 +160,29 @@ export default function CreateRolePage() {
                     >
                         Cancel
                     </Link>
-                    <button className="flex-1 py-3 bg-[#0754FF] text-white text-sm font-bold rounded-lg hover:bg-[#0643cc] transition-colors">
-                        Create Role
+                    <button
+                        onClick={async () => {
+                            const selectedPerms = categories.flatMap(c => c.permissions.filter(p => p.checked).map(p => p.name));
+                            if (!roleName.trim()) {
+                                setToast({ message: "Please enter a role name", type: "error" });
+                                return;
+                            }
+                            if (selectedPerms.length === 0) {
+                                setToast({ message: "Please select at least one permission", type: "error" });
+                                return;
+                            }
+                            const result = await createRoleMutation.mutate(roleName.trim(), selectedPerms);
+                            if (result !== undefined) {
+                                setToast({ message: "Role created successfully", type: "success" });
+                                setTimeout(() => router.push("/admin/roles"), 1000);
+                            } else {
+                                setToast({ message: "Failed to create role", type: "error" });
+                            }
+                        }}
+                        disabled={createRoleMutation.isLoading}
+                        className="flex-1 py-3 bg-[#0754FF] text-white text-sm font-bold rounded-lg hover:bg-[#0643cc] transition-colors disabled:opacity-50"
+                    >
+                        {createRoleMutation.isLoading ? "Creating..." : "Create Role"}
                     </button>
                 </div>
             </div>

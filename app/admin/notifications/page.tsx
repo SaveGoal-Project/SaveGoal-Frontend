@@ -13,7 +13,7 @@ interface Notification {
   type: "alert" | "info" | "user" | "payment";
 }
 
-const MOCK_NOTIFICATIONS: Notification[] = [
+const INITIAL_NOTIFICATIONS: Notification[] = [
   { id: "n1", title: "High-Risk Activity Detected", description: "Unusual login pattern detected for user Kwame Asante from a new IP address", time: "2 mins ago", read: false, type: "alert" },
   { id: "n2", title: "New Merchant Registration", description: "LuxGadgets GH has submitted a merchant application for review", time: "15 mins ago", read: false, type: "user" },
   { id: "n3", title: "Payment Gateway Update", description: "Paystack API version update completed successfully. No downtime recorded.", time: "1 hour ago", read: false, type: "payment" },
@@ -39,9 +39,21 @@ const typeStyles: Record<string, string> = {
 };
 
 export default function AdminNotificationsPage() {
+  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
   const [filter, setFilter] = useState<"all" | "unread">("all");
-  const filtered = filter === "unread" ? MOCK_NOTIFICATIONS.filter((n) => !n.read) : MOCK_NOTIFICATIONS;
-  const unreadCount = MOCK_NOTIFICATIONS.filter((n) => !n.read).length;
+
+  const filtered = filter === "unread" ? notifications.filter((n) => !n.read) : notifications;
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const toggleRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n))
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -52,7 +64,11 @@ export default function AdminNotificationsPage() {
             Stay updated with platform alerts, events, and system notifications
           </p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+        <button
+          onClick={markAllRead}
+          disabled={unreadCount === 0}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
           <CheckCheck className="h-4 w-4" />
           Mark All as Read
         </button>
@@ -67,7 +83,7 @@ export default function AdminNotificationsPage() {
             filter === "all" ? "bg-[#0754FF] text-white" : "text-gray-600 hover:bg-gray-100"
           )}
         >
-          All ({MOCK_NOTIFICATIONS.length})
+          All ({notifications.length})
         </button>
         <button
           onClick={() => setFilter("unread")}
@@ -82,30 +98,37 @@ export default function AdminNotificationsPage() {
 
       {/* Notifications List */}
       <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
-        {filtered.map((notif) => {
-          const Icon = typeIcons[notif.type];
-          return (
-            <div
-              key={notif.id}
-              className={cn(
-                "p-5 flex items-start gap-4 hover:bg-gray-50/50 transition-colors cursor-pointer",
-                !notif.read && "bg-blue-50/30"
-              )}
-            >
-              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", typeStyles[notif.type])}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-semibold text-gray-900">{notif.title}</h4>
-                  {!notif.read && <span className="w-2 h-2 rounded-full bg-[#0754FF]" />}
+        {filtered.length === 0 ? (
+          <div className="p-8 text-center">
+            <p className="text-sm text-gray-500">No notifications to show</p>
+          </div>
+        ) : (
+          filtered.map((notif) => {
+            const Icon = typeIcons[notif.type];
+            return (
+              <div
+                key={notif.id}
+                onClick={() => toggleRead(notif.id)}
+                className={cn(
+                  "p-5 flex items-start gap-4 hover:bg-gray-50/50 transition-colors cursor-pointer",
+                  !notif.read && "bg-blue-50/30"
+                )}
+              >
+                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", typeStyles[notif.type])}>
+                  <Icon className="h-5 w-5" />
                 </div>
-                <p className="text-sm text-gray-600 mt-0.5">{notif.description}</p>
-                <p className="text-xs text-gray-400 mt-1.5">{notif.time}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-gray-900">{notif.title}</h4>
+                    {!notif.read && <span className="w-2 h-2 rounded-full bg-[#0754FF]" />}
+                  </div>
+                  <p className="text-sm text-gray-600 mt-0.5">{notif.description}</p>
+                  <p className="text-xs text-gray-400 mt-1.5">{notif.time}</p>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

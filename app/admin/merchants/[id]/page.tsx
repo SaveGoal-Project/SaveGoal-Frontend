@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/src/lib/utils";
-import { ArrowLeft, Mail, Ban } from "lucide-react";
-import { useAdminMerchantDetail } from "@/src/domains/admin/admin.hooks";
-import { AdminLoadingSkeleton, AdminErrorState } from "@/src/components/admin/AdminFeedback";
+import { ArrowLeft, Mail, Ban, ShieldCheck } from "lucide-react";
+import { useAdminMerchantDetail, useUpdateMerchantStatus } from "@/src/domains/admin/admin.hooks";
+import { AdminLoadingSkeleton, AdminErrorState, AdminToast, AdminConfirmDialog } from "@/src/components/admin/AdminFeedback";
 
 const TABS = [
     "Store Information",
@@ -22,12 +22,42 @@ export default function AdminMerchantDetailPage() {
     const id = params.id as string;
     const [activeTab, setActiveTab] = useState("Store Information");
     const { data: merchant, isLoading, error, refetch } = useAdminMerchantDetail(id);
+    const { mutate: updateStatus, isLoading: statusLoading } = useUpdateMerchantStatus();
+    const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+    const [showConfirm, setShowConfirm] = useState(false);
+
+    const showTodo = (label: string) => setToast({ message: `${label} — feature coming soon`, type: "info" });
+    const isSuspended = merchant?.status === "Suspended";
+
+    const handleSuspendToggle = async () => {
+        const newStatus = isSuspended ? "Active" : "Suspended";
+        const result = await updateStatus(id, newStatus);
+        setShowConfirm(false);
+        if (result !== undefined) {
+            setToast({ message: `Merchant ${newStatus === "Suspended" ? "suspended" : "reactivated"} successfully`, type: "success" });
+            refetch();
+        } else {
+            setToast({ message: "Failed to update merchant status", type: "error" });
+        }
+    };
 
     if (isLoading) return <AdminLoadingSkeleton />;
     if (error || !merchant) return <AdminErrorState message={error || "Merchant not found"} onRetry={refetch} />;
 
     return (
         <div className="space-y-6">
+            {toast && <AdminToast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+            {showConfirm && (
+                <AdminConfirmDialog
+                    title={isSuspended ? "Reactivate Merchant" : "Suspend Merchant"}
+                    message={isSuspended ? `Are you sure you want to reactivate ${merchant.name}?` : `Are you sure you want to suspend ${merchant.name}?`}
+                    confirmLabel={isSuspended ? "Reactivate" : "Suspend"}
+                    confirmVariant={isSuspended ? "primary" : "danger"}
+                    isLoading={statusLoading}
+                    onConfirm={handleSuspendToggle}
+                    onCancel={() => setShowConfirm(false)}
+                />
+            )}
             {/* Back Link */}
             <Link
                 href="/admin/merchants"
@@ -66,13 +96,22 @@ export default function AdminMerchantDetailPage() {
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-3">
-                        <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        <button
+                            onClick={() => showTodo("Notify Merchant")}
+                            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
                             <Mail className="h-4 w-4" />
                             Notify
                         </button>
-                        <button className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 transition-colors">
-                            <Ban className="h-4 w-4" />
-                            Suspend
+                        <button
+                            onClick={() => setShowConfirm(true)}
+                            className={cn(
+                                "inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-lg transition-colors",
+                                isSuspended ? "bg-green-600 hover:bg-green-700" : "bg-red-500 hover:bg-red-600"
+                            )}
+                        >
+                            {isSuspended ? <ShieldCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                            {isSuspended ? "Unsuspend" : "Suspend"}
                         </button>
                     </div>
                 </div>
