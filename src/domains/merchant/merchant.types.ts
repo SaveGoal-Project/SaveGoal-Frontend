@@ -56,3 +56,24 @@ export interface UpdateProfileRequest {
     category?: string;
     logo?: string;
 }
+
+// ─── KYC Verification ────────────────────────────────────────────────────────
+
+export type KycStatus = "PENDING" | "VERIFIED" | "FAILED" | "EXPIRED";
+
+/** Matches the shape returned by GET /api/kyc/status */
+export interface KycStatusResponse {
+    kycStatus: KycStatus | null;
+    kycNote: string | null;
+    idType: string | null;
+    idNumber: string | null;
+    idImageUrl: string | null;
+    selfieImageUrl: string | null;
+    selfieVerified: boolean | null;
+    selfieMatchScore: number | null;
+    selfieReviewNote: string | null;
+    bankName: string | null;
+    bankAccountNo: string | null;
+    bankAccountName: string | null;
+    updatedAt: string;
+}

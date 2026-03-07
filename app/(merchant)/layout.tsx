@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { MerchantSidebar } from '@/src/components/merchant/sidebar';
 import { MerchantTopbar } from '@/src/components/merchant/topbar';
+import { KycGate } from '@/src/components/merchant/KycGate';
 
 export default function MerchantLayout({
     children,
@@ -23,9 +24,10 @@ export default function MerchantLayout({
                     onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 />
                 <main className="flex-1 overflow-auto p-4 md:p-6">
-                    {children}
+                    <KycGate>{children}</KycGate>
                 </main>
             </div>
         </div>
     );
 }
+
