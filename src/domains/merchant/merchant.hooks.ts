@@ -75,3 +75,56 @@ export function useUpdateMerchantProfile() {
 
     return { update, isSubmitting, error };
 }
+
+// ─── KYC Status Hook ─────────────────────────────────────────────────────────
+
+export function useKycStatus() {
+    const [data, setData] = useState<import("./merchant.types").KycStatusResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchStatus = useCallback(async () => {
+        setError(null);
+        try {
+            const { getKycStatus } = await import("./merchant.api");
+            const result = await getKycStatus();
+            setData(result);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to check verification status");
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    // Initial fetch
+    useEffect(() => {
+        fetchStatus();
+    }, [fetchStatus]);
+
+    // Poll every 60s while PENDING
+    useEffect(() => {
+        if (!data || data.kycStatus === "VERIFIED" || data.kycStatus === "FAILED") return;
+
+        const interval = setInterval(fetchStatus, 60_000);
+        return () => clearInterval(interval);
+    }, [data, fetchStatus]);
+
+    // Refetch on tab visibility change
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (document.visibilityState === "visible") fetchStatus();
+        };
+        document.addEventListener("visibilitychange", handleVisibility);
+        return () => document.removeEventListener("visibilitychange", handleVisibility);
+    }, [fetchStatus]);
+
+    return {
+        status: data?.kycStatus ?? null,
+        note: data?.kycNote ?? null,
+        data,
+        isLoading,
+        error,
+        refetch: fetchStatus,
+    };
+}
+
