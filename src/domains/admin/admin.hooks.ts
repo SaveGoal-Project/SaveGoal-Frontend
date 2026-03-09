@@ -126,6 +126,13 @@ export function useUpdateMerchantStatus() {
   return useMutation(service.updateMerchantStatus);
 }
 
+export function useVerifyKyc() {
+  return useMutation(
+    (args: { id: string; status: "VERIFIED" | "FAILED"; note?: string }) =>
+      service.verifyKyc(args.id, args.status, args.note)
+  );
+}
+
 // ═══════════════════════════════════
 // PLANS
 // ═══════════════════════════════════

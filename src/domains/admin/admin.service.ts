@@ -157,6 +157,10 @@ export async function updateMerchantStatus(id: string, status: "Active" | "Suspe
     await api.verifyMerchant(id, isVerified);
 }
 
+export async function verifyKyc(id: string, status: "VERIFIED" | "FAILED", note?: string): Promise<void> {
+    await api.verifyKyc(id, status, note);
+}
+
 // ═══════════════════════════════════
 // PLANS  ✅ CONNECTED (Goals → Plans)
 // ═══════════════════════════════════

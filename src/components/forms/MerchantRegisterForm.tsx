@@ -71,6 +71,7 @@ interface DraftState {
     frontIdImage: string | null;
     backIdImage: string | null;
     selfieImage: string | null;
+    businessRegDoc: string | null;
     selectedRegion: string;
     isPhoneVerified: boolean;
 }
@@ -128,6 +129,7 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
     const [frontIdImage, setFrontIdImage] = useState<string | null>(draft.current?.frontIdImage ?? null);
     const [backIdImage, setBackIdImage] = useState<string | null>(draft.current?.backIdImage ?? null);
     const [selfieImage, setSelfieImage] = useState<string | null>(draft.current?.selfieImage ?? null);
+    const [businessRegDoc, setBusinessRegDoc] = useState<string | null>(draft.current?.businessRegDoc ?? null);
     const [phoneVerifiedLocal, setPhoneVerifiedLocal] = useState(draft.current?.isPhoneVerified ?? false);
 
     // Camera state
@@ -140,6 +142,7 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
     const frontIdInputRef = useRef<HTMLInputElement>(null);
     const backIdInputRef = useRef<HTMLInputElement>(null);
     const selfieInputRef = useRef<HTMLInputElement>(null);
+    const businessRegInputRef = useRef<HTMLInputElement>(null);
     const formContainerRef = useRef<HTMLDivElement>(null);
 
     const isLoading = isRegistering || isUploadingFiles;
@@ -153,11 +156,11 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
         saveDraft({
             step, basicInfo, storeInfo,
             passwordData: step >= 3 ? { password: passwordForm.getValues("password"), confirmPassword: passwordForm.getValues("confirmPassword"), terms: passwordForm.getValues("terms") } : null,
-            idType, idNumber, frontIdImage, backIdImage, selfieImage, selectedRegion,
+            idType, idNumber, frontIdImage, backIdImage, selfieImage, businessRegDoc, selectedRegion,
             isPhoneVerified: phoneVerifiedLocal,
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [step, basicInfo, storeInfo, idType, idNumber, frontIdImage, backIdImage, selfieImage, selectedRegion, phoneVerifiedLocal, isSubmitted]);
+    }, [step, basicInfo, storeInfo, idType, idNumber, frontIdImage, backIdImage, selfieImage, businessRegDoc, selectedRegion, phoneVerifiedLocal, isSubmitted]);
 
     // ─── Scroll to top on step change ───────────────────────────────────────────
     useEffect(() => {
@@ -227,6 +230,10 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
     };
 
     const handleStep2Continue = async (data: MerchantStoreInfoData) => {
+        if (!businessRegDoc) {
+            setFormError("Please upload your Business Registration Document");
+            return;
+        }
         setFormError(null);
         setStoreInfo(data);
         setStep(3);
@@ -348,8 +355,8 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
 
             await registerMerchant(registerData);
 
-            if (frontIdImage && backIdImage && selfieImage) {
-                await submitVerification({ idType, idNumber, frontIdImage, backIdImage, selfieImage });
+            if (frontIdImage && backIdImage && selfieImage && businessRegDoc) {
+                await submitVerification({ idType, idNumber, frontIdImage, backIdImage, selfieImage, businessRegDoc });
             }
 
             clearDraft();
@@ -359,505 +366,575 @@ export function MerchantRegisterForm({ accountType, onAccountTypeChange }: Merch
             // Errors surfaced via authError / verificationError
         }
     };
-// ─── Sub-components ────────────────────────────────────────────────────────
-const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (
-    <div className="flex items-center space-x-2 text-sm">
-        <div className={cn("flex h-4 w-4 items-center justify-center rounded-full border", met ? "border-[#2c3466] bg-transparent text-[#2c3466]" : "border-gray-300 bg-transparent text-transparent")}>
-            {met && <Check className="h-2.5 w-2.5" />}
-        </div>
-        <span className={cn(met ? "text-[#2c3466] font-medium" : "text-gray-500")}>{text}</span>
-    </div>
-);
-
-const StepIndicator = () => {
-    const phases = ["Your Info", "Store", "Password", "Verify"];
-    const currentPhase = step <= 1 ? 0 : step === 2 ? 1 : step === 3 ? 2 : 3;
-    return (
-        <div className="flex items-center justify-center gap-4 mb-8">
-            {phases.map((label, i) => (
-                <div key={i} className="flex flex-col items-center">
-                    <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                        currentPhase === i ? "border-[#2C3466] bg-[#2C3466]" : currentPhase > i ? "border-[#2C3466] bg-transparent" : "border-gray-300 bg-transparent")}>
-                        {currentPhase > i ? <Check className="h-3 w-3 text-[#2C3466]" /> : currentPhase === i && <div className="w-2 h-2 rounded-full bg-white" />}
-                    </div>
-                    <span className={cn("text-xs mt-1", currentPhase >= i ? "text-gray-900 font-medium" : "text-gray-400")}>{label}</span>
-                </div>
-            ))}
+    // ─── Sub-components ────────────────────────────────────────────────────────
+    const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (
+        <div className="flex items-center space-x-2 text-sm">
+            <div className={cn("flex h-4 w-4 items-center justify-center rounded-full border", met ? "border-[#2c3466] bg-transparent text-[#2c3466]" : "border-gray-300 bg-transparent text-transparent")}>
+                {met && <Check className="h-2.5 w-2.5" />}
+            </div>
+            <span className={cn(met ? "text-[#2c3466] font-medium" : "text-gray-500")}>{text}</span>
         </div>
     );
-};
 
-const AccountTypeTabs = () => (
-    <div className="flex gap-6 mb-6">
-        <button type="button" onClick={() => onAccountTypeChange("buyer")} className={cn("pb-2 text-base font-medium transition-all border-b-2", accountType === "buyer" ? "text-gray-900 border-gray-900" : "text-gray-500 border-transparent hover:text-gray-700")}>Buyer account</button>
-        <button type="button" onClick={() => onAccountTypeChange("merchant")} className={cn("pb-2 text-base font-medium transition-all border-b-2", accountType === "merchant" ? "text-gray-900 border-gray-900" : "text-gray-500 border-transparent hover:text-gray-700")}>Merchant account</button>
-    </div>
-);
-
-const ErrorBanner = () => activeError ? (
-    <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm">
-        <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-        <div>
-            <p className="font-medium text-red-800">Something went wrong</p>
-            <p className="text-red-600 mt-1">{activeError}</p>
-        </div>
-    </div>
-) : null;
-
-const getStepTitle = () => {
-    switch (step) {
-        case 1: return "Basic Information";
-        case 2: return "Store Information";
-        case 3: return "Create Password";
-        case 4: return "Identity Verification";
-        case 5: return "Government ID Verification";
-        case 6: return "Take a Selfie";
-        case 7: return "You're All Set!";
-        default: return "";
-    }
-};
-
-const getStepSubtitle = () => {
-    switch (step) {
-        case 1: return "Let's get you started with SaveGoal";
-        case 2: return "Tell us about your business";
-        case 3: return "Set a strong password to secure your account";
-        case 5: return "Upload a clear photo or scan of your valid government-issued ID";
-        case 6: return "We need to confirm that you're the person on the ID. Take a clear selfie of your face.";
-        default: return undefined;
-    }
-};
-
-const UploadZone = ({ label, image, inputRef, onUpload, errorKey }: { label: string; image: string | null; inputRef: React.RefObject<HTMLInputElement | null>; onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void; errorKey: string; }) => (
-    <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">{label}</label>
-        <div onClick={() => inputRef.current?.click()} className={cn("border-2 border-dashed rounded-xl p-8 cursor-pointer transition-all hover:border-[#2C3466] hover:bg-gray-50", image ? "border-[#2C3466] bg-gray-50" : "border-gray-200")}>
-            <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onUpload} />
-            {image ? (
-                <div className="relative w-full h-32">
-                    <Image src={image} alt={label} fill className="object-contain rounded-lg" />
-                </div>
-            ) : (
-                <div className="flex flex-col items-center justify-center text-center">
-                    <Upload className="w-8 h-8 text-gray-400 mb-3" />
-                    <p className="text-gray-700 font-medium">Click to upload {label.toLowerCase()}</p>
-                    <p className="text-gray-400 text-sm">{FILE_UPLOAD_CONFIG.ACCEPTED_TYPES_LABEL} up to {FILE_UPLOAD_CONFIG.MAX_SIZE_LABEL}</p>
-                </div>
-            )}
-        </div>
-        {fileErrors[errorKey] && <p className="text-sm text-red-500 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{fileErrors[errorKey]}</p>}
-        {image && <button type="button" onClick={(e) => { e.stopPropagation(); if (inputRef.current) inputRef.current.value = ""; }} className="text-xs text-[#2C3466] hover:underline">Remove & re-upload</button>}
-    </div>
-);
-
-const BackButton = ({ targetStep }: { targetStep: number }) => (
-    <Button type="button" variant="outline" onClick={() => { setFormError(null); setStep(targetStep); }} className="flex-1 h-14 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50">
-        Back
-    </Button>
-);
-// ─── JSX Return ──────────────────────────────────────────────────────────────
-// Step 7: Success Screen
-if (step === 7) {
-    return (
-        <div ref={formContainerRef} className="w-full max-w-[550px] space-y-8 py-8">
-            <div className="text-center space-y-4">
-                <div className="flex justify-center">
-                    <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-                        <PartyPopper className="w-10 h-10 text-green-600" />
-                    </div>
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900">You&apos;re All Set!</h1>
-                <p className="text-gray-500">Your merchant account has been submitted for review.</p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-6 space-y-4">
-                <h3 className="font-semibold text-[#2C3466]">What happens next?</h3>
-                <ul className="space-y-3 text-sm text-gray-700">
-                    <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" /><span>Our team will review your identity documents within <strong>24–48 hours</strong>.</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" /><span>You&apos;ll receive an email at <strong>{basicInfo?.email}</strong> once your account is approved.</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" /><span>Once approved, you can start listing products and receiving savings orders.</span></li>
-                </ul>
-            </div>
-            {basicInfo && storeInfo && (
-                <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
-                    <h3 className="font-semibold text-gray-900 text-sm">Account Summary</h3>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div><span className="text-gray-400">Name</span><p className="font-medium text-gray-800">{basicInfo.fullName}</p></div>
-                        <div><span className="text-gray-400">Store</span><p className="font-medium text-gray-800">{storeInfo.storeName}</p></div>
-                        <div><span className="text-gray-400">Email</span><p className="font-medium text-gray-800">{basicInfo.email}</p></div>
-                        <div><span className="text-gray-400">Category</span><p className="font-medium text-gray-800">{storeInfo.category}</p></div>
-                    </div>
-                </div>
-            )}
-            <Button onClick={() => window.location.href = "/merchant"} className="w-full h-14 bg-[#2C3466] hover:bg-[#222E76] text-white text-lg font-semibold rounded-xl">
-                Go to Merchant Dashboard
-            </Button>
-        </div>
-    );
-}
-
-return (
-    <div ref={formContainerRef} className="w-full max-w-[550px] space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-4">
-            <h1 className="text-2xl font-bold text-gray-900">Create Your Merchant Account</h1>
-            {getStepSubtitle() && <p className="text-gray-400 text-sm">{getStepSubtitle()}</p>}
-        </div>
-
-        {/* Account Type Tabs */}
-        <div className="flex justify-center"><AccountTypeTabs /></div>
-
-        {/* Step Indicator */}
-        <StepIndicator />
-
-        {/* Step Title */}
-        <h2 className="text-xl font-semibold text-gray-900 text-center">{getStepTitle()}</h2>
-
-        {/* Error Banner */}
-        <ErrorBanner />
-
-        {/* Step 1: Basic Information */}
-        {step === 1 && (
-            <Form {...basicInfoForm}>
-                <form onSubmit={basicInfoForm.handleSubmit(handleStep1Continue)} className="space-y-5">
-                    <FormField control={basicInfoForm.control} name="fullName" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">Full Name</FormLabel>
-                            <FormControl><Input placeholder="Enter your full name" className="h-12 border-gray-200" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-
-                    <FormField control={basicInfoForm.control} name="phoneNumber" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">Phone Number</FormLabel>
-                            <FormControl>
-                                <div className="space-y-2">
-                                    <div className="flex gap-3">
-                                        <Input placeholder="+233 2000 765 54" className="h-12 border-gray-200 flex-1" {...field} disabled={phoneVerifiedLocal} />
-                                        {!phoneVerifiedLocal ? (
-                                            <Button type="button" onClick={handleSendOtp} disabled={isVerifyingPhone || isCodeSent} className="h-12 px-6 bg-[#2C3466] hover:bg-[#222E76] text-white rounded-lg">
-                                                {isVerifyingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : isCodeSent ? "Resend" : "Verify"}
-                                            </Button>
-                                        ) : (
-                                            <div className="h-12 px-4 flex items-center gap-2 bg-green-50 text-green-700 rounded-lg border border-green-200 text-sm font-medium"><CheckCircle2 className="w-4 h-4" />Verified</div>
-                                        )}
-                                    </div>
-                                    {showOtpInput && !phoneVerifiedLocal && (
-                                        <div className="flex gap-3">
-                                            <Input placeholder="Enter OTP code" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="h-12 border-gray-200 flex-1" maxLength={6} />
-                                            <Button type="button" onClick={handleVerifyOtp} disabled={isVerifyingPhone || otpCode.length < 4} className="h-12 px-6 bg-[#2C3466] hover:bg-[#222E76] text-white rounded-lg">
-                                                {isVerifyingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm"}
-                                            </Button>
-                                        </div>
-                                    )}
-                                    {!phoneVerifiedLocal && !showOtpInput && (
-                                        <p className="text-xs text-gray-400">Phone verification is optional — you can proceed without it.</p>
-                                    )}
-                                </div>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-
-                    <FormField control={basicInfoForm.control} name="email" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">Email</FormLabel>
-                            <FormControl><Input type="email" placeholder="example@gmail.com" className="h-12 border-gray-200" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-
-                    <FormField control={basicInfoForm.control} name="address" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">Address</FormLabel>
-                            <FormControl><Input placeholder="CA5500 Cowpea Street" className="h-12 border-gray-200" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-
-                    <Button type="submit" className="w-full h-14 bg-[#2C3466] hover:bg-[#222E76] text-white text-lg font-semibold rounded-xl">Continue</Button>
-                </form>
-            </Form>
-        )}
-
-        {/* Step 2: Store Information */}
-        {step === 2 && (
-            <Form {...storeInfoForm}>
-                <form onSubmit={storeInfoForm.handleSubmit(handleStep2Continue)} className="space-y-5">
-                    <FormField control={storeInfoForm.control} name="storeName" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">Store Name</FormLabel>
-                            <FormControl><Input placeholder="eg. Pearl's Apparrel" className="h-12 border-gray-200" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-
-                    <FormField control={storeInfoForm.control} name="category" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">Category</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl><SelectTrigger className="h-12 border-gray-200 bg-white"><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
-                                <SelectContent>{merchantCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-
-                    <FormField control={storeInfoForm.control} name="description" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">Description</FormLabel>
-                            <FormControl><Textarea placeholder="Describe your business..." className="min-h-[100px] border-gray-200 resize-none" maxLength={500} {...field} /></FormControl>
-                            <div className="flex justify-between"><FormMessage /><span className="text-xs text-gray-400">{descriptionValue.length}/500</span></div>
-                        </FormItem>
-                    )} />
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField control={storeInfoForm.control} name="region" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-gray-700">Region</FormLabel>
-                                <Select onValueChange={(v) => { field.onChange(v); setSelectedRegion(v); storeInfoForm.setValue("city", ""); }} value={field.value}>
-                                    <FormControl><SelectTrigger className="h-12 border-gray-200 bg-white"><SelectValue placeholder="Select region" /></SelectTrigger></FormControl>
-                                    <SelectContent>{ghanaRegions.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={storeInfoForm.control} name="city" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-gray-700">City</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl><SelectTrigger className="h-12 border-gray-200 bg-white"><SelectValue placeholder="Select city" /></SelectTrigger></FormControl>
-                                    <SelectContent>{(ghanaCities[selectedRegion] || []).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                    </div>
-
-                    <FormField control={storeInfoForm.control} name="closestLandmark" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">Closest Landmark</FormLabel>
-                            <FormControl><Input placeholder="Ridge Hospital" className="h-12 border-gray-200" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-
-                    <div className="flex gap-4 pt-2">
-                        <BackButton targetStep={1} />
-                        <Button type="submit" className="flex-1 h-14 bg-[#2C3466] hover:bg-[#222E76] text-white font-semibold rounded-xl">Continue</Button>
-                    </div>
-                </form>
-            </Form>
-        )}
-{/* Step 3: Password */ }
-{
-    step === 3 && (
-        <Form {...passwordForm}>
-            <form onSubmit={passwordForm.handleSubmit(handleStep3Continue)} className="space-y-5">
-                <FormField control={passwordForm.control} name="password" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-gray-700">Create Password</FormLabel>
-                        <FormControl>
-                            <div className="relative">
-                                <Input type={showPassword ? "text" : "password"} placeholder="••••••••••••" className="h-12 pr-12 border-gray-200" {...field} />
-                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                </button>
-                            </div>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-
-                <FormField control={passwordForm.control} name="confirmPassword" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-gray-700">Confirm Password</FormLabel>
-                        <FormControl>
-                            <div className="relative">
-                                <Input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••••••" className="h-12 pr-12 border-gray-200" {...field} />
-                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                </button>
-                            </div>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-
-                <div className="grid grid-cols-2 gap-3">
-                    <PasswordRequirement met={hasMinLength} text="At least 8 characters" />
-                    <PasswordRequirement met={hasUpper} text="One uppercase letter" />
-                    <PasswordRequirement met={hasNumber} text="One number" />
-                    <PasswordRequirement met={hasSpecial} text="One special character" />
-                </div>
-
-                <FormField control={passwordForm.control} name="terms" render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <div className="leading-none">
-                            <FormLabel className="font-normal text-gray-500 text-sm">
-                                I agree to the{" "}<Link href="/terms" className="font-semibold text-[#2C3466]">Terms and Conditions</Link>{" "}and{" "}<Link href="/privacy" className="font-semibold text-[#2C3466]">Privacy Policy</Link>
-                            </FormLabel>
-                            <FormMessage />
+    const StepIndicator = () => {
+        const phases = ["Your Info", "Store", "Password", "Verify"];
+        const currentPhase = step <= 1 ? 0 : step === 2 ? 1 : step === 3 ? 2 : 3;
+        return (
+            <div className="flex items-center justify-center gap-4 mb-8">
+                {phases.map((label, i) => (
+                    <div key={i} className="flex flex-col items-center">
+                        <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
+                            currentPhase === i ? "border-[#2C3466] bg-[#2C3466]" : currentPhase > i ? "border-[#2C3466] bg-transparent" : "border-gray-300 bg-transparent")}>
+                            {currentPhase > i ? <Check className="h-3 w-3 text-[#2C3466]" /> : currentPhase === i && <div className="w-2 h-2 rounded-full bg-white" />}
                         </div>
-                    </FormItem>
-                )} />
-
-                <div className="flex gap-4 pt-2">
-                    <BackButton targetStep={2} />
-                    <Button type="submit" className="flex-1 h-14 bg-[#2C3466] hover:bg-[#222E76] text-white font-semibold rounded-xl">Continue</Button>
-                </div>
-            </form>
-        </Form>
-    )
-}
-
-{/* Step 4: Identity Verification Intro */ }
-{
-    step === 4 && (
-        <div className="space-y-6">
-            <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center"><ShieldCheck className="w-5 h-5 text-green-600" /></div>
-                <div>
-                    <h3 className="font-semibold text-[#2C3466]">One-Time Process</h3>
-                    <p className="text-gray-500 text-sm">You only need to complete this once. It typically takes 2-3 minutes and is reviewed within 24 hours</p>
-                </div>
+                        <span className={cn("text-xs mt-1", currentPhase >= i ? "text-gray-900 font-medium" : "text-gray-400")}>{label}</span>
+                    </div>
+                ))}
             </div>
-            <div className="bg-gray-50 rounded-xl p-6 space-y-4">
-                <h3 className="font-semibold text-[#2C3466]">What you&apos;ll need:</h3>
-                <ul className="space-y-3">
-                    <li className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[#2C3466] mt-2 flex-shrink-0" /><span className="text-gray-700">Valid government-issued ID (Passport, Ghana card or Voter&apos;s ID)</span></li>
-                    <li className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[#2C3466] mt-2 flex-shrink-0" /><span className="text-gray-700">Clear photo or scan of your ID (Front and back)</span></li>
-                    <li className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[#2C3466] mt-2 flex-shrink-0" /><span className="text-gray-700">A selfie for identity confirmation</span></li>
-                </ul>
-            </div>
-            <div className="flex gap-4 pt-2">
-                <BackButton targetStep={3} />
-                <Button onClick={handleStartVerification} className="flex-1 h-14 bg-[#2C3466] hover:bg-[#222E76] text-white text-lg font-semibold rounded-xl">Start Verification</Button>
+        );
+    };
+
+    const AccountTypeTabs = () => (
+        <div className="flex gap-6 mb-6">
+            <button type="button" onClick={() => onAccountTypeChange("buyer")} className={cn("pb-2 text-base font-medium transition-all border-b-2", accountType === "buyer" ? "text-gray-900 border-gray-900" : "text-gray-500 border-transparent hover:text-gray-700")}>Buyer account</button>
+            <button type="button" onClick={() => onAccountTypeChange("merchant")} className={cn("pb-2 text-base font-medium transition-all border-b-2", accountType === "merchant" ? "text-gray-900 border-gray-900" : "text-gray-500 border-transparent hover:text-gray-700")}>Merchant account</button>
+        </div>
+    );
+
+    const ErrorBanner = () => activeError ? (
+        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+                <p className="font-medium text-red-800">Something went wrong</p>
+                <p className="text-red-600 mt-1">{activeError}</p>
             </div>
         </div>
-    )
-}
+    ) : null;
 
-{/* Step 5: Government ID Verification */ }
-{
-    step === 5 && (
-        <Form {...verificationForm}>
-            <form onSubmit={verificationForm.handleSubmit(handleContinueToSelfie)} className="space-y-6">
-                <FormField control={verificationForm.control} name="idType" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-gray-700">ID Type*</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger className="h-12 border-gray-200 bg-white"><SelectValue placeholder="Select ID type" /></SelectTrigger></FormControl>
-                            <SelectContent>{idTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={verificationForm.control} name="idNumber" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-gray-700">ID Number*</FormLabel>
-                        <FormControl><Input placeholder="GHA-1234556-89" className="h-12 border-gray-200" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <div className="bg-blue-50 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2"><Info className="w-4 h-4 text-blue-600" /><span className="font-medium text-blue-800">Image requirements:</span></div>
-                    <ul className="space-y-2 text-sm text-blue-700">
-                        <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />Clear, unobstructed photo (no glare, no blur)</li>
-                        <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />{FILE_UPLOAD_CONFIG.ACCEPTED_TYPES_LABEL} format, max {FILE_UPLOAD_CONFIG.MAX_SIZE_LABEL}</li>
+    const getStepTitle = () => {
+        switch (step) {
+            case 1: return "Basic Information";
+            case 2: return "Store Information";
+            case 3: return "Create Password";
+            case 4: return "Identity Verification";
+            case 5: return "Government ID Verification";
+            case 6: return "Take a Selfie";
+            case 7: return "You're All Set!";
+            default: return "";
+        }
+    };
+
+    const getStepSubtitle = () => {
+        switch (step) {
+            case 1: return "Let's get you started with SaveGoal";
+            case 2: return "Tell us about your business";
+            case 3: return "Set a strong password to secure your account";
+            case 5: return "Upload a clear photo or scan of your valid government-issued ID";
+            case 6: return "We need to confirm that you're the person on the ID. Take a clear selfie of your face.";
+            default: return undefined;
+        }
+    };
+
+    const UploadZone = ({ label, image, inputRef, onUpload, errorKey }: { label: string; image: string | null; inputRef: React.RefObject<HTMLInputElement | null>; onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void; errorKey: string; }) => (
+        <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">{label}</label>
+            <div onClick={() => inputRef.current?.click()} className={cn("border-2 border-dashed rounded-xl p-8 cursor-pointer transition-all hover:border-[#2C3466] hover:bg-gray-50", image ? "border-[#2C3466] bg-gray-50" : "border-gray-200")}>
+                <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onUpload} />
+                {image ? (
+                    <div className="relative w-full h-32">
+                        <Image src={image} alt={label} fill className="object-contain rounded-lg" />
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center text-center">
+                        <Upload className="w-8 h-8 text-gray-400 mb-3" />
+                        <p className="text-gray-700 font-medium">Click to upload {label.toLowerCase()}</p>
+                        <p className="text-gray-400 text-sm">{FILE_UPLOAD_CONFIG.ACCEPTED_TYPES_LABEL} up to {FILE_UPLOAD_CONFIG.MAX_SIZE_LABEL}</p>
+                    </div>
+                )}
+            </div>
+            {fileErrors[errorKey] && <p className="text-sm text-red-500 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{fileErrors[errorKey]}</p>}
+            {image && <button type="button" onClick={(e) => { e.stopPropagation(); if (inputRef.current) inputRef.current.value = ""; }} className="text-xs text-[#2C3466] hover:underline">Remove & re-upload</button>}
+        </div>
+    );
+
+    const BackButton = ({ targetStep }: { targetStep: number }) => (
+        <Button type="button" variant="outline" onClick={() => { setFormError(null); setStep(targetStep); }} className="flex-1 h-14 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50">
+            Back
+        </Button>
+    );
+    // ─── JSX Return ──────────────────────────────────────────────────────────────
+    // Step 7: Success Screen
+    if (step === 7) {
+        return (
+            <div ref={formContainerRef} className="w-full max-w-[550px] space-y-8 py-8">
+                <div className="text-center space-y-4">
+                    <div className="flex justify-center">
+                        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
+                            <PartyPopper className="w-10 h-10 text-green-600" />
+                        </div>
+                    </div>
+                    <h1 className="text-2xl font-bold text-gray-900">You&apos;re All Set!</h1>
+                    <p className="text-gray-500">Your merchant account has been submitted for review.</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+                    <h3 className="font-semibold text-[#2C3466]">What happens next?</h3>
+                    <ul className="space-y-3 text-sm text-gray-700">
+                        <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" /><span>Our team will review your identity documents within <strong>24–48 hours</strong>.</span></li>
+                        <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" /><span>You&apos;ll receive an email at <strong>{basicInfo?.email}</strong> once your account is approved.</span></li>
+                        <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" /><span>Once approved, you can start listing products and receiving savings orders.</span></li>
                     </ul>
                 </div>
-                <UploadZone label="Front of ID*" image={frontIdImage} inputRef={frontIdInputRef} onUpload={(e) => handleImageUpload(e, setFrontIdImage, "front")} errorKey="front" />
-                <UploadZone label="Back of ID*" image={backIdImage} inputRef={backIdInputRef} onUpload={(e) => handleImageUpload(e, setBackIdImage, "back")} errorKey="back" />
-                <div className="flex gap-4 pt-2">
-                    <BackButton targetStep={4} />
-                    <Button type="submit" disabled={!frontIdImage || !backIdImage} className="flex-1 h-14 bg-[#2C3466] hover:bg-[#222E76] text-white text-lg font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">Continue to Selfie</Button>
-                </div>
-            </form>
-        </Form>
-    )
-}
-
-{/* Step 6: Take a Selfie */ }
-{
-    step === 6 && (
-        <div className="space-y-6">
-            <div className="bg-blue-50 rounded-xl p-4 space-y-3">
-                <div className="flex items-center gap-2"><Info className="w-4 h-4 text-blue-600" /><span className="font-medium text-blue-800">Selfie Guidelines:</span></div>
-                <ul className="space-y-2 text-sm text-blue-700">
-                    <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />Face the camera directly and ensure your entire face is visible</li>
-                    <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />Remove glasses, hats, or anything covering your face</li>
-                    <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />Make sure you&apos;re in a well-lit area with no shadows</li>
-                    <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />Use a neutral expression</li>
-                </ul>
-            </div>
-
-            {/* Camera / Selfie preview */}
-            <div className="flex justify-center">
-                <div className="w-48 h-48 rounded-full bg-gray-100 overflow-hidden border-4 border-gray-200 relative">
-                    {isCameraActive ? (
-                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
-                    ) : selfieImage ? (
-                        <Image src={selfieImage} alt="Selfie preview" width={192} height={192} className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center"><Camera className="w-16 h-16 text-gray-300" /></div>
-                    )}
-                </div>
-            </div>
-            <canvas ref={canvasRef} className="hidden" />
-
-            {cameraError && <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg text-center">{cameraError}</p>}
-
-            {/* Camera controls */}
-            <div className="flex flex-col gap-3">
-                {!selfieImage && !isCameraActive && (
-                    <Button type="button" onClick={startCamera} variant="outline" className="w-full h-12 border-[#2C3466] text-[#2C3466] rounded-xl font-medium hover:bg-gray-50">
-                        <Camera className="w-5 h-5 mr-2" />Open Camera
-                    </Button>
-                )}
-                {isCameraActive && (
-                    <div className="flex gap-3">
-                        <Button type="button" onClick={stopCamera} variant="outline" className="flex-1 h-12 rounded-xl">Cancel</Button>
-                        <Button type="button" onClick={capturePhoto} className="flex-1 h-12 bg-[#2C3466] hover:bg-[#222E76] text-white rounded-xl font-medium">Capture Photo</Button>
+                {basicInfo && storeInfo && (
+                    <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
+                        <h3 className="font-semibold text-gray-900 text-sm">Account Summary</h3>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div><span className="text-gray-400">Name</span><p className="font-medium text-gray-800">{basicInfo.fullName}</p></div>
+                            <div><span className="text-gray-400">Store</span><p className="font-medium text-gray-800">{storeInfo.storeName}</p></div>
+                            <div><span className="text-gray-400">Email</span><p className="font-medium text-gray-800">{basicInfo.email}</p></div>
+                            <div><span className="text-gray-400">Category</span><p className="font-medium text-gray-800">{storeInfo.category}</p></div>
+                        </div>
                     </div>
                 )}
-                {selfieImage && (
-                    <Button type="button" onClick={() => { setSelfieImage(null); startCamera(); }} variant="outline" className="w-full h-12 border-gray-300 text-gray-700 rounded-xl">Retake Selfie</Button>
-                )}
-            </div>
-
-            {/* Upload fallback */}
-            <div onClick={() => selfieInputRef.current?.click()} className="border-2 border-dashed border-gray-200 rounded-xl p-6 cursor-pointer transition-all hover:border-[#2C3466] hover:bg-gray-50">
-                <input ref={selfieInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { handleImageUpload(e, setSelfieImage, "selfie"); stopCamera(); }} />
-                <div className="flex flex-col items-center justify-center text-center">
-                    <Upload className="w-6 h-6 text-gray-400 mb-2" />
-                    <p className="text-gray-600 text-sm font-medium">Or upload a selfie from your device</p>
-                    <p className="text-gray-400 text-xs">{FILE_UPLOAD_CONFIG.ACCEPTED_TYPES_LABEL} up to {FILE_UPLOAD_CONFIG.MAX_SIZE_LABEL}</p>
-                </div>
-            </div>
-            {fileErrors["selfie"] && <p className="text-sm text-red-500 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{fileErrors["selfie"]}</p>}
-
-            <div className="flex items-start gap-2 p-4 bg-gray-50 rounded-xl">
-                <Info className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-gray-500">Your selfie is used only for identity verification and will be stored securely.</p>
-            </div>
-
-            <div className="flex gap-4">
-                <BackButton targetStep={5} />
-                <Button onClick={handleSubmitVerification} disabled={!selfieImage || isLoading} className="flex-1 h-14 bg-[#2C3466] hover:bg-[#222E76] text-white text-lg font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
-                    {isLoading ? (<><Loader2 className="mr-2 h-5 w-5 animate-spin" />Submitting...</>) : "Submit for Verification"}
+                <Button onClick={() => window.location.href = "/merchant"} className="w-full h-14 bg-[#2C3466] hover:bg-[#222E76] text-white text-lg font-semibold rounded-xl">
+                    Go to Merchant Dashboard
                 </Button>
             </div>
-        </div>
-    )
-}
+        );
+    }
 
-{/* Sign In link */ }
-<div className="text-center text-gray-500 text-sm pt-2">
-    Already have an account?{" "}
-    <Link href="/login" className="font-semibold text-[#2C3466] hover:underline">Sign In</Link>
-</div>
-    </div >
-  );
+    return (
+        <div ref={formContainerRef} className="w-full max-w-[550px] space-y-6">
+            {/* Header */}
+            <div className="text-center space-y-4">
+                <h1 className="text-2xl font-bold text-gray-900">Create Your Merchant Account</h1>
+                {getStepSubtitle() && <p className="text-gray-400 text-sm">{getStepSubtitle()}</p>}
+            </div>
+
+            {/* Account Type Tabs */}
+            <div className="flex justify-center"><AccountTypeTabs /></div>
+
+            {/* Step Indicator */}
+            <StepIndicator />
+
+            {/* Step Title */}
+            <h2 className="text-xl font-semibold text-gray-900 text-center">{getStepTitle()}</h2>
+
+            {/* Error Banner */}
+            <ErrorBanner />
+
+            {/* Step 1: Basic Information */}
+            {step === 1 && (
+                <Form {...basicInfoForm}>
+                    <form onSubmit={basicInfoForm.handleSubmit(handleStep1Continue)} className="space-y-5">
+                        <FormField control={basicInfoForm.control} name="fullName" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-gray-700">Full Name</FormLabel>
+                                <FormControl><Input placeholder="Enter your full name" className="h-12 border-gray-200" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
+                        <FormField control={basicInfoForm.control} name="phoneNumber" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-gray-700">Phone Number</FormLabel>
+                                <FormControl>
+                                    <div className="space-y-2">
+                                        <div className="flex gap-3">
+                                            <Input placeholder="+233 2000 765 54" className="h-12 border-gray-200 flex-1" {...field} disabled={phoneVerifiedLocal} />
+                                            {!phoneVerifiedLocal ? (
+                                                <Button type="button" onClick={handleSendOtp} disabled={isVerifyingPhone || isCodeSent} className="h-12 px-6 bg-[#2C3466] hover:bg-[#222E76] text-white rounded-lg">
+                                                    {isVerifyingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : isCodeSent ? "Resend" : "Verify"}
+                                                </Button>
+                                            ) : (
+                                                <div className="h-12 px-4 flex items-center gap-2 bg-green-50 text-green-700 rounded-lg border border-green-200 text-sm font-medium"><CheckCircle2 className="w-4 h-4" />Verified</div>
+                                            )}
+                                        </div>
+                                        {showOtpInput && !phoneVerifiedLocal && (
+                                            <div className="flex gap-3">
+                                                <Input placeholder="Enter OTP code" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="h-12 border-gray-200 flex-1" maxLength={6} />
+                                                <Button type="button" onClick={handleVerifyOtp} disabled={isVerifyingPhone || otpCode.length < 4} className="h-12 px-6 bg-[#2C3466] hover:bg-[#222E76] text-white rounded-lg">
+                                                    {isVerifyingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm"}
+                                                </Button>
+                                            </div>
+                                        )}
+                                        {!phoneVerifiedLocal && !showOtpInput && (
+                                            <p className="text-xs text-gray-400">Phone verification is optional — you can proceed without it.</p>
+                                        )}
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
+                        <FormField control={basicInfoForm.control} name="email" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-gray-700">Email</FormLabel>
+                                <FormControl><Input type="email" placeholder="example@gmail.com" className="h-12 border-gray-200" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
+                        <FormField control={basicInfoForm.control} name="address" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-gray-700">Address</FormLabel>
+                                <FormControl><Input placeholder="CA5500 Cowpea Street" className="h-12 border-gray-200" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
+                        <Button type="submit" className="w-full h-14 bg-[#2C3466] hover:bg-[#222E76] text-white text-lg font-semibold rounded-xl">Continue</Button>
+                    </form>
+                </Form>
+            )}
+
+            {/* Step 2: Store Information */}
+            {step === 2 && (
+                <Form {...storeInfoForm}>
+                    <form onSubmit={storeInfoForm.handleSubmit(handleStep2Continue)} className="space-y-5">
+                        <FormField control={storeInfoForm.control} name="storeName" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-gray-700">Store Name</FormLabel>
+                                <FormControl><Input placeholder="eg. Pearl's Apparrel" className="h-12 border-gray-200" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
+                        <FormField control={storeInfoForm.control} name="category" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-gray-700">Category</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl><SelectTrigger className="h-12 border-gray-200 bg-white"><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
+                                    <SelectContent>{merchantCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
+                        <FormField control={storeInfoForm.control} name="description" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-gray-700">Description</FormLabel>
+                                <FormControl><Textarea placeholder="Describe your business..." className="min-h-[100px] border-gray-200 resize-none" maxLength={500} {...field} /></FormControl>
+                                <div className="flex justify-between"><FormMessage /><span className="text-xs text-gray-400">{descriptionValue.length}/500</span></div>
+                            </FormItem>
+                        )} />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={storeInfoForm.control} name="region" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-gray-700">Region</FormLabel>
+                                    <Select onValueChange={(v) => { field.onChange(v); setSelectedRegion(v); storeInfoForm.setValue("city", ""); }} value={field.value}>
+                                        <FormControl><SelectTrigger className="h-12 border-gray-200 bg-white"><SelectValue placeholder="Select region" /></SelectTrigger></FormControl>
+                                        <SelectContent>{ghanaRegions.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={storeInfoForm.control} name="city" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-gray-700">City</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl><SelectTrigger className="h-12 border-gray-200 bg-white"><SelectValue placeholder="Select city" /></SelectTrigger></FormControl>
+                                        <SelectContent>{(ghanaCities[selectedRegion] || []).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                        </div>
+
+                        <FormField control={storeInfoForm.control} name="closestLandmark" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-gray-700">Closest Landmark</FormLabel>
+                                <FormControl><Input placeholder="Ridge Hospital" className="h-12 border-gray-200" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
+                        {/* Business Registration Document Upload */}
+                        <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                </svg>
+                                Business Registration Document
+                            </label>
+
+                            {businessRegDoc ? (
+                                <div className="relative border border-gray-200 rounded-xl p-3 bg-gray-50">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border border-gray-100 flex-shrink-0">
+                                            <Image src={businessRegDoc} alt="Business registration" width={64} height={64} className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-gray-800 truncate">Business Registration</p>
+                                            <p className="text-xs text-green-600 flex items-center gap-1 mt-0.5">
+                                                <CheckCircle2 className="w-3 h-3" /> Uploaded
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setBusinessRegDoc(null); setFileErrors(prev => { const n = { ...prev }; delete n.businessRegDoc; return n; }); }}
+                                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => businessRegInputRef.current?.click()}
+                                    className="w-full border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center gap-2 hover:border-[#2C3466]/30 hover:bg-gray-50/50 transition-colors cursor-pointer"
+                                >
+                                    <Upload className="w-6 h-6 text-gray-400" />
+                                    <span className="text-sm font-medium text-gray-600">Click to upload document</span>
+                                    <span className="text-xs text-gray-400">PNG, JPG up to {FILE_UPLOAD_CONFIG.MAX_SIZE_LABEL}</span>
+                                </button>
+                            )}
+                            <input
+                                ref={businessRegInputRef}
+                                type="file"
+                                accept={FILE_UPLOAD_CONFIG.ACCEPTED_TYPES.join(",")}
+                                className="hidden"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    const validation = validateUploadFile(file);
+                                    if (!validation.valid) {
+                                        setFileErrors(prev => ({ ...prev, businessRegDoc: validation.error || "Invalid file" }));
+                                        return;
+                                    }
+                                    setFileErrors(prev => { const n = { ...prev }; delete n.businessRegDoc; return n; });
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => setBusinessRegDoc(ev.target?.result as string);
+                                    reader.readAsDataURL(file);
+                                    e.target.value = "";
+                                }}
+                            />
+                            {fileErrors.businessRegDoc && (
+                                <p className="text-sm text-red-500 flex items-center gap-1">
+                                    <AlertCircle className="w-3.5 h-3.5" /> {fileErrors.businessRegDoc}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex gap-4 pt-2">
+                            <BackButton targetStep={1} />
+                            <Button type="submit" className="flex-1 h-14 bg-[#2C3466] hover:bg-[#222E76] text-white font-semibold rounded-xl">Continue</Button>
+                        </div>
+                    </form>
+                </Form>
+            )}
+            {/* Step 3: Password */}
+            {
+                step === 3 && (
+                    <Form {...passwordForm}>
+                        <form onSubmit={passwordForm.handleSubmit(handleStep3Continue)} className="space-y-5">
+                            <FormField control={passwordForm.control} name="password" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-gray-700">Create Password</FormLabel>
+                                    <FormControl>
+                                        <div className="relative">
+                                            <Input type={showPassword ? "text" : "password"} placeholder="••••••••••••" className="h-12 pr-12 border-gray-200" {...field} />
+                                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                            </button>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+
+                            <FormField control={passwordForm.control} name="confirmPassword" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-gray-700">Confirm Password</FormLabel>
+                                    <FormControl>
+                                        <div className="relative">
+                                            <Input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••••••" className="h-12 pr-12 border-gray-200" {...field} />
+                                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                            </button>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <PasswordRequirement met={hasMinLength} text="At least 8 characters" />
+                                <PasswordRequirement met={hasUpper} text="One uppercase letter" />
+                                <PasswordRequirement met={hasNumber} text="One number" />
+                                <PasswordRequirement met={hasSpecial} text="One special character" />
+                            </div>
+
+                            <FormField control={passwordForm.control} name="terms" render={({ field }) => (
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    <div className="leading-none">
+                                        <FormLabel className="font-normal text-gray-500 text-sm">
+                                            I agree to the{" "}<Link href="/terms" className="font-semibold text-[#2C3466]">Terms and Conditions</Link>{" "}and{" "}<Link href="/privacy" className="font-semibold text-[#2C3466]">Privacy Policy</Link>
+                                        </FormLabel>
+                                        <FormMessage />
+                                    </div>
+                                </FormItem>
+                            )} />
+
+                            <div className="flex gap-4 pt-2">
+                                <BackButton targetStep={2} />
+                                <Button type="submit" className="flex-1 h-14 bg-[#2C3466] hover:bg-[#222E76] text-white font-semibold rounded-xl">Continue</Button>
+                            </div>
+                        </form>
+                    </Form>
+                )
+            }
+
+            {/* Step 4: Identity Verification Intro */}
+            {
+                step === 4 && (
+                    <div className="space-y-6">
+                        <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center"><ShieldCheck className="w-5 h-5 text-green-600" /></div>
+                            <div>
+                                <h3 className="font-semibold text-[#2C3466]">One-Time Process</h3>
+                                <p className="text-gray-500 text-sm">You only need to complete this once. It typically takes 2-3 minutes and is reviewed within 24 hours</p>
+                            </div>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+                            <h3 className="font-semibold text-[#2C3466]">What you&apos;ll need:</h3>
+                            <ul className="space-y-3">
+                                <li className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[#2C3466] mt-2 flex-shrink-0" /><span className="text-gray-700">Valid government-issued ID (Passport, Ghana card or Voter&apos;s ID)</span></li>
+                                <li className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[#2C3466] mt-2 flex-shrink-0" /><span className="text-gray-700">Clear photo or scan of your ID (Front and back)</span></li>
+                                <li className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[#2C3466] mt-2 flex-shrink-0" /><span className="text-gray-700">A selfie for identity confirmation</span></li>
+                            </ul>
+                        </div>
+                        <div className="flex gap-4 pt-2">
+                            <BackButton targetStep={3} />
+                            <Button onClick={handleStartVerification} className="flex-1 h-14 bg-[#2C3466] hover:bg-[#222E76] text-white text-lg font-semibold rounded-xl">Start Verification</Button>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Step 5: Government ID Verification */}
+            {
+                step === 5 && (
+                    <Form {...verificationForm}>
+                        <form onSubmit={verificationForm.handleSubmit(handleContinueToSelfie)} className="space-y-6">
+                            <FormField control={verificationForm.control} name="idType" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-gray-700">ID Type*</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl><SelectTrigger className="h-12 border-gray-200 bg-white"><SelectValue placeholder="Select ID type" /></SelectTrigger></FormControl>
+                                        <SelectContent>{idTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={verificationForm.control} name="idNumber" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-gray-700">ID Number*</FormLabel>
+                                    <FormControl><Input placeholder="GHA-1234556-89" className="h-12 border-gray-200" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <div className="bg-blue-50 rounded-xl p-4 space-y-3">
+                                <div className="flex items-center gap-2"><Info className="w-4 h-4 text-blue-600" /><span className="font-medium text-blue-800">Image requirements:</span></div>
+                                <ul className="space-y-2 text-sm text-blue-700">
+                                    <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />Clear, unobstructed photo (no glare, no blur)</li>
+                                    <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />{FILE_UPLOAD_CONFIG.ACCEPTED_TYPES_LABEL} format, max {FILE_UPLOAD_CONFIG.MAX_SIZE_LABEL}</li>
+                                </ul>
+                            </div>
+                            <UploadZone label="Front of ID*" image={frontIdImage} inputRef={frontIdInputRef} onUpload={(e) => handleImageUpload(e, setFrontIdImage, "front")} errorKey="front" />
+                            <UploadZone label="Back of ID*" image={backIdImage} inputRef={backIdInputRef} onUpload={(e) => handleImageUpload(e, setBackIdImage, "back")} errorKey="back" />
+                            <div className="flex gap-4 pt-2">
+                                <BackButton targetStep={4} />
+                                <Button type="submit" disabled={!frontIdImage || !backIdImage} className="flex-1 h-14 bg-[#2C3466] hover:bg-[#222E76] text-white text-lg font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">Continue to Selfie</Button>
+                            </div>
+                        </form>
+                    </Form>
+                )
+            }
+
+            {/* Step 6: Take a Selfie */}
+            {
+                step === 6 && (
+                    <div className="space-y-6">
+                        <div className="bg-blue-50 rounded-xl p-4 space-y-3">
+                            <div className="flex items-center gap-2"><Info className="w-4 h-4 text-blue-600" /><span className="font-medium text-blue-800">Selfie Guidelines:</span></div>
+                            <ul className="space-y-2 text-sm text-blue-700">
+                                <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />Face the camera directly and ensure your entire face is visible</li>
+                                <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />Remove glasses, hats, or anything covering your face</li>
+                                <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />Make sure you&apos;re in a well-lit area with no shadows</li>
+                                <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />Use a neutral expression</li>
+                            </ul>
+                        </div>
+
+                        {/* Camera / Selfie preview */}
+                        <div className="flex justify-center">
+                            <div className="w-48 h-48 rounded-full bg-gray-100 overflow-hidden border-4 border-gray-200 relative">
+                                {isCameraActive ? (
+                                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+                                ) : selfieImage ? (
+                                    <Image src={selfieImage} alt="Selfie preview" width={192} height={192} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center"><Camera className="w-16 h-16 text-gray-300" /></div>
+                                )}
+                            </div>
+                        </div>
+                        <canvas ref={canvasRef} className="hidden" />
+
+                        {cameraError && <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg text-center">{cameraError}</p>}
+
+                        {/* Camera controls */}
+                        <div className="flex flex-col gap-3">
+                            {!selfieImage && !isCameraActive && (
+                                <Button type="button" onClick={startCamera} variant="outline" className="w-full h-12 border-[#2C3466] text-[#2C3466] rounded-xl font-medium hover:bg-gray-50">
+                                    <Camera className="w-5 h-5 mr-2" />Open Camera
+                                </Button>
+                            )}
+                            {isCameraActive && (
+                                <div className="flex gap-3">
+                                    <Button type="button" onClick={stopCamera} variant="outline" className="flex-1 h-12 rounded-xl">Cancel</Button>
+                                    <Button type="button" onClick={capturePhoto} className="flex-1 h-12 bg-[#2C3466] hover:bg-[#222E76] text-white rounded-xl font-medium">Capture Photo</Button>
+                                </div>
+                            )}
+                            {selfieImage && (
+                                <Button type="button" onClick={() => { setSelfieImage(null); startCamera(); }} variant="outline" className="w-full h-12 border-gray-300 text-gray-700 rounded-xl">Retake Selfie</Button>
+                            )}
+                        </div>
+
+                        {/* Upload fallback */}
+                        <div onClick={() => selfieInputRef.current?.click()} className="border-2 border-dashed border-gray-200 rounded-xl p-6 cursor-pointer transition-all hover:border-[#2C3466] hover:bg-gray-50">
+                            <input ref={selfieInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { handleImageUpload(e, setSelfieImage, "selfie"); stopCamera(); }} />
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                                <p className="text-gray-600 text-sm font-medium">Or upload a selfie from your device</p>
+                                <p className="text-gray-400 text-xs">{FILE_UPLOAD_CONFIG.ACCEPTED_TYPES_LABEL} up to {FILE_UPLOAD_CONFIG.MAX_SIZE_LABEL}</p>
+                            </div>
+                        </div>
+                        {fileErrors["selfie"] && <p className="text-sm text-red-500 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{fileErrors["selfie"]}</p>}
+
+                        <div className="flex items-start gap-2 p-4 bg-gray-50 rounded-xl">
+                            <Info className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-gray-500">Your selfie is used only for identity verification and will be stored securely.</p>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <BackButton targetStep={5} />
+                            <Button onClick={handleSubmitVerification} disabled={!selfieImage || isLoading} className="flex-1 h-14 bg-[#2C3466] hover:bg-[#222E76] text-white text-lg font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                                {isLoading ? (<><Loader2 className="mr-2 h-5 w-5 animate-spin" />Submitting...</>) : "Submit for Verification"}
+                            </Button>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Sign In link */}
+            <div className="text-center text-gray-500 text-sm pt-2">
+                Already have an account?{" "}
+                <Link href="/login" className="font-semibold text-[#2C3466] hover:underline">Sign In</Link>
+            </div>
+        </div >
+    );
 }

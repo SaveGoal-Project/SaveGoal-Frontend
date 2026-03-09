@@ -105,6 +105,7 @@ export interface MerchantVerificationRequest {
   frontIdImage: string; // Base64 or URL
   backIdImage: string; // Base64 or URL
   selfieImage: string; // Base64 or URL
+  businessRegDoc: string; // Base64 business registration document
 }
 
 // Phone Verification Request
