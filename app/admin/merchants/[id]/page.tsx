@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/src/lib/utils";
 import { ArrowLeft, Mail, Ban, ShieldCheck } from "lucide-react";
-import { useAdminMerchantDetail, useUpdateMerchantStatus } from "@/src/domains/admin/admin.hooks";
+import { useAdminMerchantDetail, useUpdateMerchantStatus, useVerifyKyc } from "@/src/domains/admin/admin.hooks";
 import { AdminLoadingSkeleton, AdminErrorState, AdminToast, AdminConfirmDialog } from "@/src/components/admin/AdminFeedback";
 
 const TABS = [
@@ -25,6 +25,12 @@ export default function AdminMerchantDetailPage() {
     const { mutate: updateStatus, isLoading: statusLoading } = useUpdateMerchantStatus();
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
     const [showConfirm, setShowConfirm] = useState(false);
+    
+    // KYC Approval State
+    const { mutate: verifyKyc, isLoading: isVerifyingKyc } = useVerifyKyc();
+    const [showApproveModal, setShowApproveModal] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectReason, setRejectReason] = useState("");
 
     const showTodo = (label: string) => setToast({ message: `${label} — feature coming soon`, type: "info" });
     const isSuspended = merchant?.status === "Suspended";
@@ -39,6 +45,33 @@ export default function AdminMerchantDetailPage() {
             setToast({ message: err.message || "Failed to update merchant status", type: "error" });
         }
         setShowConfirm(false);
+    };
+
+    const handleApproveKyc = async () => {
+        try {
+            await verifyKyc({ id, status: "VERIFIED" });
+            setToast({ message: "Merchant KYC approved successfully", type: "success" });
+            setShowApproveModal(false);
+            refetch();
+        } catch (err: any) {
+            setToast({ message: err.message || "Failed to approve KYC", type: "error" });
+        }
+    };
+
+    const handleRejectKyc = async () => {
+        if (!rejectReason.trim()) {
+            setToast({ message: "Please provide a reason for rejection", type: "error" });
+            return;
+        }
+        try {
+            await verifyKyc({ id, status: "FAILED", note: rejectReason });
+            setToast({ message: "Merchant KYC rejected successfully", type: "success" });
+            setShowRejectModal(false);
+            setRejectReason("");
+            refetch();
+        } catch (err: any) {
+            setToast({ message: err.message || "Failed to reject KYC", type: "error" });
+        }
     };
 
     if (isLoading) return <AdminLoadingSkeleton />;
@@ -57,6 +90,48 @@ export default function AdminMerchantDetailPage() {
                     onConfirm={handleSuspendToggle}
                     onCancel={() => setShowConfirm(false)}
                 />
+            )}
+            {showApproveModal && (
+                <AdminConfirmDialog
+                    title="Approve Merchant KYC"
+                    message={`Are you sure you want to approve KYC for ${merchant.name}? This will grant them full access to the platform.`}
+                    confirmLabel="Approve KYC"
+                    confirmVariant="primary"
+                    isLoading={isVerifyingKyc}
+                    onConfirm={handleApproveKyc}
+                    onCancel={() => setShowApproveModal(false)}
+                />
+            )}
+            {showRejectModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Reject Merchant KYC</h3>
+                        <p className="text-sm text-gray-600 mb-4">Please provide a reason for rejecting the KYC documents. The merchant will see this note.</p>
+                        <textarea
+                            className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#0754FF] focus:border-transparent outline-none mb-6 resize-none"
+                            placeholder="e.g. ID image is blurry, Selfie doesn't match ID..."
+                            rows={3}
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                        />
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => { setShowRejectModal(false); setRejectReason(""); }}
+                                disabled={isVerifyingKyc}
+                                className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleRejectKyc}
+                                disabled={isVerifyingKyc}
+                                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                            >
+                                {isVerifyingKyc ? "Processing..." : "Reject KYC"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
             {/* Back Link */}
             <Link
@@ -202,14 +277,22 @@ export default function AdminMerchantDetailPage() {
                 <div className="bg-white rounded-2xl border border-gray-100 p-8">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-bold text-gray-900">Submitted Documents</h3>
-                        <div className="flex items-center gap-3">
-                            <button className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors">
-                                Approve KYC
-                            </button>
-                            <button className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 transition-colors">
-                                Reject KYC
-                            </button>
-                        </div>
+                        {merchant.kycStatus === "Pending" && (
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => setShowApproveModal(true)}
+                                    className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                                >
+                                    Approve KYC
+                                </button>
+                                <button 
+                                    onClick={() => setShowRejectModal(true)}
+                                    className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 transition-colors"
+                                >
+                                    Reject KYC
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
