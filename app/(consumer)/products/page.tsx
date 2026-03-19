@@ -3,8 +3,9 @@
 import { useState, useMemo } from "react";
 import { Footer } from "@/src/components/marketing/Footer";
 import { BrowseProductCard } from "@/src/components/shared/BrowseProductCard";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, CheckCircle } from "lucide-react";
 import { useProducts } from "@/src/domains/products/products.hooks";
+import { useCart } from "@/src/contexts/CartContext";
 
 const sortOptions = ["Most Popular", "Price: Low to High", "Price: High to Low", "Newest"];
 
@@ -12,8 +13,10 @@ export default function BrowseProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("Most Popular");
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [savedNotif, setSavedNotif] = useState<string | null>(null);
 
   const { products, isLoading, error } = useProducts();
+  const { addToCart, isInCart } = useCart();
 
   const filteredProducts = useMemo(() => {
     let items = [...products];
@@ -46,7 +49,24 @@ export default function BrowseProductsPage() {
   }, [products, searchQuery, sortBy]);
 
   const handleSaveProduct = (id: string) => {
-    console.log("Saving product:", id);
+    const product = products.find((p) => p.id === id);
+    if (!product) return;
+
+    if (isInCart(id)) {
+      setSavedNotif("Item is already in your cart");
+    } else {
+      addToCart({
+        productId: product.id,
+        productName: product.name,
+        productImage: product.image || null,
+        merchantName: product.merchant?.businessName || null,
+        price: product.price,
+      });
+      setSavedNotif("Item saved to cart!");
+    }
+
+    // Auto-dismiss after 3 seconds
+    setTimeout(() => setSavedNotif(null), 3000);
   };
 
   return (
@@ -61,6 +81,19 @@ export default function BrowseProductsPage() {
             Discover amazing products and start saving today
           </p>
         </div>
+        {/* Save Notification Toast */}
+        {savedNotif && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+            <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
+            <p className="text-sm font-medium text-green-800 flex-1">{savedNotif}</p>
+            <button
+              onClick={() => setSavedNotif(null)}
+              className="text-green-400 hover:text-green-600 text-lg leading-none"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-10">

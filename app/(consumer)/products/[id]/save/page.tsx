@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Clock, CalendarDays, Info } from "lucide-react";
+import { ArrowLeft, Clock, CalendarDays, Info, Star } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { useProduct } from "@/src/domains/products/products.hooks";
 import { useCreateSavingsGoal } from "@/src/domains/savings-goals/savings.hooks";
@@ -18,7 +18,8 @@ export default function CreateSavingsPlanPage() {
     const productId = params.id as string;
 
     const { product, isLoading } = useProduct(productId);
-    const [frequency, setFrequency] = useState<Frequency>("weekly");
+    const [frequency, setFrequency] = useState<Frequency>("monthly");
+    const [selectedMonths, setSelectedMonths] = useState(3);
     const [isConfirming, setIsConfirming] = useState(false);
 
     const { create } = useCreateSavingsGoal();
@@ -50,32 +51,35 @@ export default function CreateSavingsPlanPage() {
                 );
                 break;
             case "monthly":
-                periods = 5;
+                periods = selectedMonths;
                 perPayment = Math.ceil(product.price / periods);
-                frequencyLabel = "Monthly";
+                frequencyLabel = `Monthly · ${periods} month${periods > 1 ? "s" : ""}`;
                 completionDate = new Date(now);
                 completionDate.setMonth(completionDate.getMonth() + periods);
                 break;
         }
 
-        const completionMonth = completionDate.toLocaleString("en-US", {
+        const startFull = now.toLocaleDateString("en-US", {
             month: "long",
+            day: "numeric",
+            year: "numeric",
         });
-        const completionYear = completionDate.getFullYear();
         const completionFull = completionDate.toLocaleDateString("en-US", {
             month: "long",
             day: "numeric",
             year: "numeric",
         });
+        const completionMonth = `${completionDate.toLocaleString("en-US", { month: "long" })} ${completionDate.getFullYear()}`;
 
         return {
             periods,
             perPayment,
             frequencyLabel,
-            completionMonth: `${completionMonth} ${completionYear}`,
+            startFull,
             completionFull,
+            completionMonth,
         };
-    }, [product, frequency]);
+    }, [product, frequency, selectedMonths]);
 
     const handleConfirm = async () => {
         if (!product || !planDetails) return;
@@ -105,7 +109,7 @@ export default function CreateSavingsPlanPage() {
                 savingsDay: savingsDay
             });
 
-            router.push("/dashboard");
+            router.push("/cart");
         } catch (error) {
             console.error("Failed to create savings plan:", error);
         } finally {
@@ -148,6 +152,8 @@ export default function CreateSavingsPlanPage() {
             </div>
         );
     }
+
+    const monthOptions = [1, 2, 3, 4, 5];
 
     return (
         <div className="min-h-screen bg-[#f7f8fc]">
@@ -205,26 +211,78 @@ export default function CreateSavingsPlanPage() {
                                 How often would you like to save?
                             </p>
                             <div className="flex gap-3">
-                                {(
-                                    [
-                                        { key: "weekly", label: "Weekly" },
-                                        { key: "biweekly", label: "Bi-Weekly" },
-                                        { key: "monthly", label: "Monthly" },
-                                    ] as const
-                                ).map((option) => (
-                                    <button
-                                        key={option.key}
-                                        onClick={() => setFrequency(option.key)}
-                                        className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${frequency === option.key
-                                            ? "border-[#3d4a99] bg-[#3d4a99]/5 text-[#3d4a99]"
-                                            : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
-                                            }`}
-                                    >
-                                        {option.label}
-                                    </button>
-                                ))}
+                                {/* Monthly — Recommended / Primary */}
+                                <button
+                                    onClick={() => setFrequency("monthly")}
+                                    className={`relative flex-[1.3] py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${frequency === "monthly"
+                                        ? "border-[#3d4a99] bg-[#3d4a99]/10 text-[#3d4a99] shadow-sm"
+                                        : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                                        }`}
+                                >
+                                    Monthly
+                                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#3d4a99] text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                                        <Star className="h-2.5 w-2.5 fill-white text-white" />
+                                        Recommended
+                                    </span>
+                                </button>
+                                {/* Weekly */}
+                                <button
+                                    onClick={() => setFrequency("weekly")}
+                                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${frequency === "weekly"
+                                        ? "border-[#3d4a99] bg-[#3d4a99]/5 text-[#3d4a99]"
+                                        : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
+                                        }`}
+                                >
+                                    Weekly
+                                </button>
+                                {/* Bi-Weekly */}
+                                <button
+                                    onClick={() => setFrequency("biweekly")}
+                                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${frequency === "biweekly"
+                                        ? "border-[#3d4a99] bg-[#3d4a99]/5 text-[#3d4a99]"
+                                        : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
+                                        }`}
+                                >
+                                    Bi-Weekly
+                                </button>
                             </div>
                         </div>
+
+                        {/* Month Duration Selector — shown only when Monthly is selected */}
+                        {frequency === "monthly" && (
+                            <div className="space-y-3">
+                                <p className="text-sm text-gray-400">
+                                    How many months do you want to spread payments over?
+                                </p>
+                                <div className="grid grid-cols-5 gap-2">
+                                    {monthOptions.map((m) => {
+                                        const perMonth = Math.ceil(product.price / m);
+                                        const isSelected = selectedMonths === m;
+                                        return (
+                                            <button
+                                                key={m}
+                                                onClick={() => setSelectedMonths(m)}
+                                                className={`flex flex-col items-center py-3 px-2 rounded-xl border-2 transition-all duration-200 ${isSelected
+                                                    ? "border-[#3d4a99] bg-[#3d4a99]/10 shadow-sm"
+                                                    : "border-gray-200 bg-white hover:border-gray-300"
+                                                    }`}
+                                            >
+                                                <span className={`text-lg font-bold ${isSelected ? "text-[#3d4a99]" : "text-gray-900"}`}>
+                                                    {m}
+                                                </span>
+                                                <span className={`text-[10px] font-medium ${isSelected ? "text-[#3d4a99]" : "text-gray-400"}`}>
+                                                    {m === 1 ? "month" : "months"}
+                                                </span>
+                                                <span className={`text-xs font-bold mt-1 ${isSelected ? "text-[#3d4a99]" : "text-gray-600"}`}>
+                                                    GH¢{perMonth.toLocaleString()}
+                                                </span>
+                                                <span className="text-[9px] text-gray-400">/month</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Per Payment Display */}
                         <div className="bg-gray-50 rounded-xl border border-gray-100 p-5 space-y-4">
@@ -315,6 +373,14 @@ export default function CreateSavingsPlanPage() {
                                 </span>
                             </div>
 
+                            {/* Start Date */}
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-500">Start Date</span>
+                                <span className="text-sm font-bold text-black">
+                                    {planDetails.startFull}
+                                </span>
+                            </div>
+
                             {/* Completion */}
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-gray-500">Completion</span>
@@ -328,7 +394,7 @@ export default function CreateSavingsPlanPage() {
                         <div className="mt-8 flex items-start gap-2.5">
                             <Info className="h-4 w-4 text-[#3d4a99] mt-0.5 shrink-0" />
                             <p className="text-xs text-gray-400 leading-relaxed">
-                                You can pause, resume, or adjust your savings plan anytime from
+                                You can adjust your savings plan anytime from
                                 your dashboard.
                             </p>
                         </div>
