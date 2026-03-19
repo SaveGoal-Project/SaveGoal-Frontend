@@ -3,17 +3,21 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/src/components/ui/button";
-import { Menu, X, Bell, ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { Menu, X, Bell, ChevronDown, LogOut, Settings, ShoppingCart, LayoutDashboard } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { useCart } from "@/src/contexts/CartContext";
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
   const { user, isAuthenticated, logout } = useAuth();
+  const { cartCount } = useCart();
 
-  // Close user dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -22,17 +26,30 @@ export function Navbar() {
       ) {
         setIsUserMenuOpen(false);
       }
+      if (
+        notifRef.current &&
+        !notifRef.current.contains(event.target as Node)
+      ) {
+        setIsNotifOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const navLinks = [
-    { href: "/products", label: "Browse Products" },
-    { href: "/contributors", label: "Contributors" },
-    { href: "/how-it-works", label: "How It Works" },
-    { href: "/merchants", label: "For Merchants" },
-  ];
+  const navLinks = isAuthenticated
+    ? [
+        { href: "/dashboard", label: "Dashboard" },
+        { href: "/products", label: "Browse Products" },
+        { href: "/contributors", label: "Contributors" },
+        { href: "/how-it-works", label: "How It Works" },
+      ]
+    : [
+        { href: "/products", label: "Browse Products" },
+        { href: "/contributors", label: "Contributors" },
+        { href: "/how-it-works", label: "How It Works" },
+        { href: "/merchants", label: "For Merchants" },
+      ];
 
   const getInitials = () => {
     if (!user) return "U";
@@ -58,7 +75,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-20">
+          <div className="hidden md:flex items-center gap-10">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -73,15 +90,49 @@ export function Navbar() {
           {/* Desktop CTA / User Controls */}
           <div className="hidden md:flex items-center gap-4">
             {isAuthenticated && user ? (
-              /* Authenticated: notification bell + avatar dropdown */
-              <div className="flex items-center gap-3">
+              /* Authenticated: notification bell + cart + avatar dropdown */
+              <div className="flex items-center gap-2">
                 {/* Notification Bell */}
-                <button
+                <div className="relative" ref={notifRef}>
+                  <button
+                    onClick={() => setIsNotifOpen(!isNotifOpen)}
+                    className="relative p-2 text-gray-600 hover:text-[#1a53c8] transition-colors"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="h-5 w-5" />
+                  </button>
+
+                  {/* Notification Dropdown */}
+                  {isNotifOpen && (
+                    <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg py-3 z-50">
+                      <div className="px-4 pb-2 border-b border-gray-100">
+                        <p className="text-sm font-semibold text-gray-900">
+                          Notifications
+                        </p>
+                      </div>
+                      <div className="px-4 py-8 text-center">
+                        <Bell className="h-8 w-8 text-gray-200 mx-auto mb-2" />
+                        <p className="text-sm text-gray-400">
+                          No notifications yet
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Cart Icon */}
+                <Link
+                  href="/cart"
                   className="relative p-2 text-gray-600 hover:text-[#1a53c8] transition-colors"
-                  aria-label="Notifications"
+                  aria-label="Cart"
                 >
-                  <Bell className="h-5 w-5" />
-                </button>
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-[18px] min-w-[18px] px-1 flex items-center justify-center rounded-full bg-[#3d4a99] text-white text-[10px] font-bold leading-none">
+                      {cartCount > 9 ? "9+" : cartCount}
+                    </span>
+                  )}
+                </Link>
 
                 {/* User Avatar Dropdown */}
                 <div className="relative" ref={userMenuRef}>
@@ -114,7 +165,7 @@ export function Navbar() {
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
-                        <User className="h-4 w-4" />
+                        <LayoutDashboard className="h-4 w-4" />
                         Dashboard
                       </Link>
                       <Link
@@ -192,11 +243,17 @@ export function Navbar() {
                 {isAuthenticated && user ? (
                   <>
                     <Link
-                      href="/dashboard"
-                      className="text-base font-medium text-gray-700 hover:text-[#1a53c8] py-2"
+                      href="/cart"
+                      className="flex items-center gap-2 text-base font-medium text-gray-700 hover:text-[#1a53c8] py-2"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      Dashboard
+                      <ShoppingCart className="h-5 w-5" />
+                      Cart
+                      {cartCount > 0 && (
+                        <span className="ml-1 h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-[#3d4a99] text-white text-[10px] font-bold">
+                          {cartCount}
+                        </span>
+                      )}
                     </Link>
                     <Link
                       href="/settings"

@@ -1,9 +1,9 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useSavingsGoalDetail, useCancelSavingsGoal, usePauseSavingsGoal } from "@/src/domains/savings-goals/savings.hooks";
+import { useSavingsGoalDetail, useCancelSavingsGoal } from "@/src/domains/savings-goals/savings.hooks";
 import { Progress } from "@/src/components/ui/progress";
-import { ArrowLeft, Plus, Pause, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -32,13 +32,13 @@ function formatCurrency(amount: number) {
 function formatFrequency(frequency: string) {
   switch (frequency) {
     case "WEEKLY":
-      return "Weekly Payments";
+      return "Weekly";
     case "BIWEEKLY":
-      return "Bi-Weekly Payments";
+      return "Bi-Weekly";
     case "MONTHLY":
-      return "Monthly Payments";
+      return "Monthly";
     case "FLEXIBLE":
-      return "Flexible Payments";
+      return "Flexible";
     default:
       return frequency;
   }
@@ -48,20 +48,8 @@ export default function GoalDetailPage() {
   const params = useParams();
   const router = useRouter();
   const goalId = params.goalId as string;
-  const { goal, isLoading, error, refetch } = useSavingsGoalDetail(goalId);
+  const { goal, isLoading, error } = useSavingsGoalDetail(goalId);
   const { cancel, isLoading: isCanceling } = useCancelSavingsGoal();
-  const { pause, isLoading: isPausing } = usePauseSavingsGoal();
-
-  const handlePause = async () => {
-    if (confirm("Are you sure you want to pause this savings goal?")) {
-      try {
-        await pause(goalId);
-        refetch();
-      } catch (err) {
-        console.error("Failed to pause goal:", err);
-      }
-    }
-  };
 
   const handleCancel = async () => {
     if (confirm("Are you sure you want to completely cancel this goal? It will be removed from your active goals.")) {
@@ -153,7 +141,7 @@ export default function GoalDetailPage() {
                   {goal.product.name}
                 </h2>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {formatFrequency(goal.frequency)}
+                  {formatFrequency(goal.frequency)} Payments
                 </p>
                 <span
                   className={`inline-block mt-1.5 px-3 py-0.5 rounded-full text-xs font-semibold ${goal.status === "ACTIVE"
@@ -275,15 +263,6 @@ export default function GoalDetailPage() {
                 Make Deposit
               </Link>
               <button
-                onClick={handlePause}
-                disabled={isPausing || goal.status !== "ACTIVE"}
-                className={`flex items-center justify-center gap-2 w-full border border-gray-300 text-gray-700 rounded-lg py-3 text-sm font-semibold transition-colors
-                  ${goal.status !== "ACTIVE" ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-gray-50'}`}
-              >
-                <Pause className="h-4 w-4" />
-                {isPausing ? "Pausing..." : goal.status === "PAUSED" ? "Paused" : "Pause Savings"}
-              </button>
-              <button
                 onClick={handleCancel}
                 disabled={isCanceling}
                 className="flex items-center justify-center gap-2 w-full border border-red-300 text-red-600 hover:bg-red-50 rounded-lg py-3 text-sm font-semibold transition-colors disabled:opacity-50"
@@ -294,7 +273,7 @@ export default function GoalDetailPage() {
             </div>
           </div>
 
-          {/* Goal Info Card */}
+          {/* Goal Info Card — Expanded */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="text-base font-bold text-gray-900 mb-4">
               Goal Info
@@ -312,6 +291,35 @@ export default function GoalDetailPage() {
                   {formatDate(goal.estimatedCompletionDate)}
                 </span>
               </div>
+              <div className="border-t border-gray-100 my-1" />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Frequency</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {formatFrequency(goal.frequency)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Per Payment</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {formatCurrency(goal.nextPaymentAmount ?? 0)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Next Payment</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {goal.nextPaymentDate
+                    ? formatDate(goal.nextPaymentDate)
+                    : "—"}
+                </span>
+              </div>
+              {goal.product.merchant && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Merchant</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {goal.product.merchant.businessName}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -10,6 +10,26 @@ import {
   CreateSavingsGoalRequest,
 } from "./savings.types";
 
+// ─── Dynamic Date Helpers ────────────────────────────────────────────────────
+
+function daysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
+}
+
+function daysFromNow(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0]; // YYYY-MM-DD format
+}
+
+function monthsFromNow(months: number): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().split("T")[0];
+}
+
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
 const mockGoals: SavingsGoal[] = [
@@ -21,12 +41,12 @@ const mockGoals: SavingsGoal[] = [
     currentAmount: 3400,
     frequency: "WEEKLY",
     status: "ACTIVE",
-    estimatedCompletionDate: "2026-05-06",
-    progress: 40,
-    nextPaymentDate: "2026-02-05",
+    estimatedCompletionDate: monthsFromNow(3),
+    progress: 49,
+    nextPaymentDate: daysFromNow(5),
     nextPaymentAmount: 425,
-    createdAt: "2025-11-15T12:00:00Z",
-    updatedAt: "2026-01-22T10:00:00Z",
+    createdAt: daysAgo(120),
+    updatedAt: daysAgo(7),
     product: {
       id: "prod-001",
       name: "Sony PlayStation 5",
@@ -49,12 +69,12 @@ const mockGoals: SavingsGoal[] = [
     currentAmount: 4000,
     frequency: "BIWEEKLY",
     status: "ACTIVE",
-    estimatedCompletionDate: "2026-08-15",
+    estimatedCompletionDate: monthsFromNow(5),
     progress: 40,
-    nextPaymentDate: "2026-02-05",
+    nextPaymentDate: daysFromNow(10),
     nextPaymentAmount: 850,
-    createdAt: "2025-12-01T12:00:00Z",
-    updatedAt: "2026-01-18T10:00:00Z",
+    createdAt: daysAgo(90),
+    updatedAt: daysAgo(14),
     product: {
       id: "prod-002",
       name: "MacBook Air M2",
@@ -75,13 +95,13 @@ const mockGoals: SavingsGoal[] = [
     userId: "user-001",
     targetAmount: 1000,
     currentAmount: 0,
-    frequency: "WEEKLY",
+    frequency: "MONTHLY",
     status: "ACTIVE",
-    estimatedCompletionDate: "2026-04-15",
+    estimatedCompletionDate: monthsFromNow(4),
     progress: 0,
-    nextPaymentDate: "2026-02-05",
-    nextPaymentAmount: 425,
-    createdAt: "2026-01-15T12:00:00Z",
+    nextPaymentDate: daysFromNow(3),
+    nextPaymentAmount: 250,
+    createdAt: daysAgo(7),
     product: {
       id: "prod-003",
       name: "Nike AirForce 1",
@@ -108,7 +128,7 @@ const mockGoalDetails: Record<string, SavingsGoalDetail> = {
         amount: 425,
         method: "MTN Mobile Money",
         status: "COMPLETED",
-        createdAt: "2026-01-22T10:00:00Z",
+        createdAt: daysAgo(7),
       },
       {
         id: "dep-002",
@@ -116,7 +136,7 @@ const mockGoalDetails: Record<string, SavingsGoalDetail> = {
         amount: 425,
         method: "MTN Mobile Money",
         status: "COMPLETED",
-        createdAt: "2026-01-15T10:00:00Z",
+        createdAt: daysAgo(14),
       },
       {
         id: "dep-003",
@@ -124,7 +144,7 @@ const mockGoalDetails: Record<string, SavingsGoalDetail> = {
         amount: 425,
         method: "Telecel Cash",
         status: "COMPLETED",
-        createdAt: "2026-01-08T10:00:00Z",
+        createdAt: daysAgo(21),
       },
       {
         id: "dep-004",
@@ -132,7 +152,7 @@ const mockGoalDetails: Record<string, SavingsGoalDetail> = {
         amount: 425,
         method: "MTN Mobile Money",
         status: "COMPLETED",
-        createdAt: "2026-01-01T10:00:00Z",
+        createdAt: daysAgo(28),
       },
       {
         id: "dep-005",
@@ -140,7 +160,7 @@ const mockGoalDetails: Record<string, SavingsGoalDetail> = {
         amount: 425,
         method: "Telecel Cash",
         status: "COMPLETED",
-        createdAt: "2025-12-25T10:00:00Z",
+        createdAt: daysAgo(35),
       },
     ],
   },
@@ -153,7 +173,7 @@ const mockGoalDetails: Record<string, SavingsGoalDetail> = {
         amount: 850,
         method: "MTN Mobile Money",
         status: "COMPLETED",
-        createdAt: "2026-01-18T10:00:00Z",
+        createdAt: daysAgo(14),
       },
       {
         id: "dep-007",
@@ -161,7 +181,7 @@ const mockGoalDetails: Record<string, SavingsGoalDetail> = {
         amount: 850,
         method: "Telecel Cash",
         status: "COMPLETED",
-        createdAt: "2026-01-04T10:00:00Z",
+        createdAt: daysAgo(28),
       },
       {
         id: "dep-008",
@@ -169,7 +189,7 @@ const mockGoalDetails: Record<string, SavingsGoalDetail> = {
         amount: 850,
         method: "MTN Mobile Money",
         status: "COMPLETED",
-        createdAt: "2025-12-21T10:00:00Z",
+        createdAt: daysAgo(42),
       },
     ],
   },
@@ -230,7 +250,7 @@ export async function createSavingsGoal(
     currentAmount: 0,
     frequency: _data.frequency,
     status: "ACTIVE",
-    estimatedCompletionDate: "2026-08-01",
+    estimatedCompletionDate: monthsFromNow(3),
     progress: 0,
     createdAt: new Date().toISOString(),
     product: {
@@ -275,4 +295,3 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     nextPaymentDate: nextPaymentDates[0] ?? null,
   };
 }
-

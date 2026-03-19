@@ -228,8 +228,38 @@ export default function ProductDetailPage() {
                                 </div>
                             </div>
 
-                            {/* Plan Options */}
-                            <div className="space-y-3">
+                            {/* Monthly — Featured Option */}
+                            <div className="relative bg-[#3d4a99]/5 rounded-xl border-2 border-[#3d4a99]/30 p-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm font-bold text-[#3d4a99]">Monthly</p>
+                                        <span className="bg-[#3d4a99] text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                                            <Star className="h-2.5 w-2.5 fill-white text-white" />
+                                            Recommended
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-5 gap-1.5">
+                                    {[1, 2, 3, 4, 5].map((m) => {
+                                        const perMonth = Math.ceil(product.price / m);
+                                        return (
+                                            <div
+                                                key={m}
+                                                className="flex flex-col items-center py-2 px-1 rounded-lg bg-white border border-gray-200"
+                                            >
+                                                <span className="text-sm font-bold text-gray-900">{m}</span>
+                                                <span className="text-[9px] text-gray-400">{m === 1 ? "month" : "months"}</span>
+                                                <span className="text-[10px] font-bold text-[#3d4a99] mt-0.5">
+                                                    GH¢{perMonth.toLocaleString()}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Secondary Plan Options */}
+                            <div className="space-y-2">
                                 {/* Weekly */}
                                 <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-xl border border-gray-100">
                                     <div>
@@ -255,19 +285,6 @@ export default function ProductDetailPage() {
                                     </div>
                                     <span className="text-sm font-bold text-[#3d4a99]">
                                         GH¢ {biweeklyPlan.amount.toLocaleString()}
-                                    </span>
-                                </div>
-
-                                {/* Monthly */}
-                                <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-xl border border-gray-100">
-                                    <div>
-                                        <p className="text-sm font-semibold text-black">Monthly</p>
-                                        <p className="text-[11px] text-gray-400">
-                                            {monthlyPlan.label}
-                                        </p>
-                                    </div>
-                                    <span className="text-sm font-bold text-[#3d4a99]">
-                                        GH¢ {monthlyPlan.amount.toLocaleString()}
                                     </span>
                                 </div>
                             </div>
