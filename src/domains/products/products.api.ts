@@ -17,6 +17,7 @@ function normalizeProduct(raw: Record<string, unknown>): Product {
     const merchant = raw.merchant as { businessName?: string; isVerified?: boolean } | undefined;
     return {
         ...(raw as unknown as Product),
+        id: (raw.id as string) || (raw._id as string), // Support both id and _id
         price: Number(raw.price),
         brand: merchant?.businessName || (raw as unknown as Product).brand,
     };

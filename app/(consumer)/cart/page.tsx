@@ -36,7 +36,7 @@ export default function CartPage() {
   const handleAction = (item: (typeof items)[0]) => {
     // Check if an active goal already exists for this product
     const existingGoal = goals.find(
-      (g) => (g.product?.id === item.productId || g.productId === item.productId) && g.status === "ACTIVE"
+      (g) => item.productId && (g.product?.id === item.productId || g.productId === item.productId) && g.status === "ACTIVE"
     );
 
     if (existingGoal) {
@@ -174,7 +174,7 @@ export default function CartPage() {
                 <div className="mt-4 pt-3 border-t border-gray-100">
                   {(() => {
                     const existingGoal = goals.find(
-                      (g) => (g.product?.id === item.productId || g.productId === item.productId) && g.status === "ACTIVE"
+                      (g) => item.productId && (g.product?.id === item.productId || g.productId === item.productId) && g.status === "ACTIVE"
                     );
 
                     return existingGoal ? (
