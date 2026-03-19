@@ -294,7 +294,7 @@ export default function ProductDetailPage() {
                             {/* CTA */}
                             {(() => {
                                 const existingGoal = goals.find(
-                                    (g) => (g.product?.id === productId || g.productId === productId) && g.status === "ACTIVE"
+                                    (g) => productId && (g.product?.id === productId || g.productId === productId) && g.status === "ACTIVE"
                                 );
 
                                 return existingGoal ? (

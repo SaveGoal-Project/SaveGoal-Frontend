@@ -57,6 +57,8 @@ function normalizeGoal(rawGoal: SavingsGoal): SavingsGoal {
 
     return {
         ...rawGoal,
+        id: rawGoal.id || (rawGoal as unknown as Record<string, string>)._id,
+        productId: rawGoal.productId || (rawGoal as unknown as Record<string, string>).product_id,
         product,
         category: (rawGoal as unknown as Record<string, unknown>).category as SavingsGoal['category'] || undefined,
         progress: rawGoal.progress || (rawGoal.targetAmount > 0 ? (rawGoal.currentAmount / rawGoal.targetAmount) * 100 : 0),
