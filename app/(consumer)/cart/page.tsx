@@ -12,9 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { useCart } from "@/src/contexts/CartContext";
-import { useCreateSavingsGoal } from "@/src/domains/savings-goals/savings.hooks";
+import { useSavingsGoals } from "@/src/domains/savings-goals/savings.hooks";
 import { SavingsFrequency } from "@/src/domains/savings-goals/savings.types";
-import { useState } from "react";
 
 function formatFrequencyLabel(frequency: string, months: number): string {
   switch (frequency) {
@@ -32,31 +31,18 @@ function formatFrequencyLabel(frequency: string, months: number): string {
 export default function CartPage() {
   const router = useRouter();
   const { items, removeFromCart, clearCart, cartCount } = useCart();
-  const { create, isLoading: isCreating } = useCreateSavingsGoal();
-  const [savingItemId, setSavingItemId] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { goals } = useSavingsGoals();
 
-  const handleStartSaving = async (item: (typeof items)[0]) => {
-    setSavingItemId(item.id);
-    setSuccessMessage(null);
-    try {
-      await create({
-        name: item.productName,
-        productId: item.productId,
-        targetAmount: item.price,
-        frequency: item.frequency as SavingsFrequency,
-        isRecurring: true,
-        monthlyAmount: item.perPayment,
-      });
+  const handleAction = (item: (typeof items)[0]) => {
+    // Check if an active goal already exists for this product
+    const existingGoal = goals.find(
+      (g) => (g.product?.id === item.productId || g.productId === item.productId) && g.status === "ACTIVE"
+    );
 
-      removeFromCart(item.id);
-      setSuccessMessage(
-        `Savings goal for "${item.productName}" created! View it on your dashboard.`
-      );
-    } catch (err) {
-      console.error("Failed to create savings goal:", err);
-    } finally {
-      setSavingItemId(null);
+    if (existingGoal) {
+      router.push(`/goals/${existingGoal.id}`);
+    } else {
+      router.push(`/products/${item.productId}/save`);
     }
   };
 
@@ -93,46 +79,8 @@ export default function CartPage() {
         )}
       </div>
 
-      {/* Success Message */}
-      {successMessage && (
-        <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-4 flex items-start gap-3">
-          <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-            <svg
-              className="w-3 h-3 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={3}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-green-800">
-              {successMessage}
-            </p>
-            <Link
-              href="/dashboard"
-              className="text-xs text-green-600 underline mt-1 inline-block"
-            >
-              Go to Dashboard →
-            </Link>
-          </div>
-          <button
-            onClick={() => setSuccessMessage(null)}
-            className="text-green-400 hover:text-green-600 text-lg leading-none"
-          >
-            ×
-          </button>
-        </div>
-      )}
-
       {/* Empty State */}
-      {items.length === 0 && !successMessage && (
+      {items.length === 0 && (
         <div className="bg-white rounded-2xl border border-gray-200 p-16 text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
             <ShoppingCart className="h-8 w-8 text-gray-300" />
@@ -224,22 +172,27 @@ export default function CartPage() {
 
                 {/* Start Saving CTA */}
                 <div className="mt-4 pt-3 border-t border-gray-100">
-                  <Button
-                    onClick={() => handleStartSaving(item)}
-                    disabled={
-                      isCreating && savingItemId === item.id
-                    }
-                    className="w-full h-10 bg-[#22c55e] hover:bg-[#16a34a] text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-70"
-                  >
-                    {isCreating && savingItemId === item.id ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Creating Goal...
-                      </span>
+                  {(() => {
+                    const existingGoal = goals.find(
+                      (g) => (g.product?.id === item.productId || g.productId === item.productId) && g.status === "ACTIVE"
+                    );
+
+                    return existingGoal ? (
+                      <Button
+                        onClick={() => handleAction(item)}
+                        className="w-full h-10 bg-[#3d4a99] hover:bg-[#2d3369] text-white text-sm font-semibold rounded-lg transition-all"
+                      >
+                        Make Deposit
+                      </Button>
                     ) : (
-                      "Start Saving for This Item"
-                    )}
-                  </Button>
+                      <Button
+                        onClick={() => handleAction(item)}
+                        className="w-full h-10 bg-[#22c55e] hover:bg-[#16a34a] text-white text-sm font-semibold rounded-lg transition-all"
+                      >
+                        Start Saving for This Item
+                      </Button>
+                    );
+                  })()}
                 </div>
               </div>
             ))}
