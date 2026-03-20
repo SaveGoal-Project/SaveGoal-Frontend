@@ -205,7 +205,13 @@ export default function GoalDetailPage() {
               </div>
               <div className="space-y-1 text-right">
                 <p className="text-sm font-medium text-gray-400">
-                  Payment Plan: {formatFrequency(goal.frequency)} Payment
+                  Payment Plan: {(() => {
+                    const perPayment = goal.nextPaymentAmount || goal.monthlyAmount || 0;
+                    const totalMonths = perPayment > 0 ? Math.ceil(goal.targetAmount / perPayment) : 0;
+                    return totalMonths > 0
+                      ? `Monthly · ${totalMonths} month${totalMonths > 1 ? 's' : ''}`
+                      : formatFrequency(goal.frequency) + ' Payment';
+                  })()}
                 </p>
                 <p className="text-[22px] font-extrabold text-[#1d4ed8]">
                   {formatCurrency(goal.nextPaymentAmount ?? 0)}
@@ -300,13 +306,19 @@ export default function GoalDetailPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Frequency</span>
                 <span className="text-sm font-medium text-gray-900">
-                  {formatFrequency(goal.frequency)}
+                  {(() => {
+                    const perPayment = goal.nextPaymentAmount || goal.monthlyAmount || 0;
+                    const totalMonths = perPayment > 0 ? Math.ceil(goal.targetAmount / perPayment) : 0;
+                    return totalMonths > 0
+                      ? `Monthly · ${totalMonths} month${totalMonths > 1 ? 's' : ''}`
+                      : formatFrequency(goal.frequency);
+                  })()}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Per Payment</span>
                 <span className="text-sm font-medium text-gray-900">
-                  {formatCurrency(goal.nextPaymentAmount ?? 0)}
+                  {formatCurrency(goal.nextPaymentAmount || goal.monthlyAmount || 0)}
                 </span>
               </div>
               <div className="flex items-center justify-between">

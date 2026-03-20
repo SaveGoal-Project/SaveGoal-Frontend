@@ -44,6 +44,7 @@ export interface SavingsGoal {
   progress: number;
   nextPaymentDate?: string;
   nextPaymentAmount?: number;
+  monthlyAmount?: number;
   createdAt: string;
   updatedAt?: string;
   product: GoalProduct;

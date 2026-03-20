@@ -56,31 +56,53 @@ function normalizeGoal(rawGoal: SavingsGoal): SavingsGoal {
     }
 
     const progress = rawGoal.progress || (rawGoal.targetAmount > 0 ? (rawGoal.currentAmount / rawGoal.targetAmount) * 100 : 0);
-    const frequency = rawGoal.frequency || "MONTHLY";
-    const nextPaymentAmount = rawGoal.nextPaymentAmount || 0;
 
+    // Read monthlyAmount from backend (it's stored as a Decimal, so convert)
+    const rawRecord = rawGoal as unknown as Record<string, unknown>;
+    const monthlyAmount = Number(rawRecord.monthlyAmount) || rawGoal.monthlyAmount || 0;
+
+    // Compute nextPaymentAmount: use the backend's value if present, otherwise derive from monthlyAmount
+    let nextPaymentAmount = rawGoal.nextPaymentAmount || 0;
+    if (!nextPaymentAmount && monthlyAmount > 0) {
+        // monthlyAmount IS the per-payment amount (set during goal creation)
+        nextPaymentAmount = monthlyAmount;
+    }
+
+    // Compute nextPaymentDate: use the backend's value if present, otherwise derive from createdAt
+    let nextPaymentDate = rawGoal.nextPaymentDate;
+    if (!nextPaymentDate || isNaN(Date.parse(nextPaymentDate))) {
+        if (rawGoal.createdAt) {
+            const created = new Date(rawGoal.createdAt);
+            // Next payment is one month from creation (since monthlyAmount = per-month amount)
+            created.setMonth(created.getMonth() + 1);
+            // If next payment date is in the past, advance to the next upcoming date
+            const now = new Date();
+            while (created < now) {
+                created.setMonth(created.getMonth() + 1);
+            }
+            nextPaymentDate = created.toISOString();
+        }
+    }
+
+    // Compute estimatedCompletionDate
     let computedCompletionDate = rawGoal.estimatedCompletionDate;
-    
-    // Only parse standard Date formats. If invalid or missing, calculate it manually
     if (!computedCompletionDate || isNaN(Date.parse(computedCompletionDate))) {
-        computedCompletionDate = new Date().toISOString(); // Default to today
-        
         const remainingAmount = Math.max(0, rawGoal.targetAmount - rawGoal.currentAmount);
 
         if (remainingAmount > 0 && nextPaymentAmount > 0) {
             const paymentsLeft = Math.ceil(remainingAmount / nextPaymentAmount);
-            const today = new Date();
-            
-            if (frequency === "WEEKLY") {
-                today.setDate(today.getDate() + (paymentsLeft * 7));
-            } else if (frequency === "BIWEEKLY") {
-                today.setDate(today.getDate() + (paymentsLeft * 14));
-            } else if (frequency === "MONTHLY") {
-                today.setMonth(today.getMonth() + paymentsLeft);
-            }
-            computedCompletionDate = today.toISOString();
+            const startDate = new Date(rawGoal.createdAt || new Date());
+            startDate.setMonth(startDate.getMonth() + paymentsLeft);
+            computedCompletionDate = startDate.toISOString();
+        } else {
+            computedCompletionDate = new Date().toISOString();
         }
     }
+
+    // Derive the number of total payments (for display as "X months")
+    const totalPayments = (nextPaymentAmount > 0 && rawGoal.targetAmount > 0)
+        ? Math.ceil(rawGoal.targetAmount / nextPaymentAmount)
+        : 0;
 
     return {
         ...rawGoal,
@@ -89,6 +111,9 @@ function normalizeGoal(rawGoal: SavingsGoal): SavingsGoal {
         product,
         category: (rawGoal as unknown as Record<string, unknown>).category as SavingsGoal['category'] || undefined,
         progress,
+        monthlyAmount,
+        nextPaymentAmount,
+        nextPaymentDate,
         estimatedCompletionDate: computedCompletionDate,
     };
 }

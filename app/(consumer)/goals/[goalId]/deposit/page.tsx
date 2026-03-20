@@ -104,13 +104,9 @@ export default function DepositPage() {
     );
   }
 
-  let scheduledAmount = goal.nextPaymentAmount ?? 0;
-  if (!scheduledAmount && goal.targetAmount > 0) {
-    let periods = 20; // default weekly
-    if (goal.frequency === "BIWEEKLY") periods = 10;
-    if (goal.frequency === "MONTHLY") periods = 5;
-    scheduledAmount = Math.ceil(goal.targetAmount / periods);
-  }
+  // Use the properly computed nextPaymentAmount from normalizeGoal
+  // (derived from monthlyAmount stored in backend)
+  const scheduledAmount = goal.nextPaymentAmount || goal.monthlyAmount || 0;
 
   const depositAmountNum = amountType === "scheduled" ? scheduledAmount : (parseFloat(customAmount) || 0);
   const currentAmountNum = parseFloat(goal.currentAmount as any) || 0;
