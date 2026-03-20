@@ -192,20 +192,25 @@ export default function GoalDetailPage() {
             </div>
 
             {/* Next Payment Due */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg px-5 py-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-0.5">
-                  Next Payment Due
+            <div className="bg-[#eef4ff] rounded-2xl px-6 py-6 flex items-center justify-between mb-8">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-400">
+                  Next Payment
                 </p>
-                <p className="text-base font-bold text-gray-900">
+                <p className="text-[22px] font-extrabold text-[#000000]">
                   {goal.nextPaymentDate
                     ? formatDateLong(goal.nextPaymentDate)
                     : "No upcoming"}
                 </p>
               </div>
-              <p className="text-lg font-bold text-[#3b5bdb]">
-                {formatCurrency(goal.nextPaymentAmount ?? 0)}
-              </p>
+              <div className="space-y-1 text-right">
+                <p className="text-sm font-medium text-gray-400">
+                  Payment Plan: {formatFrequency(goal.frequency)} Payment
+                </p>
+                <p className="text-[22px] font-extrabold text-[#1d4ed8]">
+                  {formatCurrency(goal.nextPaymentAmount ?? 0)}
+                </p>
+              </div>
             </div>
           </div>
 
