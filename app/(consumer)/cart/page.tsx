@@ -157,15 +157,35 @@ export default function CartPage() {
                           GH¢ {item.price.toLocaleString()}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="text-xs text-gray-500">
-                          {formatFrequencyLabel(item.frequency, item.months)}
-                        </span>
-                      </div>
-                      <span className="text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-0.5 rounded-full">
-                        GH¢ {item.perPayment.toLocaleString()}/payment
-                      </span>
+                      {/* Only show plan details if an active goal exists for this item */}
+                      {(() => {
+                        const existingGoal = goals.find(
+                          (g) => item.productId && (g.product?.id === item.productId || g.productId === item.productId) && g.status === "ACTIVE"
+                        );
+                        if (!existingGoal) return null;
+
+                        const perPayment = existingGoal.nextPaymentAmount || existingGoal.monthlyAmount || 0;
+                        const totalMonths = perPayment > 0 ? Math.ceil(existingGoal.targetAmount / perPayment) : 0;
+                        const planLabel = totalMonths > 0
+                          ? `Monthly · ${totalMonths} month${totalMonths > 1 ? "s" : ""}`
+                          : "Saving Plan Active";
+
+                        return (
+                          <>
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                              <span className="text-xs text-gray-500">
+                                {planLabel}
+                              </span>
+                            </div>
+                            {perPayment > 0 && (
+                              <span className="text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-0.5 rounded-full">
+                                GH¢ {perPayment.toLocaleString()}/payment
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
