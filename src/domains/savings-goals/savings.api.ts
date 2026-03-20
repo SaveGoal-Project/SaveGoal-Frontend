@@ -55,13 +55,41 @@ function normalizeGoal(rawGoal: SavingsGoal): SavingsGoal {
         };
     }
 
+    const progress = rawGoal.progress || (rawGoal.targetAmount > 0 ? (rawGoal.currentAmount / rawGoal.targetAmount) * 100 : 0);
+    const frequency = rawGoal.frequency || "MONTHLY";
+    const nextPaymentAmount = rawGoal.nextPaymentAmount || 0;
+
+    let computedCompletionDate = rawGoal.estimatedCompletionDate;
+    
+    // Only parse standard Date formats. If invalid or missing, calculate it manually
+    if (!computedCompletionDate || isNaN(Date.parse(computedCompletionDate))) {
+        computedCompletionDate = new Date().toISOString(); // Default to today
+        
+        const remainingAmount = Math.max(0, rawGoal.targetAmount - rawGoal.currentAmount);
+
+        if (remainingAmount > 0 && nextPaymentAmount > 0) {
+            const paymentsLeft = Math.ceil(remainingAmount / nextPaymentAmount);
+            const today = new Date();
+            
+            if (frequency === "WEEKLY") {
+                today.setDate(today.getDate() + (paymentsLeft * 7));
+            } else if (frequency === "BIWEEKLY") {
+                today.setDate(today.getDate() + (paymentsLeft * 14));
+            } else if (frequency === "MONTHLY") {
+                today.setMonth(today.getMonth() + paymentsLeft);
+            }
+            computedCompletionDate = today.toISOString();
+        }
+    }
+
     return {
         ...rawGoal,
         id: rawGoal.id || (rawGoal as unknown as Record<string, string>)._id,
         productId: rawGoal.productId || (rawGoal as unknown as Record<string, string>).product_id,
         product,
         category: (rawGoal as unknown as Record<string, unknown>).category as SavingsGoal['category'] || undefined,
-        progress: rawGoal.progress || (rawGoal.targetAmount > 0 ? (rawGoal.currentAmount / rawGoal.targetAmount) * 100 : 0),
+        progress,
+        estimatedCompletionDate: computedCompletionDate,
     };
 }
 
