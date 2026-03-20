@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { useProduct } from "@/src/domains/products/products.hooks";
-import { useSavingsGoals } from "@/src/domains/savings-goals/savings.hooks";
 
 export default function ProductDetailPage() {
     const params = useParams();
@@ -24,7 +23,6 @@ export default function ProductDetailPage() {
     const productId = params.id as string;
 
     const { product, isLoading } = useProduct(productId);
-    const { goals } = useSavingsGoals();
     const [isWishlisted, setIsWishlisted] = useState(false);
 
     // Savings calculator logic
@@ -292,27 +290,12 @@ export default function ProductDetailPage() {
                             </div>
 
                             {/* CTA */}
-                            {(() => {
-                                const existingGoal = goals.find(
-                                    (g) => productId && (g.product?.id === productId || g.productId === productId) && g.status === "ACTIVE"
-                                );
-
-                                return existingGoal ? (
-                                    <Button
-                                        onClick={() => router.push(`/goals/${existingGoal.id}`)}
-                                        className="w-full h-12 bg-[#3d4a99] hover:bg-[#2d3369] text-white text-sm font-semibold rounded-xl transition-all duration-300"
-                                    >
-                                        Make Deposit
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        onClick={() => router.push(`/products/${productId}/save`)}
-                                        className="w-full h-12 bg-[#3d4a99] hover:bg-[#2d3369] text-white text-sm font-semibold rounded-xl transition-all duration-300"
-                                    >
-                                        Start Saving for This Product
-                                    </Button>
-                                );
-                            })()}
+                            <Button
+                                onClick={() => router.push(`/products/${productId}/save`)}
+                                className="w-full h-12 bg-[#3d4a99] hover:bg-[#2d3369] text-white text-sm font-semibold rounded-xl transition-all duration-300"
+                            >
+                                Start Saving for This Product
+                            </Button>
                         </div>
                     </div>
                 </div>
