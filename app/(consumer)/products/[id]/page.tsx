@@ -233,10 +233,6 @@ export default function ProductDetailPage() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <p className="text-sm font-bold text-[#3d4a99]">Monthly</p>
-                                        <span className="bg-[#3d4a99] text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                                            <Star className="h-2.5 w-2.5 fill-white text-white" />
-                                            Recommended
-                                        </span>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-5 gap-1.5">
