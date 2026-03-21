@@ -110,6 +110,9 @@ function normalizeGoal(rawGoal: SavingsGoal): SavingsGoal {
         productId: rawGoal.productId || (rawGoal as unknown as Record<string, string>).product_id,
         product,
         category: (rawGoal as unknown as Record<string, unknown>).category as SavingsGoal['category'] || undefined,
+        // Ensure Prisma Decimals are cast to proper JS numbers
+        currentAmount: Number(rawGoal.currentAmount) || 0,
+        targetAmount: Number(rawGoal.targetAmount) || 0,
         progress,
         monthlyAmount,
         nextPaymentAmount,
