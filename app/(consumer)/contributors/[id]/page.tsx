@@ -684,8 +684,11 @@ export default function GroupDashboardPage() {
 
             {/* INVITE MODAL */}
             <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-                <DialogContent className="sm:max-w-md rounded-2xl p-0 overflow-hidden hide-close-button border-0 shadow-2xl bg-white" aria-describedby={undefined}>
-                    <div className="p-8 pb-10 flex flex-col items-center text-center relative">
+                <DialogContent
+                    className="w-[calc(100vw-2rem)] max-w-lg rounded-2xl p-0 border-0 shadow-2xl bg-white hide-close-button sm:max-w-lg"
+                    aria-describedby={undefined}
+                >
+                    <div className="w-full max-w-full min-w-0 p-6 pb-8 sm:p-8 sm:pb-10 flex flex-col items-center text-center relative">
                         <DialogTitle className="sr-only">Invite Members Modal</DialogTitle>
 
                         <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-[#1a53c8] mb-4">
@@ -696,26 +699,27 @@ export default function GroupDashboardPage() {
                             Share the link below to invite friends and family to contribute to your group goal
                         </p>
 
-                        <div className="w-full text-left space-y-1 mb-4">
+                        <div className="w-full max-w-full min-w-0 text-left space-y-1 mb-4">
                             <span className="text-xs font-bold text-gray-900 ml-1">Share Link</span>
-                            <div className="flex gap-2">
-                                <div className="flex-1 flex items-center bg-[#f1f5fb] border border-gray-200 rounded-xl px-3 h-11">
+                            <div className="flex min-w-0 w-full flex-col gap-2 sm:flex-row sm:items-stretch">
+                                <div className="min-w-0 flex-1 flex items-center bg-[#f1f5fb] border border-gray-200 rounded-xl px-3 h-11 overflow-hidden">
                                     <Link2 className="w-4 h-4 text-gray-400 mr-2 shrink-0" />
-                                    <span className="text-sm text-gray-500 font-medium truncate">
+                                    <span className="text-sm text-gray-500 font-medium truncate min-w-0">
                                         {shareUrl || "Loading..."}
                                     </span>
                                 </div>
                                 <Button
                                     onClick={handleCopyLink}
                                     variant="outline"
-                                    className="w-11 h-11 p-0 rounded-xl border-2 border-[#1a53c8] bg-white text-[#1a53c8] hover:bg-blue-50/50 hover:text-[#1a53c8]"
+                                    className="h-11 w-full shrink-0 rounded-xl border-2 border-[#1a53c8] bg-white p-0 text-[#1a53c8] hover:bg-blue-50/50 hover:text-[#1a53c8] sm:h-11 sm:w-11"
+                                    aria-label="Copy link"
                                 >
                                     <Copy className="w-5 h-5" />
                                 </Button>
                             </div>
                         </div>
 
-                        <div className="w-full space-y-3 mb-6 mt-4">
+                        <div className="w-full max-w-full min-w-0 space-y-3 mb-6 mt-4">
                             <Button className="w-full h-12 bg-[#1a53c8] hover:bg-[#1442a3] text-white font-extrabold rounded-xl transition-all shadow-sm">
                                 <MessageCircle className="w-5 h-5 mr-2" />
                                 Share via Whatsapp

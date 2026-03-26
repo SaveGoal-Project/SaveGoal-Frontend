@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { useProduct } from "@/src/domains/products/products.hooks";
+import { useProductGoal } from "@/src/domains/savings-goals/useProductGoal";
 
 export default function ProductDetailPage() {
     const params = useParams();
@@ -23,7 +24,13 @@ export default function ProductDetailPage() {
     const productId = params.id as string;
 
     const { product, isLoading } = useProduct(productId);
+    const { activeGoal, isLoading: goalsLoading } = useProductGoal(productId);
     const [isWishlisted, setIsWishlisted] = useState(false);
+
+    useEffect(() => {
+        if (!productId || goalsLoading || !activeGoal) return;
+        router.replace(`/goals/${activeGoal.id}`);
+    }, [productId, goalsLoading, activeGoal, router]);
 
     // Savings calculator logic
     const calculatePayment = (
@@ -78,13 +85,21 @@ export default function ProductDetailPage() {
         );
     }
 
+    if (goalsLoading) {
+        return (
+            <div className="container mx-auto px-4 py-20 text-center max-w-md">
+                <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#3d4a99] border-t-transparent mx-auto mb-4" />
+                <p className="text-gray-600 text-sm font-medium">Checking your savings goals…</p>
+            </div>
+        );
+    }
+
     // Build images array from single image
     const images = product.image ? [product.image] : [];
     const brand = product.merchant?.businessName || "Merchant";
 
     const weeklyPlan = calculatePayment(product.price, "weekly");
     const biweeklyPlan = calculatePayment(product.price, "biweekly");
-    const monthlyPlan = calculatePayment(product.price, "monthly");
 
     return (
         <div className="min-h-screen bg-[#f7f8fc]">
