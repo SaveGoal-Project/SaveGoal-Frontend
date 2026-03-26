@@ -104,26 +104,52 @@ export default function DepositPage() {
     );
   }
 
-  // Use the properly computed nextPaymentAmount from normalizeGoal
-  // (derived from monthlyAmount stored in backend)
   const scheduledAmount = goal.nextPaymentAmount || goal.monthlyAmount || 0;
-
-  const depositAmountNum = amountType === "scheduled" ? scheduledAmount : (parseFloat(customAmount) || 0);
-  const currentAmountNum = parseFloat(goal.currentAmount as any) || 0;
-  const targetAmountNum = parseFloat(goal.targetAmount as any) || 0;
-
+  const currentAmountNum = Number(goal.currentAmount) || 0;
+  const targetAmountNum = Number(goal.targetAmount) || 0;
   const remaining = Math.max(targetAmountNum - currentAmountNum, 0);
+
+  const effectiveScheduled =
+    remaining <= 0
+      ? 0
+      : scheduledAmount > 0
+        ? Math.min(scheduledAmount, remaining)
+        : remaining;
+
+  const minDepositForPeriod =
+    remaining <= 0
+      ? 0
+      : scheduledAmount > 0
+        ? Math.min(scheduledAmount, remaining)
+        : remaining;
+
+  const parsedCustom = parseFloat(customAmount) || 0;
+  const depositAmountNum =
+    amountType === "scheduled" ? effectiveScheduled : parsedCustom;
+
   const afterPayment = currentAmountNum + depositAmountNum;
   const remainingAfter = targetAmountNum - afterPayment;
   const afterPaymentPercent = Math.min(Math.round((afterPayment / targetAmountNum) * 100), 100);
 
+  const customBelowMin =
+    amountType === "custom" &&
+    customAmount.trim() !== "" &&
+    parsedCustom > 0 &&
+    parsedCustom < minDepositForPeriod;
+
+  const phoneOk =
+    !paymentMethods.find((m) => m.id === selectedMethod)?.requiresPhone ||
+    phoneNumber.length >= 9;
+
   const canSubmit =
+    remaining > 0 &&
+    minDepositForPeriod > 0 &&
     depositAmountNum > 0 &&
     depositAmountNum <= remaining &&
+    (amountType === "scheduled" ||
+      (parsedCustom >= minDepositForPeriod && !customBelowMin)) &&
     selectedMethod !== null &&
-    (paymentMethods.find((m) => m.id === selectedMethod)?.requiresPhone
-      ? phoneNumber.length >= 9
-      : true);
+    phoneOk;
 
   const handleConfirmPayment = async () => {
     if (!canSubmit || !selectedMethod) return;
@@ -288,9 +314,14 @@ export default function DepositPage() {
                 </div>
               </div>
               <p className="text-lg font-bold text-green-600">
-                {formatCurrency(scheduledAmount)}
+                {formatCurrency(effectiveScheduled)}
               </p>
             </label>
+            {scheduledAmount > 0 && effectiveScheduled < scheduledAmount && (
+              <p className="text-xs text-amber-700 mb-4 -mt-2">
+                Capped to your remaining balance ({formatCurrency(remaining)}).
+              </p>
+            )}
 
             {/* Custom Payment */}
             <div className="mb-2">
@@ -310,14 +341,20 @@ export default function DepositPage() {
                     if (e.target.value) setAmountType("custom");
                   }}
                   onFocus={() => setAmountType("custom")}
-                  className="pl-12 h-12 rounded-xl border-gray-200"
-                  min="1"
+                  className={`pl-12 h-12 rounded-xl ${customBelowMin ? "border-red-300 focus-visible:ring-red-200" : "border-gray-200"}`}
+                  min={minDepositForPeriod > 0 ? minDepositForPeriod : undefined}
+                  step="1"
                 />
               </div>
-              <p className="text-xs text-blue-500 mt-1.5 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
-                Minimum: {formatCurrency(scheduledAmount)}
+              <p className="text-xs text-blue-600 mt-1.5 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block shrink-0" />
+                Minimum this period: {formatCurrency(minDepositForPeriod)}
               </p>
+              {customBelowMin && (
+                <p className="text-xs text-red-600 mt-1.5">
+                  Deposits must be at least {formatCurrency(minDepositForPeriod)} for this period.
+                </p>
+              )}
             </div>
           </div>
 

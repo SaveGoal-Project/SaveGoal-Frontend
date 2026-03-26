@@ -191,11 +191,33 @@ export default function GoalDetailPage() {
               </div>
             </div>
 
+            {goal.currentAmount === 0 && goal.deposits.length === 0 && (
+              <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-[#f0f4ff] px-6 py-6 mb-6 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 mb-1">
+                  First payment
+                </p>
+                <p className="text-2xl font-extrabold text-gray-900 mb-2">
+                  {formatCurrency(goal.nextPaymentAmount ?? goal.monthlyAmount ?? 0)}
+                </p>
+                <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                  You haven&apos;t made a deposit yet. This is your scheduled installment for this period.
+                </p>
+                <Link
+                  href={`/goals/${goalId}/deposit`}
+                  className="inline-flex items-center justify-center w-full sm:w-auto rounded-xl bg-[#22c55e] hover:bg-[#16a34a] text-white text-sm font-semibold px-6 py-3 transition-colors"
+                >
+                  Make deposit
+                </Link>
+              </div>
+            )}
+
             {/* Next Payment Due */}
             <div className="bg-[#eef4ff] rounded-2xl px-6 py-6 flex items-center justify-between mb-8">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-gray-400">
-                  Next Payment
+                  {goal.currentAmount === 0 && goal.deposits.length === 0
+                    ? "Next due date"
+                    : "Next Payment"}
                 </p>
                 <p className="text-[22px] font-extrabold text-[#000000]">
                   {goal.nextPaymentDate
@@ -213,9 +235,15 @@ export default function GoalDetailPage() {
                       : formatFrequency(goal.frequency) + ' Payment';
                   })()}
                 </p>
-                <p className="text-[22px] font-extrabold text-[#1d4ed8]">
-                  {formatCurrency(goal.nextPaymentAmount ?? 0)}
-                </p>
+                {goal.currentAmount === 0 && goal.deposits.length === 0 ? (
+                  <p className="text-sm text-gray-500 max-w-[200px] ml-auto">
+                    Amount shown above
+                  </p>
+                ) : (
+                  <p className="text-[22px] font-extrabold text-[#1d4ed8]">
+                    {formatCurrency(goal.nextPaymentAmount ?? 0)}
+                  </p>
+                )}
               </div>
             </div>
           </div>

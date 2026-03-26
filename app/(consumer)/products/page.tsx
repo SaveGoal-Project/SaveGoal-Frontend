@@ -5,6 +5,8 @@ import { Footer } from "@/src/components/marketing/Footer";
 import { BrowseProductCard } from "@/src/components/shared/BrowseProductCard";
 import { Search, ChevronDown, CheckCircle } from "lucide-react";
 import { useProducts } from "@/src/domains/products/products.hooks";
+import { useSavingsGoals } from "@/src/domains/savings-goals/savings.hooks";
+import { findActiveGoalForProduct } from "@/src/domains/savings-goals/savings.logic";
 import { useCart } from "@/src/contexts/CartContext";
 
 const sortOptions = ["Most Popular", "Price: Low to High", "Price: High to Low", "Newest"];
@@ -16,6 +18,7 @@ export default function BrowseProductsPage() {
   const [savedNotif, setSavedNotif] = useState<string | null>(null);
 
   const { products, isLoading, error } = useProducts();
+  const { goals: savingsGoals } = useSavingsGoals();
   const { addToCart, isInCart } = useCart();
 
   const filteredProducts = useMemo(() => {
@@ -51,6 +54,12 @@ export default function BrowseProductsPage() {
   const handleSaveProduct = (id: string) => {
     const product = products.find((p) => p.id === id);
     if (!product) return;
+
+    if (findActiveGoalForProduct(savingsGoals, id)) {
+      setSavedNotif("You already have an active savings goal for this product.");
+      setTimeout(() => setSavedNotif(null), 3000);
+      return;
+    }
 
     if (isInCart(id)) {
       setSavedNotif("Item is already in your cart");
@@ -167,17 +176,22 @@ export default function BrowseProductsPage() {
         {/* Product Grid */}
         {!isLoading && !error && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-            {filteredProducts.map((product) => (
-              <BrowseProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                brand={product.merchant?.businessName}
-                price={product.price}
-                image={product.image || undefined}
-                onSave={handleSaveProduct}
-              />
-            ))}
+            {filteredProducts.map((product) => {
+              const active = findActiveGoalForProduct(savingsGoals, product.id);
+              return (
+                <BrowseProductCard
+                  key={product.id}
+                  id={product.id}
+                  name={product.name}
+                  brand={product.merchant?.businessName}
+                  price={product.price}
+                  image={product.image || undefined}
+                  onSave={handleSaveProduct}
+                  inCart={isInCart(product.id)}
+                  activeGoalId={active?.id ?? null}
+                />
+              );
+            })}
           </div>
         )}
 

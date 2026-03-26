@@ -9,6 +9,10 @@ import {
     CreateSavingsGoalRequest,
     GoalProduct,
 } from "./savings.types";
+import * as savingsMock from "./savings.mock";
+
+/** When true, use local mocks so dev works without a backend or Bearer token (see AuthContext mock user). */
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true";
 
 const DEFAULT_PRODUCT: GoalProduct = {
     id: "unknown",
@@ -124,6 +128,14 @@ function normalizeGoal(rawGoal: SavingsGoal): SavingsGoal {
 // ─── API Functions ──────────────────────────────────────────────────────────
 
 export async function getSavingsGoals(): Promise<SavingsGoalsListResponse> {
+    if (USE_MOCK) {
+        const res = await savingsMock.getSavingsGoals();
+        return {
+            ...res,
+            items: res.items.map((g) => normalizeGoal(g)),
+        };
+    }
+
     const response = await apiClient.get<SavingsGoalsListResponse | SavingsGoal[]>(API_ENDPOINTS.SAVINGS.LIST);
 
     // Handle backend responses that might be wrapped differently
@@ -140,6 +152,15 @@ export async function getSavingsGoals(): Promise<SavingsGoalsListResponse> {
 }
 
 export async function getSavingsGoalById(goalId: string): Promise<SavingsGoalDetail> {
+    if (USE_MOCK) {
+        const goal = await savingsMock.getSavingsGoalById(goalId);
+        const transformed = normalizeGoal(goal);
+        return {
+            ...transformed,
+            deposits: goal.deposits ?? [],
+        };
+    }
+
     const response = await apiClient.get<SavingsGoalDetail>(API_ENDPOINTS.SAVINGS.DETAILS(goalId));
     const resRecord = response as unknown as Record<string, unknown>;
     const rawGoal = (resRecord.data || response) as SavingsGoalDetail & { transactions?: unknown[]; deposits?: unknown[] };
@@ -153,6 +174,11 @@ export async function getSavingsGoalById(goalId: string): Promise<SavingsGoalDet
 }
 
 export async function createSavingsGoal(data: CreateSavingsGoalRequest): Promise<SavingsGoal> {
+    if (USE_MOCK) {
+        const raw = await savingsMock.createSavingsGoal(data);
+        return normalizeGoal(raw);
+    }
+
     const payload = {
         name: data.name || "Savings Goal",
         targetAmount: data.targetAmount,
@@ -170,16 +196,28 @@ export async function createSavingsGoal(data: CreateSavingsGoalRequest): Promise
 }
 
 export async function cancelSavingsGoal(goalId: string): Promise<CancelGoalResponse> {
+    if (USE_MOCK) {
+        return savingsMock.cancelSavingsGoal(goalId);
+    }
+
     const response = await apiClient.post<CancelGoalResponse>(API_ENDPOINTS.SAVINGS.CANCEL(goalId));
     return (response as unknown as Record<string, unknown>).data as CancelGoalResponse || response;
 }
 
 export async function pauseSavingsGoal(goalId: string): Promise<unknown> {
+    if (USE_MOCK) {
+        return savingsMock.pauseSavingsGoal(goalId);
+    }
+
     const response = await apiClient.post<unknown>(API_ENDPOINTS.SAVINGS.PAUSE(goalId));
     return (response as unknown as Record<string, unknown>).data || response;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
+    if (USE_MOCK) {
+        return savingsMock.getDashboardStats();
+    }
+
     try {
         const goalsResp = await getSavingsGoals();
         const activeGoals = goalsResp.items.filter((g) => g.status === "ACTIVE");

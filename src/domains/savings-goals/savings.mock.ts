@@ -118,6 +118,9 @@ const mockGoals: SavingsGoal[] = [
   },
 ];
 
+/** Goals created in the current session (mock mode only) — appended by createSavingsGoal */
+const dynamicGoals: SavingsGoal[] = [];
+
 const mockGoalDetails: Record<string, SavingsGoalDetail> = {
   "goal-001": {
     ...mockGoals[0],
@@ -209,11 +212,12 @@ function delay(ms: number = 500): Promise<void> {
 /** GET /savings-goals */
 export async function getSavingsGoals(): Promise<SavingsGoalsListResponse> {
   await delay();
+  const items = [...mockGoals, ...dynamicGoals];
   return {
-    items: mockGoals,
+    items,
     page: 1,
     pageSize: 20,
-    total: mockGoals.length,
+    total: items.length,
   };
 }
 
@@ -222,7 +226,7 @@ export async function getSavingsGoalById(
   goalId: string
 ): Promise<SavingsGoalDetail> {
   await delay();
-  const goal = mockGoals.find((g) => g.id === goalId);
+  const goal = [...mockGoals, ...dynamicGoals].find((g) => g.id === goalId);
   if (!goal) throw new Error("Goal not found");
 
   // Return detail version with deposits if available
@@ -241,9 +245,9 @@ export async function createSavingsGoal(
   _data: CreateSavingsGoalRequest
 ): Promise<SavingsGoal> {
   await delay(800);
-  // Return a new mock goal
-  return {
+  const goal: SavingsGoal = {
     id: `goal-${Date.now()}`,
+    name: _data.name,
     productId: _data.productId,
     userId: "user-001",
     targetAmount: _data.targetAmount,
@@ -252,15 +256,20 @@ export async function createSavingsGoal(
     status: "ACTIVE",
     estimatedCompletionDate: monthsFromNow(3),
     progress: 0,
+    nextPaymentAmount: _data.monthlyAmount,
+    monthlyAmount: _data.monthlyAmount,
+    nextPaymentDate: daysFromNow(7),
     createdAt: new Date().toISOString(),
     product: {
-      id: _data.productId || 'unknown',
-      name: "New Product",
+      id: _data.productId || "unknown",
+      name: _data.name || "New Product",
       price: _data.targetAmount,
       currency: "GHS",
       images: [],
     },
   };
+  dynamicGoals.push(goal);
+  return goal;
 }
 
 /** POST /savings-goals/:id/cancel */
@@ -268,7 +277,7 @@ export async function cancelSavingsGoal(
   goalId: string
 ): Promise<CancelGoalResponse> {
   await delay(800);
-  const goal = mockGoals.find((g) => g.id === goalId);
+  const goal = [...mockGoals, ...dynamicGoals].find((g) => g.id === goalId);
   return {
     id: goalId,
     status: "CANCELLED",
@@ -278,10 +287,17 @@ export async function cancelSavingsGoal(
   };
 }
 
+/** POST /savings-goals/:id/pause */
+export async function pauseSavingsGoal(goalId: string): Promise<{ id: string; status: string }> {
+  await delay(400);
+  return { id: goalId, status: "PAUSED" };
+}
+
 /** Get dashboard stats derived from goals */
 export async function getDashboardStats(): Promise<DashboardStats> {
   await delay(300);
-  const activeGoals = mockGoals.filter((g) => g.status === "ACTIVE");
+  const all = [...mockGoals, ...dynamicGoals];
+  const activeGoals = all.filter((g) => g.status === "ACTIVE");
   const totalSaved = activeGoals.reduce((sum, g) => sum + g.currentAmount, 0);
   const nextPaymentDates = activeGoals
     .map((g) => g.nextPaymentDate)
@@ -291,7 +307,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   return {
     totalSaved,
     activeGoals: activeGoals.length,
-    completedGoals: 2,
+    completedGoals: all.filter((g) => g.status === "COMPLETED").length,
     nextPaymentDate: nextPaymentDates[0] ?? null,
   };
 }
