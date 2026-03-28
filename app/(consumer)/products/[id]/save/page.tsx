@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Clock, CalendarDays, Info, Star } from "lucide-react";
+import { ArrowLeft, Clock, CalendarDays, Info } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { useProduct } from "@/src/domains/products/products.hooks";
 import { useCreateSavingsGoal } from "@/src/domains/savings-goals/savings.hooks";
@@ -99,7 +99,7 @@ export default function CreateSavingsPlanPage() {
             const today = new Date().getDate();
             const savingsDay = today > 28 ? 28 : today;
 
-            await create({
+            const goal = await create({
                 name: product.name,
                 productId: product.id,
                 targetAmount: product.price,
@@ -109,7 +109,11 @@ export default function CreateSavingsPlanPage() {
                 savingsDay: savingsDay
             });
 
-            router.push("/cart");
+            if (goal?.id) {
+                router.push(`/goals/${goal.id}`);
+            } else {
+                router.push("/products");
+            }
         } catch (error) {
             console.error("Failed to create savings plan:", error);
         } finally {
