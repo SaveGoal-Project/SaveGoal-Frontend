@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,29 +10,44 @@ import {
   ShoppingCart,
   Calendar,
   CreditCard,
+  Target,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { useCart } from "@/src/contexts/CartContext";
 import { useSavingsGoals } from "@/src/domains/savings-goals/savings.hooks";
-import { SavingsFrequency } from "@/src/domains/savings-goals/savings.types";
+import type { SavingsGoal } from "@/src/domains/savings-goals/savings.types";
 
-function formatFrequencyLabel(frequency: string, months: number): string {
-  switch (frequency) {
-    case "WEEKLY":
-      return "Weekly · 20 payments";
-    case "BIWEEKLY":
-      return "Bi-Weekly · 10 payments";
-    case "MONTHLY":
-      return `Monthly · ${months} payment${months > 1 ? "s" : ""}`;
+function goalStatusStyles(status: SavingsGoal["status"]): string {
+  switch (status) {
+    case "ACTIVE":
+      return "bg-green-50 text-green-700";
+    case "PAUSED":
+      return "bg-amber-50 text-amber-800";
+    case "COMPLETED":
+      return "bg-[#3d4a99]/10 text-[#3d4a99]";
     default:
-      return frequency;
+      return "bg-gray-100 text-gray-600";
   }
 }
 
 export default function CartPage() {
   const router = useRouter();
   const { items, removeFromCart, clearCart, cartCount } = useCart();
-  const { goals } = useSavingsGoals();
+  const { goals, isLoading: goalsLoading } = useSavingsGoals();
+
+  const displayGoals = useMemo(
+    () =>
+      goals.filter(
+        (g) =>
+          g.status === "ACTIVE" ||
+          g.status === "PAUSED" ||
+          g.status === "COMPLETED"
+      ),
+    [goals]
+  );
+
+  const showFullCartEmpty =
+    items.length === 0 && !goalsLoading && displayGoals.length === 0;
 
   const handleAction = (item: (typeof items)[0]) => {
     // Check if an active goal already exists for this product
@@ -79,8 +95,101 @@ export default function CartPage() {
         )}
       </div>
 
-      {/* Empty State */}
-      {items.length === 0 && (
+      {/* Goals — from API; shown whenever user has goals (not localStorage cart) */}
+      {displayGoals.length > 0 && (
+        <div className="mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <Target className="h-5 w-5 text-[#3d4a99]" aria-hidden />
+            <h2 className="text-lg font-bold text-gray-900">
+              Your saving goals
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {displayGoals.map((goal) => {
+              const imageUrl = goal.product?.images?.[0];
+              const pct = Math.min(
+                100,
+                Math.round(Number(goal.progress) || 0)
+              );
+              return (
+                <Link
+                  key={goal.id}
+                  href={`/goals/${goal.id}`}
+                  className="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#3d4a99]/40 transition-colors flex gap-4 text-left group"
+                >
+                  <div className="relative w-[90px] h-[75px] rounded-lg overflow-hidden bg-gray-100 shrink-0">
+                    {imageUrl ? (
+                      <Image
+                        src={imageUrl}
+                        alt={goal.product.name}
+                        fill
+                        sizes="90px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-base font-bold text-gray-900 leading-tight group-hover:text-[#3d4a99] transition-colors">
+                        {goal.product.name}
+                      </h3>
+                      <span
+                        className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full shrink-0 ${goalStatusStyles(goal.status)}`}
+                      >
+                        {goal.status === "ACTIVE"
+                          ? "Active"
+                          : goal.status === "PAUSED"
+                            ? "Paused"
+                            : "Completed"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      GH¢ {goal.currentAmount.toLocaleString()} of GH¢{" "}
+                      {goal.targetAmount.toLocaleString()}
+                    </p>
+                    <div className="mt-2 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#22c55e] rounded-full transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {items.length === 0 && goalsLoading && displayGoals.length === 0 && (
+        <p className="text-center text-sm text-gray-500 py-10">
+          Loading your saving goals…
+        </p>
+      )}
+
+      {/* Browse-later cart empty (distinct from goals above) */}
+      {items.length === 0 && displayGoals.length > 0 && (
+        <div className="bg-gray-50/80 rounded-2xl border border-dashed border-gray-200 p-8 text-center mb-8">
+          <p className="text-sm text-gray-600 max-w-md mx-auto">
+            Nothing saved for later here yet. Use{" "}
+            <span className="font-medium text-gray-800">Save</span> on a
+            product while browsing to add it to this list. Your active saving
+            goals are above.
+          </p>
+          <Button
+            onClick={() => router.push("/products")}
+            variant="outline"
+            className="mt-4 border-[#3d4a99] text-[#3d4a99] hover:bg-[#3d4a99]/5"
+          >
+            Browse products
+          </Button>
+        </div>
+      )}
+
+      {/* Empty State — no cart items and no goals */}
+      {showFullCartEmpty && (
         <div className="bg-white rounded-2xl border border-gray-200 p-16 text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
             <ShoppingCart className="h-8 w-8 text-gray-300" />
