@@ -128,8 +128,8 @@ export function useUpdateMerchantStatus() {
 
 export function useVerifyKyc() {
   return useMutation(
-    (args: { id: string; status: "VERIFIED" | "FAILED"; note?: string }) =>
-      service.verifyKyc(args.id, args.status, args.note)
+    (args: { userId: string; status: "VERIFIED" | "FAILED"; note?: string }) =>
+      service.verifyKyc(args.userId, args.status, args.note)
   );
 }
 

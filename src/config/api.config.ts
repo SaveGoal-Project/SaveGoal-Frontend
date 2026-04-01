@@ -23,7 +23,8 @@ export const API_ENDPOINTS = {
     REFRESH_TOKEN: "/auth/refresh-token",
   },
 
-  // Merchant Authentication
+  // Optional upload helpers — if not deployed on API, KYC submit falls back to data URLs (dev / small images)
+  // Optional — if not on API, KYC submit falls back to embedding data URLs (dev / small images)
   MERCHANT_AUTH: {
     REGISTER: "/auth/merchant/register",
     VERIFY_BUSINESS: "/auth/merchant/verify-business",
@@ -76,8 +77,10 @@ export const API_ENDPOINTS = {
     HISTORY: "/payments/history",
   },
 
-  // Merchant
+  // Merchant (backend: /api/merchants/*)
   MERCHANT: {
+    ONBOARD: "/merchants/onboard",
+    PROFILE: "/merchants/profile",
     DASHBOARD: "/merchant/dashboard",
     PRODUCTS: "/merchant/products",
     ORDERS: "/merchant/orders",
