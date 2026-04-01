@@ -10,6 +10,8 @@ import type {
     AdminUserDetail,
     AdminMerchantRow,
     AdminMerchantDetail,
+    BackendKycDetail,
+    BackendUserDetail,
     AdminPlanRow,
     AdminPlanDetail,
     AdminPaymentRow,
@@ -144,21 +146,36 @@ export async function fetchMerchants(params: PaginationParams = {}): Promise<Pag
 }
 
 export async function fetchMerchantById(id: string): Promise<AdminMerchantDetail> {
-    // Backend doesn't have a single-merchant detail endpoint yet. 
-    // Fetch from list and transform.
     const merchants = await api.listMerchants();
     const merchant = merchants.find((m) => m.id === id);
     if (!merchant) throw new Error("Merchant not found");
-    return transform.transformMerchantDetail(merchant);
+
+    let kycDetail: BackendKycDetail | null = null;
+    try {
+        kycDetail = await api.getKycDetail(merchant.userId);
+    } catch {
+        kycDetail = null;
+    }
+
+    let userDetail: BackendUserDetail | null = null;
+    try {
+        userDetail = await api.getUserDetail(merchant.userId);
+    } catch {
+        userDetail = null;
+    }
+
+    return transform.transformMerchantDetail(merchant, kycDetail, userDetail);
 }
 
-export async function updateMerchantStatus(id: string, status: "Active" | "Suspended"): Promise<void> {
-    const isVerified = status === "Active";
-    await api.verifyMerchant(id, isVerified);
+/** Suspends or reactivates the merchant user account (PATCH /admin/users/:id/suspend). */
+export async function updateMerchantStatus(userId: string, status: "Active" | "Suspended"): Promise<void> {
+    const suspend = status === "Suspended";
+    await api.suspendUser(userId, suspend);
 }
 
-export async function verifyKyc(id: string, status: "VERIFIED" | "FAILED", note?: string): Promise<void> {
-    await api.verifyKyc(id, status, note);
+/** Approves or rejects identity KYC on the user Profile (PATCH /admin/kyc/:userId/verify). */
+export async function verifyKyc(userId: string, status: "VERIFIED" | "FAILED", note?: string): Promise<void> {
+    await api.verifyKyc(userId, status, note);
 }
 
 // ═══════════════════════════════════

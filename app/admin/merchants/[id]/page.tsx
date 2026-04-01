@@ -36,9 +36,10 @@ export default function AdminMerchantDetailPage() {
     const isSuspended = merchant?.status === "Suspended";
 
     const handleSuspendToggle = async () => {
+        if (!merchant) return;
         const newStatus = isSuspended ? "Active" : "Suspended";
         try {
-            await updateStatus(id, newStatus);
+            await updateStatus(merchant.userId, newStatus);
             setToast({ message: `Merchant ${newStatus === "Suspended" ? "suspended" : "reactivated"} successfully`, type: "success" });
             refetch();
         } catch (err: any) {
@@ -48,8 +49,9 @@ export default function AdminMerchantDetailPage() {
     };
 
     const handleApproveKyc = async () => {
+        if (!merchant) return;
         try {
-            await verifyKyc({ id, status: "VERIFIED" });
+            await verifyKyc({ userId: merchant.userId, status: "VERIFIED" });
             setToast({ message: "Merchant KYC approved successfully", type: "success" });
             setShowApproveModal(false);
             refetch();
@@ -59,12 +61,13 @@ export default function AdminMerchantDetailPage() {
     };
 
     const handleRejectKyc = async () => {
+        if (!merchant) return;
         if (!rejectReason.trim()) {
             setToast({ message: "Please provide a reason for rejection", type: "error" });
             return;
         }
         try {
-            await verifyKyc({ id, status: "FAILED", note: rejectReason });
+            await verifyKyc({ userId: merchant.userId, status: "FAILED", note: rejectReason });
             setToast({ message: "Merchant KYC rejected successfully", type: "success" });
             setShowRejectModal(false);
             setRejectReason("");
@@ -139,7 +142,7 @@ export default function AdminMerchantDetailPage() {
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-[#0754FF] hover:text-[#0643cc] transition-colors"
             >
                 <ArrowLeft className="h-4 w-4" />
-                Back to Merchant L
+                Back to Merchants
             </Link>
 
             {/* Merchant Header Card */}
@@ -275,9 +278,51 @@ export default function AdminMerchantDetailPage() {
             {/* Tab Content: KYC Status */}
             {activeTab === "KYC Status" && (
                 <div className="bg-white rounded-2xl border border-gray-100 p-8">
+                    {merchant.kycIdentity && (
+                        <div className="mb-8 rounded-xl border border-gray-100 bg-gray-50/80 p-6">
+                            <h4 className="text-sm font-semibold text-gray-900 mb-4">Identity &amp; bank (submitted)</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                {merchant.kycIdentity.idType && (
+                                    <div>
+                                        <p className="text-xs text-gray-400 mb-0.5">ID type</p>
+                                        <p className="font-medium text-gray-900">{merchant.kycIdentity.idType}</p>
+                                    </div>
+                                )}
+                                {merchant.kycIdentity.idNumber && (
+                                    <div>
+                                        <p className="text-xs text-gray-400 mb-0.5">ID number</p>
+                                        <p className="font-medium text-gray-900 break-all">{merchant.kycIdentity.idNumber}</p>
+                                    </div>
+                                )}
+                                {merchant.kycIdentity.bankName && (
+                                    <div>
+                                        <p className="text-xs text-gray-400 mb-0.5">Bank name</p>
+                                        <p className="font-medium text-gray-900">{merchant.kycIdentity.bankName}</p>
+                                    </div>
+                                )}
+                                {(merchant.kycIdentity.bankAccountNo || merchant.kycIdentity.bankAccountName) && (
+                                    <div>
+                                        <p className="text-xs text-gray-400 mb-0.5">Bank account</p>
+                                        <p className="font-medium text-gray-900">
+                                            {merchant.kycIdentity.bankAccountName}
+                                            {merchant.kycIdentity.bankAccountNo
+                                                ? ` · ${merchant.kycIdentity.bankAccountNo}`
+                                                : null}
+                                        </p>
+                                    </div>
+                                )}
+                                {merchant.kycIdentity.kycNote && (
+                                    <div className="sm:col-span-2">
+                                        <p className="text-xs text-gray-400 mb-0.5">Last note</p>
+                                        <p className="text-gray-800">{merchant.kycIdentity.kycNote}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-bold text-gray-900">Submitted Documents</h3>
-                        {merchant.kycStatus === "Pending" && (
+                        {merchant.kycStatusRaw === "PENDING" && (
                             <div className="flex items-center gap-3">
                                 <button 
                                     onClick={() => setShowApproveModal(true)}
@@ -296,21 +341,35 @@ export default function AdminMerchantDetailPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {merchant.kycDocuments.map((doc, i) => (
-                            <div key={i} className="border border-gray-200 rounded-xl p-4">
-                                <h4 className="text-sm font-bold text-gray-900 mb-3">{doc.name}</h4>
-                                {/* Document Preview Placeholder */}
-                                <div className="w-full h-44 rounded-lg bg-gray-100 flex items-center justify-center mb-4">
-                                    <span className="text-sm text-gray-400">Document Preview</span>
+                        {merchant.kycDocuments.length === 0 ? (
+                            <p className="text-sm text-gray-500 col-span-full text-center py-8">
+                                No KYC documents submitted yet.
+                            </p>
+                        ) : (
+                            merchant.kycDocuments.map((doc, i) => (
+                                <div key={`${doc.name}-${i}`} className="border border-gray-200 rounded-xl p-4">
+                                    <h4 className="text-sm font-bold text-gray-900 mb-3">{doc.name}</h4>
+                                    <div className="w-full h-44 rounded-lg bg-gray-100 flex items-center justify-center mb-4 overflow-hidden">
+                                        {doc.previewUrl ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img
+                                                src={doc.previewUrl}
+                                                alt={doc.name}
+                                                className="max-h-full max-w-full object-contain"
+                                            />
+                                        ) : (
+                                            <span className="text-sm text-gray-400 px-2 text-center">No preview</span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                                            {doc.status}
+                                        </span>
+                                        <span className="text-sm text-gray-500">{doc.date}</span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
-                                        {doc.status}
-                                    </span>
-                                    <span className="text-sm text-gray-500">{doc.date}</span>
-                                </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </div>
             )}

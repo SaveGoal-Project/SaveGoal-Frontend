@@ -105,7 +105,10 @@ export interface AdminMerchantRow {
 }
 
 export interface AdminMerchantDetail {
+  /** MerchantProfile id (URL param /admin/merchants/:id) */
   id: string;
+  /** User id — required for admin KYC verify and user suspend endpoints */
+  userId: string;
   name: string;
   businessName: string;
   email: string;
@@ -113,6 +116,8 @@ export interface AdminMerchantDetail {
   initial: string;
   status: "Active" | "Pending" | "Suspended";
   kycStatus: "KYC Verified" | "Pending" | "Rejected";
+  /** Raw profile KYC status for conditional UI */
+  kycStatusRaw: "PENDING" | "VERIFIED" | "FAILED" | "EXPIRED" | null;
   storeInfo: {
     businessName: string;
     fullName: string;
@@ -125,7 +130,22 @@ export interface AdminMerchantDetail {
     lastPayoutDate: string;
     status: string;
   };
-  kycDocuments: { name: string; status: string; date: string }[];
+  kycDocuments: {
+    name: string;
+    status: string;
+    date: string;
+    /** When available from KYC submission */
+    previewUrl?: string;
+  }[];
+  /** Identity & bank fields from Profile KYC (when loaded) */
+  kycIdentity: {
+    idType: string | null;
+    idNumber: string | null;
+    bankName: string | null;
+    bankAccountNo: string | null;
+    bankAccountName: string | null;
+    kycNote: string | null;
+  } | null;
 }
 
 // ── Plans ────────────────────────

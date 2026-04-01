@@ -23,6 +23,7 @@ import type {
     BackendMerchantProfile,
     BackendTransaction,
     BackendGoal,
+    BackendKycDetail,
 } from "./admin.types";
 
 // ═══════════════════════════════════
@@ -266,18 +267,73 @@ export function transformMerchantRow(
     };
 }
 
+function mapProfileKycToLabel(
+    kycStatus: BackendKycDetail["kycStatus"] | null | undefined
+): AdminMerchantDetail["kycStatus"] {
+    switch (kycStatus) {
+        case "VERIFIED":
+            return "KYC Verified";
+        case "FAILED":
+            return "Rejected";
+        default:
+            return "Pending";
+    }
+}
+
 export function transformMerchantDetail(
-    merchant: BackendMerchantProfile
+    merchant: BackendMerchantProfile,
+    kycDetail: BackendKycDetail | null,
+    userDetail: BackendUserDetail | null
 ): AdminMerchantDetail {
+    const suspended = userDetail ? userDetail.emailVerified === false : false;
+    const status: AdminMerchantDetail["status"] = suspended
+        ? "Suspended"
+        : merchant.isVerified
+          ? "Active"
+          : "Pending";
+
+    const kycRaw = kycDetail?.kycStatus ?? null;
+    const kycLabel = mapProfileKycToLabel(kycRaw);
+    const docDate = kycDetail?.updatedAt ? formatDate(kycDetail.updatedAt) : formatDate(merchant.createdAt);
+    const pendingLabel = kycRaw === "VERIFIED" ? "Verified" : kycRaw === "FAILED" ? "Rejected" : "Pending";
+
+    const kycDocuments: AdminMerchantDetail["kycDocuments"] = [];
+
+    if (kycDetail?.idImageUrl) {
+        kycDocuments.push({
+            name: `${kycDetail.idType || "ID"} (front)`,
+            status: pendingLabel,
+            date: docDate,
+            previewUrl: kycDetail.idImageUrl,
+        });
+    }
+    if (kycDetail?.selfieImageUrl) {
+        kycDocuments.push({
+            name: "Selfie verification",
+            status: kycDetail.selfieVerified ? "Verified" : pendingLabel,
+            date: docDate,
+            previewUrl: kycDetail.selfieImageUrl,
+        });
+    }
+    if (merchant.registrationNo) {
+        kycDocuments.push({
+            name: "Business registration (reference)",
+            status: "On file",
+            date: formatDate(merchant.createdAt),
+        });
+    }
+
     return {
         id: merchant.id,
+        userId: merchant.userId,
         name: merchant.user.name,
         businessName: merchant.businessName,
         email: merchant.contactEmail,
         phone: merchant.contactPhone,
         initial: getInitial(merchant.businessName),
-        status: merchant.isVerified ? "Active" : "Pending",
-        kycStatus: merchant.isVerified ? "KYC Verified" : "Pending",
+        status,
+        kycStatus: kycLabel,
+        kycStatusRaw: kycRaw,
         storeInfo: {
             businessName: merchant.businessName,
             fullName: merchant.user.name,
@@ -290,9 +346,17 @@ export function transformMerchantDetail(
             lastPayoutDate: "—",
             status: merchant.isVerified ? "Active" : "Pending",
         },
-        kycDocuments: merchant.registrationNo
-            ? [{ name: "Business Registration", status: merchant.isVerified ? "Verified" : "Pending", date: formatDate(merchant.createdAt) }]
-            : [],
+        kycDocuments,
+        kycIdentity: kycDetail
+            ? {
+                  idType: kycDetail.idType ?? null,
+                  idNumber: kycDetail.idNumber ?? null,
+                  bankName: kycDetail.bankName ?? null,
+                  bankAccountNo: kycDetail.bankAccountNo ?? null,
+                  bankAccountName: kycDetail.bankAccountName ?? null,
+                  kycNote: kycDetail.kycNote ?? null,
+              }
+            : null,
     };
 }
 

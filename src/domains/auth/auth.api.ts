@@ -164,7 +164,7 @@ export async function registerMerchant(data: MerchantRegisterRequest): Promise<A
 
   // 3. Create the active Merchant Profile securely (with Bearer Token stored via apiClient)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await apiClient.post<any>("/merchants/onboard", merchantPayload);
+  await apiClient.post<any>(API_ENDPOINTS.MERCHANT.ONBOARD, merchantPayload);
 
   // Map the backend's unified "name" string back to the frontend's expected properties
   let responseFirstName = "";
@@ -187,32 +187,82 @@ export async function registerMerchant(data: MerchantRegisterRequest): Promise<A
   };
 }
 
+/** Map UI ID type labels to backend-friendly codes (KYC route accepts string). */
+function mapIdTypeToBackend(frontend: string): string {
+  const t = frontend.toLowerCase();
+  if (t.includes("ghana")) return "GHANA_CARD";
+  if (t.includes("passport")) return "PASSPORT";
+  if (t.includes("voter")) return "VOTERS_ID";
+  if (t.includes("driver")) return "DRIVERS_LICENSE";
+  return frontend.replace(/\s+/g, "_").toUpperCase();
+}
+
+function dataUrlToFile(dataUrl: string, filename: string): File {
+  const arr = dataUrl.split(",");
+  const mimeMatch = arr[0]?.match(/:(.*?);/);
+  const mime = mimeMatch?.[1] || "image/jpeg";
+  const b64 = arr[1];
+  if (!b64) {
+    throw new Error("Invalid image data");
+  }
+  const binary = atob(b64);
+  const len = binary.length;
+  const u8 = new Uint8Array(len);
+  for (let i = 0; i < len; i++) u8[i] = binary.charCodeAt(i);
+  return new File([u8], filename, { type: mime });
+}
+
 /**
- * Submit merchant verification documents (ID and selfie)
+ * Prefer HTTPS URLs; if given a data URL, try upload endpoints; if upload is unavailable, send data URL (dev / small images).
+ */
+async function resolveKycImageUrl(
+  dataUrlOrHttp: string,
+  upload: (file: File) => Promise<{ url: string; filename: string }>,
+  filename: string
+): Promise<string> {
+  const v = dataUrlOrHttp.trim();
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  if (v.startsWith("data:")) {
+    try {
+      const file = dataUrlToFile(v, filename);
+      const out = await upload(file);
+      return out.url;
+    } catch {
+      return v;
+    }
+  }
+  return v;
+}
+
+/**
+ * Submit merchant verification documents (ID and selfie) to POST /api/kyc/submit.
+ * Ghana Card back / business registration files are collected in the UI but not persisted by the current API contract (single idImageUrl on Profile).
  */
 export async function submitMerchantVerification(
   data: MerchantVerificationRequest
 ): Promise<{ success: boolean; message: string }> {
-  // Use the new centralized /kyc/submit endpoint
-  // Map frontend's Base64 image fields or CDN URLs if we have them
-  const kycPayload = {
-    idType: data.idType,
-    idNumber: data.idNumber,
-    idImageUrl: data.frontIdImage || "https://placeholder.com/id", // Fallbacks if base64 upload is unsupported natively
-    selfieImageUrl: data.selfieImage || "https://placeholder.com/selfie",
-    bankName: "Guaranty Trust Bank", // Placeholder for MVP
-    bankAccountNo: "0000000000",
-    bankAccountName: "SaveGoal Merchant",
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const response = await apiClient.post<any>(
-    API_ENDPOINTS.KYC.SUBMIT,
-    kycPayload
+  const idImageUrl = await resolveKycImageUrl(
+    data.frontIdImage,
+    (file) => uploadIdDocument(file, "front"),
+    "id-front.jpg"
+  );
+  const selfieImageUrl = await resolveKycImageUrl(
+    data.selfieImage,
+    uploadSelfie,
+    "selfie.jpg"
   );
 
+  const kycPayload = {
+    idType: mapIdTypeToBackend(data.idType),
+    idNumber: data.idNumber.trim(),
+    idImageUrl,
+    selfieImageUrl,
+  };
+
+  await apiClient.post(API_ENDPOINTS.KYC.SUBMIT, kycPayload);
+
   return {
-    success: response.status === "success" || !!response.id,
+    success: true,
     message: "Identity verification submitted successfully.",
   };
 }
