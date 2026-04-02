@@ -10,6 +10,8 @@ import {
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true";
 
+type MerchantApiEnvelope<T> = T | { data?: T; status?: string; success?: boolean };
+
 interface RawMerchantProfileResponse {
     id: string;
     userId?: string;
@@ -35,6 +37,14 @@ function toNumber(v: string | number | undefined): number {
     return Number.isFinite(n) ? n : 0;
 }
 
+function unwrapResponse<T>(response: MerchantApiEnvelope<T>): T {
+    if (response && typeof response === "object" && "data" in response && response.data !== undefined) {
+        return response.data;
+    }
+
+    return response as T;
+}
+
 function mapProfile(raw: RawMerchantProfileResponse): MerchantProfile {
     return {
         id: raw.id,
@@ -42,25 +52,22 @@ function mapProfile(raw: RawMerchantProfileResponse): MerchantProfile {
         ownerName: raw.businessName,
         email: raw.contactEmail,
         phone: raw.contactPhone,
-        category: "—",
+        category: "General",
         address: raw.businessAddress,
         status: raw.isVerified ? "ACTIVE" : "PENDING",
     };
 }
 
 /**
- * GET /api/merchants/profile — merchant profile with products (when authenticated as MERCHANT).
+ * GET /api/merchants/profile - merchant profile with products (when authenticated as MERCHANT).
  */
 export async function fetchMerchantProfile(): Promise<MerchantProfile> {
     if (USE_MOCK) {
         return getMockProfile();
     }
-    try {
-        const raw = await apiClient.get<RawMerchantProfileResponse>(API_ENDPOINTS.MERCHANT.PROFILE);
-        return mapProfile(raw);
-    } catch {
-        return getMockProfile();
-    }
+
+    const response = await apiClient.get<MerchantApiEnvelope<RawMerchantProfileResponse>>(API_ENDPOINTS.MERCHANT.PROFILE);
+    return mapProfile(unwrapResponse(response));
 }
 
 /**
@@ -79,13 +86,15 @@ export async function updateMerchantProfile(data: UpdateProfileRequest): Promise
             category: data.category ?? current.category,
         };
     }
+
     const payload: Record<string, string | undefined> = {};
     if (data.storeName !== undefined) payload.businessName = data.storeName;
     if (data.email !== undefined) payload.contactEmail = data.email;
     if (data.phone !== undefined) payload.contactPhone = data.phone;
     if (data.address !== undefined) payload.businessAddress = data.address;
-    const raw = await apiClient.patch<RawMerchantProfileResponse>(API_ENDPOINTS.MERCHANT.PROFILE, payload);
-    return mapProfile(raw);
+
+    const response = await apiClient.patch<MerchantApiEnvelope<RawMerchantProfileResponse>>(API_ENDPOINTS.MERCHANT.PROFILE, payload);
+    return mapProfile(unwrapResponse(response));
 }
 
 /**
@@ -95,43 +104,41 @@ export async function fetchMerchantDashboard(): Promise<MerchantDashboardData> {
     if (USE_MOCK) {
         return getMockDashboard();
     }
-    try {
-        const raw = await apiClient.get<RawMerchantProfileResponse>(API_ENDPOINTS.MERCHANT.PROFILE);
-        const products = raw.products ?? [];
-        const active = products.filter((p) => p.isAvailable !== false).length;
-        const balance = toNumber(raw.balance ?? 0);
 
-        const topProducts = products.slice(0, 4).map((p) => ({
-            name: p.name,
-            sales: typeof p.stock === "number" ? Math.max(0, 10 - p.stock) : 0,
-            revenue: `GH¢${toNumber(p.price).toLocaleString()}`,
-            rating: 5,
-        }));
+    const response = await apiClient.get<MerchantApiEnvelope<RawMerchantProfileResponse>>(API_ENDPOINTS.MERCHANT.PROFILE);
+    const raw = unwrapResponse(response);
+    const products = raw.products ?? [];
+    const active = products.filter((p) => p.isAvailable !== false).length;
+    const balance = toNumber(raw.balance ?? 0);
 
-        return {
-            stats: {
-                totalRevenue: `GH¢${balance.toLocaleString()}`,
-                revenueChange: "—",
-                totalOrders: 0,
-                ordersChange: "—",
-                activeProducts: active,
-                productsChange: "—",
-                avgOrderValue: "—",
-                avgOrderValueChange: "—",
-                recentRevenue: [40, 50, 45, 60, 55, 50, 48, 52, 58, 54, 49, 53],
-                orderStatusDistribution: [
-                    { label: "Active", value: active, color: "#1A53C8" },
-                    { label: "Other", value: Math.max(0, products.length - active), color: "#8AABEE" },
-                ],
-            },
-            recentActivities: [],
-            topProducts: topProducts.length
-                ? topProducts
-                : [{ name: "Add your first product", sales: 0, revenue: "GH¢0", rating: 0 }],
-        };
-    } catch {
-        return getMockDashboard();
-    }
+    const topProducts = products.slice(0, 4).map((p) => ({
+        name: p.name,
+        sales: typeof p.stock === "number" ? Math.max(0, 10 - p.stock) : 0,
+        revenue: `GHc${toNumber(p.price).toLocaleString()}`,
+        rating: 5,
+    }));
+
+    return {
+        stats: {
+            totalRevenue: `GHc${balance.toLocaleString()}`,
+            revenueChange: "-",
+            totalOrders: 0,
+            ordersChange: "-",
+            activeProducts: active,
+            productsChange: "-",
+            avgOrderValue: "-",
+            avgOrderValueChange: "-",
+            recentRevenue: [40, 50, 45, 60, 55, 50, 48, 52, 58, 54, 49, 53],
+            orderStatusDistribution: [
+                { label: "Active", value: active, color: "#1A53C8" },
+                { label: "Other", value: Math.max(0, products.length - active), color: "#8AABEE" },
+            ],
+        },
+        recentActivities: [],
+        topProducts: topProducts.length
+            ? topProducts
+            : [{ name: "Add your first product", sales: 0, revenue: "GHc0", rating: 0 }],
+    };
 }
 
 /**
