@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
     Plus,
     Search,
     Filter,
-    MoreVertical,
     Edit2,
     Trash2,
     Eye,
@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { AddProductModal } from '@/src/components/products/add-product-modal';
-import { useProducts, useProductStats } from '@/src/domains/products/products.hooks';
+import { useDeleteMerchantProduct, useMerchantProducts, useProductStats } from '@/src/domains/products/products.hooks';
 import { Skeleton } from '@/src/components/ui/skeleton';
 import { Badge } from '@/src/components/ui/badge';
 
@@ -37,10 +37,25 @@ const getStatusBadge = (status: string) => {
 };
 
 export default function MerchantProductsPage() {
-    const { products, isLoading: isProductsLoading, error: productsError, refetch } = useProducts();
+    const { products, isLoading: isProductsLoading, error: productsError, refetch } = useMerchantProducts();
     const { stats, isLoading: isStatsLoading } = useProductStats();
+    const { remove, isSubmitting: isDeleting } = useDeleteMerchantProduct();
     const [isAddProductOpen, setIsAddProductOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+
+    const handleDelete = async (productId: string) => {
+        const confirmed = window.confirm("Archive this product from your catalog?");
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            await remove(productId);
+            await refetch();
+        } catch (err) {
+            console.error(err instanceof Error ? err.message : "Failed to delete product");
+        }
+    };
 
     const filteredProducts = products.filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -198,13 +213,23 @@ export default function MerchantProductsPage() {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-1">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[#1A53C8]">
-                                                    <Eye className="w-4 h-4" />
+                                                <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[#1A53C8]">
+                                                    <Link href={`/merchant/products/${product.id}`}>
+                                                        <Eye className="w-4 h-4" />
+                                                    </Link>
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[#1A53C8]">
-                                                    <Edit2 className="w-4 h-4" />
+                                                <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[#1A53C8]">
+                                                    <Link href={`/merchant/products/${product.id}`}>
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </Link>
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-500">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-slate-400 hover:text-red-500"
+                                                    onClick={() => handleDelete(product.id)}
+                                                    disabled={isDeleting}
+                                                >
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
                                             </div>

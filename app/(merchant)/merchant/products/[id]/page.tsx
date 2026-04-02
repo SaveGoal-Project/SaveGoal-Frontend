@@ -1,274 +1,211 @@
-"use client"
+'use client';
 
-import { useState, use } from "react"
-import { useRouter } from "next/navigation"
-import {
-    ChevronLeft,
-    Upload,
-    X,
-    Plus,
-    DollarSign,
-    Tag,
-    Layers,
-    Type,
-} from "lucide-react"
-import { Button } from "@/src/components/ui/button"
-import Link from "next/link"
+import { use, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { ChevronLeft, Loader2, Save } from 'lucide-react';
+import { Button } from '@/src/components/ui/button';
+import { Input } from '@/src/components/ui/input';
+import { Label } from '@/src/components/ui/label';
+import { Skeleton } from '@/src/components/ui/skeleton';
+import { Textarea } from '@/src/components/ui/textarea';
+import { useMerchantProduct, useUpdateMerchantProduct } from '@/src/domains/products/products.hooks';
+import type { Product } from '@/src/domains/products/products.types';
 
-// Mock Data for demonstration
-const mockProduct = {
-    id: 1,
-    name: 'Apple MacBook Pro 14"',
-    description: "Supercharged by M2 Pro or M2 Max, MacBook Pro takes its power and efficiency further than ever. It delivers exceptional performance whether it's plugged in or not, and now has even longer battery life.",
-    category: "Electronics",
-    price: 10000,
-    discountedPrice: 9500,
-    sku: "MB-PRO-14-2023",
-    stock: 12,
-    status: "Active",
-    images: [
-        "https://images.unsplash.com/photo-1517336714731-489689fd1ca4?q=80&w=2026&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?q=80&w=2070&auto=format&fit=crop"
-    ],
+type ProductFormState = {
+    name: string;
+    description: string;
+    category: string;
+    price: string;
+    sku: string;
+    stock: string;
+    imageUrls: string;
+    isAvailable: boolean;
+};
+
+function toFormState(product: Product): ProductFormState {
+    return {
+        name: product.name,
+        description: product.description || "",
+        category: product.category || "",
+        price: String(product.price),
+        sku: product.sku || "",
+        stock: String(product.stock ?? 0),
+        imageUrls: (product.images || []).join("\n"),
+        isAvailable: product.isAvailable !== false,
+    };
 }
 
-export default function ProductDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-    const router = useRouter()
-    // const { id } = use(params) // In a real app, fetch execution using ID
-    const [product, setProduct] = useState(mockProduct)
-    const [images, setImages] = useState<string[]>(mockProduct.images)
-
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const url = URL.createObjectURL(e.target.files[0])
-            setImages([...images, url])
-        }
-    }
-
-    const removeImage = (index: number) => {
-        setImages(images.filter((_, i) => i !== index))
-    }
+function ProductEditor({
+    product,
+    onSave,
+    isSubmitting,
+}: {
+    product: Product;
+    onSave: (state: ProductFormState) => Promise<void>;
+    isSubmitting: boolean;
+}) {
+    const [form, setForm] = useState<ProductFormState>(() => toFormState(product));
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 pb-20">
-            {/* Header */}
+        <div className="space-y-6">
             <div className="flex items-center gap-4">
-                <Button
-                    variant="outline"
-                    size="icon"
-                    asChild
-                    className="h-10 w-10 bg-white border-slate-200"
-                >
+                <Button variant="outline" size="icon" asChild className="h-10 w-10">
                     <Link href="/merchant/products">
-                        <ChevronLeft className="w-5 h-5 text-slate-500" />
+                        <ChevronLeft className="w-5 h-5" />
                     </Link>
                 </Button>
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Edit Product</h1>
-                    <p className="text-slate-500 text-sm">
-                        Manage details for {product.name}
-                    </p>
+                    <p className="text-sm text-slate-500">Update your merchant catalog details.</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column - Main Info */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Basic Details */}
-                    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <Type className="w-5 h-5 text-[#1A53C8]" />
-                            Basic Information
-                        </h2>
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">
-                                    Product Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={product.name}
-                                    onChange={(e) => setProduct({ ...product, name: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1A53C8]/20 focus:border-[#1A53C8] text-sm"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">
-                                    Description
-                                </label>
-                                <textarea
-                                    value={product.description}
-                                    onChange={(e) => setProduct({ ...product, description: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1A53C8]/20 focus:border-[#1A53C8] text-sm min-h-[150px]"
-                                />
-                            </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Product Name</Label>
+                        <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                            id="description"
+                            className="min-h-[140px]"
+                            value={form.description}
+                            onChange={(e) => setForm({ ...form, description: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="category">Category</Label>
+                        <Input id="category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="imageUrls">Image URLs</Label>
+                        <Textarea
+                            id="imageUrls"
+                            className="min-h-[120px]"
+                            placeholder="One image URL per line"
+                            value={form.imageUrls}
+                            onChange={(e) => setForm({ ...form, imageUrls: e.target.value })}
+                        />
+                    </div>
+                </section>
+
+                <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="price">Price</Label>
+                            <Input
+                                id="price"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={form.price}
+                                onChange={(e) => setForm({ ...form, price: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="stock">Stock</Label>
+                            <Input
+                                id="stock"
+                                type="number"
+                                min="0"
+                                value={form.stock}
+                                onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                            />
                         </div>
                     </div>
-
-                    {/* Media */}
-                    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <Upload className="w-5 h-5 text-[#1A53C8]" />
-                            Product Images
-                        </h2>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {images.map((img, idx) => (
-                                <div
-                                    key={idx}
-                                    className="relative aspect-square rounded-xl bg-slate-50 border border-slate-200 overflow-hidden group"
-                                >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        src={img}
-                                        alt={`Product ${idx}`}
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <button
-                                        onClick={() => removeImage(idx)}
-                                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <X className="w-3 h-3" />
-                                    </button>
-                                </div>
-                            ))}
-
-                            <label className="aspect-square rounded-xl border-2 border-dashed border-slate-300 hover:border-[#1A53C8] hover:bg-blue-50/50 flex flex-col items-center justify-center cursor-pointer transition-colors">
-                                <Plus className="w-6 h-6 text-slate-400 mb-2" />
-                                <span className="text-xs text-slate-500 font-medium">
-                                    Add Image
-                                </span>
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                />
-                            </label>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-3">
-                            Recommended size 1000x1000px. Max 5MB per image.
-                        </p>
+                    <div className="space-y-2">
+                        <Label htmlFor="sku">SKU</Label>
+                        <Input id="sku" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
                     </div>
-
-                    {/* Inventory */}
-                    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <Layers className="w-5 h-5 text-[#1A53C8]" />
-                            Inventory
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">
-                                    SKU
-                                </label>
-                                <input
-                                    type="text"
-                                    value={product.sku}
-                                    onChange={(e) => setProduct({ ...product, sku: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1A53C8]/20 focus:border-[#1A53C8] text-sm"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">
-                                    Stock Quantity
-                                </label>
-                                <input
-                                    type="number"
-                                    value={product.stock}
-                                    onChange={(e) => setProduct({ ...product, stock: Number(e.target.value) })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1A53C8]/20 focus:border-[#1A53C8] text-sm"
-                                />
-                            </div>
-                        </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="listingStatus">Listing Status</Label>
+                        <select
+                            id="listingStatus"
+                            className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                            value={form.isAvailable ? "ACTIVE" : "DRAFT"}
+                            onChange={(e) => setForm({ ...form, isAvailable: e.target.value === "ACTIVE" })}
+                        >
+                            <option value="ACTIVE">Active</option>
+                            <option value="DRAFT">Draft</option>
+                        </select>
                     </div>
-                </div>
-
-                {/* Right Column - Organization & Pricing */}
-                <div className="space-y-6">
-                    {/* Pricing */}
-                    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <DollarSign className="w-5 h-5 text-[#1A53C8]" />
-                            Pricing
-                        </h2>
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">
-                                    Base Price (GH¢)
-                                </label>
-                                <input
-                                    type="number"
-                                    value={product.price}
-                                    onChange={(e) => setProduct({ ...product, price: Number(e.target.value) })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1A53C8]/20 focus:border-[#1A53C8] text-sm font-semibold"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">
-                                    Discounted Price (Optional)
-                                </label>
-                                <input
-                                    type="number"
-                                    value={product.discountedPrice}
-                                    onChange={(e) => setProduct({ ...product, discountedPrice: Number(e.target.value) })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1A53C8]/20 focus:border-[#1A53C8] text-sm"
-                                />
-                            </div>
-                        </div>
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Preview</p>
+                        <p className="mt-2 text-lg font-bold text-slate-900">{form.name || "Untitled product"}</p>
+                        <p className="text-sm text-slate-500">{form.category || "Uncategorized"}</p>
+                        <p className="mt-2 font-semibold text-[#1A53C8]">GH¢{form.price || "0"}</p>
                     </div>
-
-                    {/* Organization */}
-                    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <Tag className="w-5 h-5 text-[#1A53C8]" />
-                            Organization
-                        </h2>
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">
-                                    Category
-                                </label>
-                                <select
-                                    value={product.category}
-                                    onChange={(e) => setProduct({ ...product, category: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1A53C8]/20 focus:border-[#1A53C8] text-sm bg-white"
-                                >
-                                    <option>Select Category</option>
-                                    <option>Electronics</option>
-                                    <option>Fashion</option>
-                                    <option>Home & Living</option>
-                                    <option>Health & Beauty</option>
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">
-                                    Status
-                                </label>
-                                <select
-                                    value={product.status}
-                                    onChange={(e) => setProduct({ ...product, status: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1A53C8]/20 focus:border-[#1A53C8] text-sm bg-white"
-                                >
-                                    <option>Active</option>
-                                    <option>Draft</option>
-                                    <option>Archived</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                </section>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-200">
-                <Button variant="outline" onClick={() => router.back()}>
-                    Cancel
+            <div className="flex justify-end gap-3 border-t border-slate-200 pt-6">
+                <Button variant="outline" asChild>
+                    <Link href="/merchant/products">Cancel</Link>
                 </Button>
-                <Button className="bg-[#1A53C8] hover:bg-[#1542a1] text-white">
+                <Button
+                    className="bg-[#1A53C8] text-white hover:bg-[#1542a1]"
+                    disabled={isSubmitting}
+                    onClick={() => onSave(form)}
+                >
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Save Changes
                 </Button>
             </div>
         </div>
-    )
+    );
+}
+
+export default function MerchantProductDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
+    const router = useRouter();
+    const { product, isLoading, error } = useMerchantProduct(id);
+    const { update, isSubmitting } = useUpdateMerchantProduct();
+
+    const handleSave = async (state: ProductFormState) => {
+        const images = state.imageUrls
+            .split("\n")
+            .map((value) => value.trim())
+            .filter(Boolean);
+
+        try {
+            await update(id, {
+                name: state.name.trim(),
+                description: state.description.trim(),
+                category: state.category.trim(),
+                price: state.price,
+                sku: state.sku.trim(),
+                stock: Number.parseInt(state.stock, 10) || 0,
+                images,
+                isAvailable: state.isAvailable,
+            });
+            router.push("/merchant/products");
+        } catch (err) {
+            console.error(err instanceof Error ? err.message : "Failed to update product");
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="space-y-4">
+                <Skeleton className="h-10 w-52" />
+                <Skeleton className="h-[420px] rounded-2xl" />
+            </div>
+        );
+    }
+
+    if (error || !product) {
+        return (
+            <div className="rounded-2xl border border-red-100 bg-white p-8 text-center">
+                <p className="font-medium text-red-600">{error || "Product not found"}</p>
+                <Button variant="outline" className="mt-4" asChild>
+                    <Link href="/merchant/products">Back to products</Link>
+                </Button>
+            </div>
+        );
+    }
+
+    return <ProductEditor product={product} onSave={handleSave} isSubmitting={isSubmitting} />;
 }
