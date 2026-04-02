@@ -247,7 +247,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Redirect to merchant verification or dashboard
       const merchantUser = response.user as MerchantUser;
       if (merchantUser.verificationStatus === "PENDING") {
-        router.push("/merchant/verification");
+        router.push("/merchant");
       } else {
         router.push("/merchant");
       }

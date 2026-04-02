@@ -347,7 +347,63 @@ export async function refreshToken(data: RefreshTokenRequest): Promise<RefreshTo
  * Get current user profile
  */
 export async function getCurrentUser(): Promise<User | MerchantUser> {
-  return apiClient.get<User | MerchantUser>(API_ENDPOINTS.USERS.ME);
+  const response = await apiClient.get<{
+    id: string;
+    name: string;
+    email: string;
+    phone?: string | null;
+    role: "CONSUMER" | "MERCHANT" | "ADMIN";
+    createdAt: string;
+    updatedAt: string;
+    merchantProfile?: {
+      businessName: string;
+      businessAddress: string;
+      isVerified: boolean;
+      contactEmail: string;
+    } | null;
+    profile?: {
+      address?: string | null;
+      kycStatus?: string | null;
+    } | null;
+  }>(API_ENDPOINTS.USERS.ME);
+
+  const nameParts = response.name.split(" ");
+  const firstName = nameParts[0] || "";
+  const lastName = nameParts.slice(1).join(" ") || "";
+
+  if (response.role === "MERCHANT" && response.merchantProfile) {
+    return {
+      id: response.id,
+      firstName,
+      lastName,
+      phone: response.phone || "",
+      email: response.email,
+      role: "MERCHANT",
+      status: response.merchantProfile.isVerified ? "ACTIVE" : "PENDING_VERIFICATION",
+      createdAt: response.createdAt,
+      updatedAt: response.updatedAt,
+      storeName: response.merchantProfile.businessName,
+      storeDescription: "",
+      category: "General",
+      region: "",
+      city: "",
+      address: response.merchantProfile.businessAddress || response.profile?.address || "",
+      verificationStatus: response.merchantProfile.isVerified ? "APPROVED" : "PENDING",
+      isVerified: response.merchantProfile.isVerified,
+    };
+  }
+
+  return {
+    id: response.id,
+    firstName,
+    lastName,
+    phone: response.phone || "",
+    email: response.email,
+    role: response.role,
+    status: "ACTIVE",
+    createdAt: response.createdAt,
+    updatedAt: response.updatedAt,
+  };
 }
 
 /**

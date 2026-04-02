@@ -1,50 +1,71 @@
-export interface MerchantStats {
-    totalRevenue: string;
-    revenueChange: string;
+export interface MerchantSummary {
+    availableBalance: number;
+    totalRevenue: number;
     totalOrders: number;
-    ordersChange: string;
     activeProducts: number;
-    productsChange: string;
-    avgOrderValue: string;
-    avgOrderValueChange: string;
-    recentRevenue: number[];
-    orderStatusDistribution: {
-        label: string;
-        value: number;
-        color: string;
-    }[];
+    avgOrderValue: number;
+    pendingPayoutAmount: number;
+    pendingPayouts: number;
+}
+
+export interface RevenuePoint {
+    label: string;
+    amount: number;
+}
+
+export interface MerchantOrderPreview {
+    id: string;
+    productName: string;
+    customerName: string;
+    amount: number;
+    currency: string;
+    orderStatus: string;
+    paymentStatus: string;
+    reference: string | null;
+    createdAt: string;
 }
 
 export interface RecentActivity {
     id: string;
-    text: string;
+    type: "order" | "product" | "payout";
+    message: string;
     time: string;
-    type: 'order' | 'product' | 'payment' | 'shipping';
 }
 
 export interface TopProduct {
     name: string;
-    sales: number;
-    revenue: string;
-    rating: number;
+    orders: number;
+    revenue: number;
 }
 
 export interface MerchantDashboardData {
-    stats: MerchantStats;
-    recentActivities: RecentActivity[];
+    summary: MerchantSummary;
+    monthlyRevenue: RevenuePoint[];
+    latestOrders: MerchantOrderPreview[];
     topProducts: TopProduct[];
+    recentActivity: RecentActivity[];
 }
 
 export interface MerchantProfile {
     id: string;
+    userId: string;
     storeName: string;
     ownerName: string;
     email: string;
     phone: string;
-    logo?: string;
-    category: string;
     address: string;
-    status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+    registrationNo?: string | null;
+    bankName?: string | null;
+    bankAccountNo?: string | null;
+    bankAccountName?: string | null;
+    isVerified: boolean;
+    balance: number;
+    kycStatus: "PENDING" | "VERIFIED" | "FAILED" | "EXPIRED";
+    kycNote: string | null;
+    productsCount: number;
+    activeProducts: number;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface UpdateProfileRequest {
@@ -53,15 +74,14 @@ export interface UpdateProfileRequest {
     email?: string;
     phone?: string;
     address?: string;
-    category?: string;
-    logo?: string;
+    registrationNo?: string;
+    bankName?: string;
+    bankAccountNo?: string;
+    bankAccountName?: string;
 }
-
-// ─── KYC Verification ────────────────────────────────────────────────────────
 
 export type KycStatus = "PENDING" | "VERIFIED" | "FAILED" | "EXPIRED";
 
-/** Matches the shape returned by GET /api/kyc/status */
 export interface KycStatusResponse {
     kycStatus: KycStatus | null;
     kycNote: string | null;

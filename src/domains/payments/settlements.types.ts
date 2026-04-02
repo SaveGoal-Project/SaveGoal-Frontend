@@ -1,30 +1,23 @@
-export type SettlementStatus = 'Completed' | 'Pending' | 'Scheduled' | 'Failed';
-export type TransactionType = 'Sale' | 'Payout' | 'Refund' | 'Fee';
+export type SettlementStatus = "PENDING" | "COMPLETED" | "FAILED" | "CANCELLED";
+export type TransactionType = "SALE" | "PAYOUT";
 
 export interface WalletBalance {
-    currentBalance: string;
-    availableForPayout: string;
-    pendingSettlement: string;
-    totalEarnings: string;
+    currentBalance: number;
+    availableForPayout: number;
+    totalTransactions: number;
+    pendingPayoutAmount?: number;
 }
 
 export interface Transaction {
     id: string;
     type: TransactionType;
-    amount: string;
-    status: SettlementStatus;
-    date: string;
-    description: string;
-    reference?: string;
-}
-
-export interface PayoutRequest {
+    direction: "credit" | "debit";
     amount: number;
-    accountDetails: {
-        bankName: string;
-        accountNumber: string;
-        accountName: string;
-    };
+    currency: string;
+    status: SettlementStatus | string;
+    createdAt: string;
+    description: string;
+    reference?: string | null;
 }
 
 export interface MerchantBankDetails {
@@ -32,4 +25,10 @@ export interface MerchantBankDetails {
     accountNumber: string;
     accountName: string;
     isVerified: boolean;
+}
+
+export interface PayoutRequestResult {
+    id: string;
+    status: string;
+    reference?: string | null;
 }

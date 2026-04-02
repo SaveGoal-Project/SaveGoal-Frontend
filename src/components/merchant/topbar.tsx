@@ -2,18 +2,19 @@
 
 import { useState, useRef, useEffect } from 'react';
 import {
-    Bell,
     Search,
     ChevronDown,
     LogOut,
     User,
-    Settings,
     Store,
     CreditCard,
     Menu,
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/src/lib/utils';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { NotificationBell } from '@/src/components/shared/NotificationBell';
+import type { MerchantUser, User as AuthUser } from '@/src/domains/auth/auth.types';
 
 interface MerchantTopbarProps {
     title: string;
@@ -21,179 +22,125 @@ interface MerchantTopbarProps {
     onMenuClick?: () => void;
 }
 
-export function MerchantTopbar({ title, subtitle, onMenuClick }: MerchantTopbarProps) {
-    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-    const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const notificationRef = useRef<HTMLDivElement>(null);
-    const profileRef = useRef<HTMLDivElement>(null);
+function getInitials(name: string) {
+    return name
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('') || 'M';
+}
 
-    // Close dropdowns when clicking outside
+function isMerchantUser(user: AuthUser | MerchantUser | null): user is MerchantUser {
+    return Boolean(user && user.role === "MERCHANT");
+}
+
+export function MerchantTopbar({ title, subtitle, onMenuClick }: MerchantTopbarProps) {
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const profileRef = useRef<HTMLDivElement>(null);
+    const { user, logout } = useAuth();
+
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-                setIsNotificationsOpen(false);
-            }
             if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
             }
         }
+
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
 
-    const notifications = [
-        {
-            id: 1,
-            title: 'New Order Received',
-            message: 'Order #ORD-0091 from Kwame Adu',
-            time: '2 min ago',
-            read: false,
-            type: 'order'
-        },
-        {
-            id: 2,
-            title: 'Low Stock Alert',
-            message: 'Sony PlayStation 5 is running low (5 left)',
-            time: '1 hour ago',
-            read: false,
-            type: 'alert'
-        },
-        {
-            id: 3,
-            title: 'Payout Processed',
-            message: 'GH¢ 12,000.00 has been sent to your account',
-            time: 'Yesterday',
-            read: true,
-            type: 'info'
-        }
-    ];
+    const merchantUser = isMerchantUser(user) ? user : null;
+    const storeName = merchantUser?.storeName || "My Store";
+    const ownerName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || "Merchant User";
+    const userEmail = user?.email || "";
+    const initials = getInitials(storeName);
 
     return (
-        <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 md:px-6 bg-white border-b border-slate-100 shadow-sm">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-100 bg-white px-4 shadow-sm md:px-6">
             <div className="flex items-center gap-4">
-                {/* Mobile Menu Toggle */}
                 <button
                     onClick={onMenuClick}
-                    className="p-2 -ml-2 text-slate-600 hover:bg-slate-50 rounded-xl lg:hidden transition-colors"
+                    className="rounded-xl p-2 -ml-2 text-slate-600 transition-colors hover:bg-slate-50 lg:hidden"
                 >
-                    <Menu className="w-6 h-6" />
+                    <Menu className="h-6 w-6" />
                 </button>
 
-                {/* Title */}
                 <div className="min-w-0">
-                    <h1 className="text-base md:text-lg font-bold text-slate-900 leading-tight truncate">{title}</h1>
-                    {subtitle && <p className="text-[10px] md:text-xs text-slate-500 truncate">{subtitle}</p>}
+                    <h1 className="truncate text-base font-bold leading-tight text-slate-900 md:text-lg">{title}</h1>
+                    {subtitle ? <p className="truncate text-[10px] text-slate-500 md:text-xs">{subtitle}</p> : null}
                 </div>
             </div>
 
-            {/* Right actions */}
             <div className="flex items-center gap-2 md:gap-3">
-                {/* Search - Hidden on mobile, shown on desktop */}
-                <div className="hidden lg:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 w-56 focus-within:ring-2 focus-within:ring-[#1A53C8]/20 focus-within:border-[#1A53C8] transition-all">
-                    <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                <div className="hidden w-56 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition-all focus-within:border-[#1A53C8] focus-within:ring-2 focus-within:ring-[#1A53C8]/20 lg:flex">
+                    <Search className="h-4 w-4 flex-shrink-0 text-slate-400" />
                     <input
                         type="text"
                         placeholder="Search..."
-                        className="bg-transparent text-sm text-slate-700 placeholder-slate-400 outline-none w-full"
+                        className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
                     />
                 </div>
 
-                {/* Notifications */}
-                <div className="relative" ref={notificationRef}>
-                    <button
-                        onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                        className={cn(
-                            "relative flex items-center justify-center w-9 h-9 rounded-xl border transition-colors",
-                            isNotificationsOpen
-                                ? "bg-slate-100 border-slate-300"
-                                : "bg-slate-50 border-slate-200 hover:bg-slate-100"
-                        )}
-                    >
-                        <Bell className="w-4 h-4 text-slate-600" />
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#1A53C8] text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-sm">3</span>
-                    </button>
+                <NotificationBell variant="merchant" />
 
-                    {/* Notification Dropdown */}
-                    {isNotificationsOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-72 md:w-80 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                                <h3 className="font-semibold text-slate-900">Notifications</h3>
-                                <button className="text-xs text-[#1A53C8] hover:underline">Mark all read</button>
-                            </div>
-                            <div className="max-h-[300px] overflow-y-auto">
-                                {notifications.map((notif) => (
-                                    <div key={notif.id} className={cn(
-                                        "p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer flex gap-3",
-                                        !notif.read && "bg-blue-50/30"
-                                    )}>
-                                        <div className={cn(
-                                            "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
-                                            notif.read ? "bg-slate-200" : "bg-[#1A53C8]"
-                                        )} />
-                                        <div>
-                                            <p className={cn("text-sm text-slate-900", !notif.read && "font-semibold")}>{notif.title}</p>
-                                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{notif.message}</p>
-                                            <p className="text-[10px] text-slate-400 mt-1.5">{notif.time}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Profile */}
                 <div className="relative" ref={profileRef}>
                     <button
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
                         className={cn(
-                            "flex items-center gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-xl border transition-colors",
+                            "flex items-center gap-2 rounded-xl border px-2 py-1.5 transition-colors md:px-3 md:py-2",
                             isProfileOpen
-                                ? "bg-slate-100 border-slate-300"
-                                : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                                ? "border-slate-300 bg-slate-100"
+                                : "border-slate-200 bg-slate-50 hover:bg-slate-100"
                         )}
                     >
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[10px] font-bold text-white shadow-sm flex-shrink-0">
-                            M
+                        <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-[10px] font-bold text-white shadow-sm">
+                            {initials}
                         </div>
-                        <span className="text-sm font-medium text-slate-700 hidden sm:block">My Store</span>
-                        <ChevronDown className={cn(
-                            "w-3.5 h-3.5 text-slate-400 transition-transform duration-200",
-                            isProfileOpen && "rotate-180"
-                        )} />
+                        <span className="hidden text-sm font-medium text-slate-700 sm:block">{storeName}</span>
+                        <ChevronDown
+                            className={cn(
+                                "h-3.5 w-3.5 text-slate-400 transition-transform duration-200",
+                                isProfileOpen && "rotate-180"
+                            )}
+                        />
                     </button>
 
-                    {/* Profile Dropdown */}
-                    {isProfileOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                            <div className="p-4 border-b border-slate-100">
-                                <p className="font-semibold text-slate-900 text-sm">My Store</p>
-                                <p className="text-[10px] text-slate-500 truncate">merchant@unique-store.com</p>
+                    {isProfileOpen ? (
+                        <div className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl">
+                            <div className="border-b border-slate-100 p-4">
+                                <p className="text-sm font-semibold text-slate-900">{storeName}</p>
+                                <p className="mt-0.5 text-[10px] text-slate-500">{ownerName}</p>
+                                {userEmail ? <p className="truncate text-[10px] text-slate-500">{userEmail}</p> : null}
                             </div>
-                            <div className="p-2 space-y-1">
-                                <Link href="/merchant/settings" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
-                                    <User className="w-4 h-4 text-slate-400" />
+                            <div className="space-y-1 p-2">
+                                <Link href="/merchant/settings" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50">
+                                    <User className="h-4 w-4 text-slate-400" />
                                     Profile
                                 </Link>
-                                <Link href="/merchant/settings" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
-                                    <Store className="w-4 h-4 text-slate-400" />
+                                <Link href="/merchant/settings" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50">
+                                    <Store className="h-4 w-4 text-slate-400" />
                                     Store Settings
                                 </Link>
-                                <Link href="/merchant/payments" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
-                                    <CreditCard className="w-4 h-4 text-slate-400" />
+                                <Link href="/merchant/payments" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50">
+                                    <CreditCard className="h-4 w-4 text-slate-400" />
                                     Billing
                                 </Link>
                             </div>
-                            <div className="p-2 border-t border-slate-100">
-                                <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                                    <LogOut className="w-4 h-4" />
+                            <div className="border-t border-slate-100 p-2">
+                                <button
+                                    onClick={() => void logout()}
+                                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
+                                >
+                                    <LogOut className="h-4 w-4" />
                                     Sign Out
                                 </button>
                             </div>
                         </div>
-                    )}
+                    ) : null}
                 </div>
             </div>
         </header>

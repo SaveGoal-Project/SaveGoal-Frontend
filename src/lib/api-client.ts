@@ -136,8 +136,15 @@ async function request<T>(
     // Parse response
     const json = await response.json();
 
+    const hasBooleanSuccess = json && typeof json === "object" && "success" in json;
+    const hasStatusEnvelope = json && typeof json === "object" && "status" in json;
+
     // Handle error responses
-    if (!response.ok || (json.success === false)) {
+    if (
+      !response.ok ||
+      (hasBooleanSuccess && json.success === false) ||
+      (hasStatusEnvelope && json.status === "error")
+    ) {
       const errorData = json.error || json;
       throw new ApiClientError(response.status || 400, {
         code: errorData.code || "UNKNOWN_ERROR",
@@ -147,7 +154,13 @@ async function request<T>(
     }
 
     // Unwrap the global response envelope if it exists
-    if (json && typeof json === "object" && "success" in json && "data" in json) {
+    if (
+      json &&
+      typeof json === "object" &&
+      "data" in json &&
+      ((hasBooleanSuccess && json.success === true) ||
+        (hasStatusEnvelope && json.status === "success"))
+    ) {
       return json.data as T;
     }
 

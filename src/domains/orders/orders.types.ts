@@ -1,31 +1,35 @@
-export type OrderStatus = 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
-export type PaymentStatus = 'Paid' | 'Pending' | 'Failed';
-
-export interface Order {
-    id: string;
-    customer: string;
-    email: string;
-    product: string;
-    date: string;
-    amount: string;
-    paymentStatus: PaymentStatus;
-    orderStatus: OrderStatus;
-    items?: OrderItem[];
-    shippingAddress?: string;
-    phone?: string;
-}
+export type OrderStatus = "PROCESSING" | "FULFILLED" | "CANCELLED";
+export type PaymentStatus = "PAID" | "PENDING" | "FAILED";
 
 export interface OrderItem {
     id: string;
     name: string;
     quantity: number;
-    price: string;
-    image?: string;
+    unitPrice: number;
+    image?: string | null;
+}
+
+export interface Order {
+    id: string;
+    goalId: string | null;
+    productId: string | null;
+    productName: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    shippingAddress: string;
+    amount: number;
+    currency: string;
+    paymentStatus: PaymentStatus | string;
+    orderStatus: OrderStatus | string;
+    reference: string | null;
+    createdAt: string;
+    items: OrderItem[];
 }
 
 export interface OrderStats {
     totalOrders: number;
-    pendingProcessing: number;
-    deliveredMonth: number;
-    returns: number;
+    processing: number;
+    fulfilled: number;
+    cancelled: number;
 }
