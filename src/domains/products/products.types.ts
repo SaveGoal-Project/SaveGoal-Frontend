@@ -34,6 +34,12 @@ export interface Product {
     specifications?: { label: string; value: string }[];
 }
 
+export interface ProductMetadata {
+    category?: string;
+    sku?: string;
+    images?: string[];
+}
+
 export interface ProductStats {
     totalProducts: number;
     activeProducts: number;
@@ -59,4 +65,8 @@ export interface CreateProductData {
     sku?: string;
     stock?: number;
     images?: string[];
+}
+
+export interface UpdateProductData extends Partial<CreateProductData> {
+    isAvailable?: boolean;
 }

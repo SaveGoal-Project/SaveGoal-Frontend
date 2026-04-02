@@ -4,8 +4,8 @@ import { useState } from "react"
 import {
     Check,
     ChevronRight,
-    DollarSign,
     Layers,
+    type LucideIcon,
     Package,
     Plus,
     Type,
@@ -35,6 +35,7 @@ import {
 } from "@/src/components/ui/select"
 import { cn } from "@/src/lib/utils"
 import { useCreateProduct } from "@/src/domains/products/products.hooks"
+import { uploadProductImage } from "@/src/lib/supabase"
 
 interface AddProductModalProps {
     isOpen: boolean
@@ -44,7 +45,7 @@ interface AddProductModalProps {
 
 type Step = "basic" | "inventory" | "media" | "review"
 
-const steps: { id: Step; label: string; icon: any }[] = [
+const steps: { id: Step; label: string; icon: LucideIcon }[] = [
     { id: "basic", label: "Basic Info", icon: Type },
     { id: "inventory", label: "Inventory", icon: Layers },
     { id: "media", label: "Media", icon: Upload },
@@ -54,6 +55,7 @@ const steps: { id: Step; label: string; icon: any }[] = [
 export function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalProps) {
     const { create, isSubmitting, error: submitError } = useCreateProduct()
     const [currentStep, setCurrentStep] = useState<Step>("basic")
+    const [isUploading, setIsUploading] = useState(false)
     const [formData, setFormData] = useState({
         name: "",
         description: "",
@@ -80,10 +82,17 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalP
         }
     }
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const url = URL.createObjectURL(e.target.files[0])
-            setFormData({ ...formData, images: [...formData.images, url] })
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            setIsUploading(true);
+            const url = await uploadProductImage(file);
+            setFormData((prev) => ({ ...prev, images: [...prev.images, url] }));
+        } catch (err) {
+            console.error('Image upload failed:', err instanceof Error ? err.message : err);
+        } finally {
+            setIsUploading(false);
         }
     }
 
@@ -177,6 +186,12 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalP
 
                 {/* Step Content */}
                 <div className="py-4 min-h-[300px]">
+                    {submitError && (
+                        <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                            {submitError}
+                        </div>
+                    )}
+
                     {currentStep === "basic" && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                             <div className="space-y-2">
@@ -276,11 +291,11 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalP
                                     </div>
                                 ))}
 
-                                <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 hover:border-[#1A53C8] hover:bg-blue-50/50 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 group">
+                                <label className={cn("aspect-square rounded-2xl border-2 border-dashed border-slate-200 hover:border-[#1A53C8] hover:bg-blue-50/50 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 group", isUploading && "opacity-50 pointer-events-none")}>
                                     <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center mb-2 group-hover:bg-[#1A53C8]/10 transition-colors">
-                                        <Plus className="w-5 h-5 text-slate-400 group-hover:text-[#1A53C8]" />
+                                        {isUploading ? <Loader2 className="w-5 h-5 text-slate-400 animate-spin" /> : <Plus className="w-5 h-5 text-slate-400 group-hover:text-[#1A53C8]" />}
                                     </div>
-                                    <span className="text-xs text-slate-500 font-bold">Add Image</span>
+                                    <span className="text-xs text-slate-500 font-bold">{isUploading ? "Uploading..." : "Add Image"}</span>
                                     <Input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                                 </label>
                             </div>

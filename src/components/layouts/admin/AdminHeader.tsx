@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/src/components/ui/button";
-import { Bell, Plus, Search, Users2, Menu } from "lucide-react";
+import { Plus, Search, Users2, Menu } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { NotificationBell } from "@/src/components/shared/NotificationBell";
 
 interface AdminHeaderProps {
   title?: string;
@@ -58,9 +59,7 @@ export function AdminHeader({
           Quick Action
         </Button>
 
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 transition-colors">
-          <Bell className="h-5 w-5" />
-        </button>
+        <NotificationBell variant="admin" viewAllHref="/admin/notifications" />
 
         <div className="hidden md:flex flex-col text-right mr-2">
           <span className="text-sm font-medium text-gray-900">{user?.firstName ? `${user.firstName} ${user.lastName}` : "Admin User"}</span>

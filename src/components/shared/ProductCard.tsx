@@ -1,10 +1,12 @@
 "use client";
 
-import { Card } from "@/src/components/ui/card";
-import { Button } from "@/src/components/ui/button";
-import { Star, Bookmark } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Bookmark, Star } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import { Card } from "@/src/components/ui/card";
+import { cn } from "@/src/lib/utils";
 
 interface ProductCardProps {
   id: string;
@@ -12,7 +14,7 @@ interface ProductCardProps {
   brand?: string;
   price: number;
   currency?: string;
-  image?: string;
+  image?: string | null;
   category?: string;
   rating?: number;
   reviewCount?: number;
@@ -28,90 +30,93 @@ export function ProductCard({
   currency = "GHS",
   image,
   category,
-  rating = 5.0,
+  rating = 5,
   reviewCount = 1200,
   className,
   onSave,
 }: ProductCardProps) {
+  const router = useRouter();
+
   const formatReviewCount = (count: number) => {
     if (count >= 1000) {
       return `${(count / 1000).toFixed(1)}k`;
     }
-    return count.toString();
+
+    return String(count);
+  };
+
+  const formatPrice = (amount: number) => {
+    if (currency.toUpperCase() === "GHS") {
+      return `GHc${amount.toLocaleString()}`;
+    }
+
+    return `${currency} ${amount.toLocaleString()}`;
+  };
+
+  const handleSave = () => {
+    if (onSave) {
+      onSave(id);
+      return;
+    }
+
+    router.push("/login");
   };
 
   return (
-    <Card className={`bg-white border border-[#3d4a99]/40 rounded-2xl overflow-hidden hover:shadow-lg hover:border-[#3d4a99]/70 transition-all duration-300 group ${className}`}>
+    <Card
+      className={cn(
+        "group overflow-hidden rounded-[20px] border border-[#1a53c8] bg-white shadow-none transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(26,83,200,0.12)]",
+        className
+      )}
+    >
       <Link href={`/products/${id}`} className="block">
-        {/* Image Container */}
-        <div className="relative h-[220px] md:h-[240px] bg-gray-100 overflow-hidden">
+        <div className="relative h-[228px] overflow-hidden border-b border-[#dce4f8] bg-[#f7f8fc]">
           {image ? (
             <Image
               src={image}
               alt={name}
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-100 to-gray-200">
-              <div className="w-3/4 h-3/4 relative">
-                <div className="absolute inset-0 bg-gradient-to-t from-[#3d4a99]/10 via-transparent to-transparent" />
-              </div>
-            </div>
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#eef3ff] to-[#f9fbff]" />
           )}
-
-          {/* Category Badge */}
-          {category && (
-            <div className="absolute top-3 left-3">
-              <span className="bg-[#3d4a99]/90 text-white text-xs font-medium px-3.5 py-1.5 rounded-full backdrop-blur-sm">
-                {category}
-              </span>
-            </div>
-          )}
+          {category ? (
+            <span className="absolute left-3 top-3 rounded-full bg-[rgba(245,245,245,0.72)] px-3 py-1 text-[11px] text-black backdrop-blur-sm">
+              {category}
+            </span>
+          ) : null}
         </div>
-
-        {/* Content */}
-        <div className="p-4 md:p-5 space-y-2.5">
-          {/* Brand */}
-          {brand && (
-            <span className="text-xs font-semibold text-[#5e7fc1] uppercase tracking-wider">
-              {brand}
-            </span>
-          )}
-
-          {/* Product Name */}
-          <h3 className="text-base md:text-lg font-bold text-black leading-snug">{name}</h3>
-
-          {/* Rating */}
-          <div className="flex items-center gap-1.5">
-            <Star className="h-4 w-4 fill-[#ffce31] text-[#ffce31]" />
-            <span className="text-xs text-[#5f5e5e]">
-              <span className="font-medium">{rating}</span>
-              <span className="text-[#939393]"> rating ({formatReviewCount(reviewCount)} reviews)</span>
-            </span>
+        <div className="space-y-2 px-4 pb-3 pt-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#939393]">
+            {brand || "SaveGoal"}
+          </p>
+          <h3 className="line-clamp-2 min-h-[2.75rem] text-[14px] font-bold leading-5 text-black">
+            {name}
+          </h3>
+          <div className="flex items-center gap-1.5 text-[8px] text-[#5f5e5e]">
+            <Star className="h-3.5 w-3.5 fill-[#ffce31] text-[#ffce31]" />
+            <span>{rating.toFixed(1)} rating ({formatReviewCount(reviewCount)} reviews)</span>
           </div>
         </div>
       </Link>
 
-      {/* Price & Save — outside Link for independent click */}
-      <div className="px-4 md:px-5 pb-4 md:pb-5">
-        <div className="border-t border-gray-200 pt-3">
-          <div className="flex items-end justify-between">
-            <div>
-              <p className="text-[11px] text-[#939393] mb-0.5">Total Price</p>
-              <p className="text-xl md:text-2xl font-bold text-black">
-                GH¢{price.toLocaleString()}
-              </p>
-            </div>
-            <Button
-              onClick={() => onSave?.(id)}
-              size="sm"
-              className="bg-[#3d4a99] hover:bg-[#2d3369] text-white rounded-lg px-4 py-2 h-auto flex items-center gap-1.5 text-xs font-semibold"
-            >
-              <Bookmark className="h-3.5 w-3.5" />
-              Save
-            </Button>
+      <div className="border-t border-[#dce4f8] px-4 pb-4 pt-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[9px] text-[#939393]">Total Price</p>
+            <p className="mt-1 text-[14px] font-bold text-black">
+              {formatPrice(price)}
+            </p>
           </div>
+          <Button
+            type="button"
+            onClick={handleSave}
+            className="h-7 rounded-full bg-[#2e3369] px-3 text-[11px] font-semibold text-white hover:bg-[#232858]"
+          >
+            <Bookmark className="h-3 w-3" />
+            Save
+          </Button>
         </div>
       </div>
     </Card>

@@ -29,7 +29,9 @@ export default function BrowseProductsPage() {
       items = items.filter(
         (p) =>
           p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.merchant?.businessName?.toLowerCase().includes(searchQuery.toLowerCase())
+          p.merchant?.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.merchantName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.brand?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -68,7 +70,7 @@ export default function BrowseProductsPage() {
         productId: product.id,
         productName: product.name,
         productImage: product.image || null,
-        merchantName: product.merchant?.businessName || null,
+        merchantName: product.merchant?.businessName || product.merchantName || product.brand || null,
         price: product.price,
       });
       setSavedNotif("Item saved to cart!");
@@ -183,7 +185,7 @@ export default function BrowseProductsPage() {
                   key={product.id}
                   id={product.id}
                   name={product.name}
-                  brand={product.merchant?.businessName}
+                  brand={product.brand || product.merchantName || product.merchant?.businessName}
                   price={product.price}
                   image={product.image || undefined}
                   onSave={handleSaveProduct}

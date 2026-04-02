@@ -1,8 +1,14 @@
 // API Configuration
 // Base URL will be set via environment variable
 
+const DEFAULT_LOCAL_API_URL = "http://localhost:3001/api";
+const DEFAULT_PRODUCTION_API_URL = "https://savegoal-backend.onrender.com/api";
+const isProduction = process.env.NODE_ENV === "production";
+
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || "https://api.savegoal.com/api/v1",
+  BASE_URL:
+    process.env.NEXT_PUBLIC_API_URL ||
+    (isProduction ? DEFAULT_PRODUCTION_API_URL : DEFAULT_LOCAL_API_URL),
   TIMEOUT: 100000, // 100 seconds to account for Render cold starts
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000, // 1 second
@@ -45,6 +51,12 @@ export const API_ENDPOINTS = {
     CHANGE_PASSWORD: "/users/me/password",
   },
 
+  NOTIFICATIONS: {
+    LIST: "/notifications",
+    MARK_READ: (id: string) => `/notifications/${id}/read`,
+    MARK_ALL_READ: "/notifications/read-all",
+  },
+
   // Products
   PRODUCTS: {
     LIST: "/products",
@@ -81,11 +93,13 @@ export const API_ENDPOINTS = {
   MERCHANT: {
     ONBOARD: "/merchants/onboard",
     PROFILE: "/merchants/profile",
-    DASHBOARD: "/merchant/dashboard",
-    PRODUCTS: "/merchant/products",
-    ORDERS: "/merchant/orders",
-    PAYOUTS: "/merchant/payouts",
-    ANALYTICS: "/merchant/analytics",
+    DASHBOARD: "/merchants/dashboard",
+    PRODUCTS: "/merchants/products",
+    PRODUCT_DETAILS: (id: string) => `/merchants/products/${id}`,
+    ORDERS: "/merchants/orders",
+    PAYOUTS: "/merchants/payouts",
+    TRANSACTIONS: "/merchants/transactions",
+    ANALYTICS: "/merchants/analytics",
   },
 
   // Refunds

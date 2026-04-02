@@ -1,194 +1,80 @@
 'use client';
 
-import {
-    TrendingUp,
-    Package,
-    ShoppingCart,
-    DollarSign,
-    ArrowUpRight,
-    ArrowDownRight,
-    MoreHorizontal,
-    Eye,
-    Star,
-    Clock,
-} from 'lucide-react';
-import { useMerchantDashboard } from '@/src/domains/merchant/merchant.hooks';
+import type { ElementType } from 'react';
+import Link from 'next/link';
+import { ArrowRight, CreditCard, Package, ShoppingBag, Wallet } from 'lucide-react';
+import { useMerchantDashboard, useMerchantProfile } from '@/src/domains/merchant/merchant.hooks';
 import { Skeleton } from '@/src/components/ui/skeleton';
+import { Button } from '@/src/components/ui/button';
 
-// --- Stat Card ---
+function formatCurrency(amount: number, currency = 'GHS') {
+    return new Intl.NumberFormat('en-GH', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 2,
+    }).format(amount);
+}
+
+function formatDate(value: string) {
+    return new Intl.DateTimeFormat('en-GH', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(new Date(value));
+}
+
 function StatCard({
-    label,
+    title,
     value,
-    change,
-    changeLabel,
+    hint,
     icon: Icon,
-    iconBg,
-    positive,
 }: {
-    label: string;
+    title: string;
     value: string;
-    change: string;
-    changeLabel: string;
-    icon: React.ElementType;
-    iconBg: string;
-    positive: boolean;
+    hint: string;
+    icon: ElementType;
 }) {
     return (
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${iconBg}`}>
-                    <Icon className="w-5 h-5 text-white" />
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+                <div className="rounded-xl bg-slate-100 p-3 text-slate-700">
+                    <Icon className="h-5 w-5" />
                 </div>
-                <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors">
-                    <MoreHorizontal className="w-4 h-4 text-slate-400" />
-                </button>
+                <p className="text-xs font-medium text-slate-500">{hint}</p>
             </div>
-            <p className="text-2xl font-bold text-slate-900 mb-1">{value}</p>
-            <p className="text-sm text-slate-500 mb-3">{label}</p>
-            <div className={`flex items-center gap-1.5 text-xs font-semibold ${positive ? 'text-emerald-600' : 'text-red-500'}`}>
-                {positive ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                <span>{change}</span>
-                <span className="text-slate-400 font-normal">{changeLabel}</span>
-            </div>
+            <p className="text-sm font-medium text-slate-500">{title}</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
         </div>
     );
 }
 
-function StatCardSkeleton() {
-    return (
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <div className="flex items-start justify-between mb-4">
-                <Skeleton className="w-11 h-11 rounded-xl" />
-                <Skeleton className="w-7 h-7 rounded-lg" />
-            </div>
-            <Skeleton className="h-8 w-24 mb-2" />
-            <Skeleton className="h-4 w-32 mb-4" />
-            <Skeleton className="h-4 w-20" />
-        </div>
-    );
-}
-
-// --- Sales Chart ---
-function SalesChart({ data }: { data: number[] }) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const max = Math.max(...data);
+function RevenueChart({ points }: { points: Array<{ label: string; amount: number }> }) {
+    const max = Math.max(...points.map((point) => point.amount), 1);
 
     return (
-        <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100 col-span-1 lg:col-span-2 overflow-hidden">
-            <div className="flex items-center justify-between mb-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-6 flex items-center justify-between">
                 <div>
-                    <h2 className="text-base font-bold text-slate-900">Sales Overview</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Monthly revenue performance</p>
+                    <h2 className="text-lg font-bold text-slate-900">Revenue Trend</h2>
+                    <p className="text-sm text-slate-500">Last 6 months of redeemed merchant sales</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg">2025</span>
-                </div>
+                <Link href="/merchant/orders" className="text-sm font-semibold text-[#1A53C8]">
+                    View orders
+                </Link>
             </div>
-            <div className="overflow-x-auto pb-2 scrollbar-hide">
-                <div className="flex items-end gap-2 h-48 min-w-[500px] md:min-w-0">
-                    {data.map((v, i) => (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                            <div className="w-full relative group">
-                                <div
-                                    className="w-full rounded-t-lg bg-gradient-to-t from-[#1A53C8] to-[#306CFE] hover:from-[#306CFE] hover:to-[#8AABEE] transition-all duration-300 cursor-pointer"
-                                    style={{ height: `${(v / max) * 160}px` }}
-                                />
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                    GH¢{(v * 1000).toLocaleString()}
-                                </div>
-                            </div>
-                            <span className="text-[9px] text-slate-400 font-medium">{months[i]}</span>
+            <div className="flex h-64 items-end gap-3">
+                {points.map((point) => (
+                    <div key={point.label} className="flex flex-1 flex-col items-center gap-3">
+                        <div className="flex h-full w-full items-end">
+                            <div
+                                className="w-full rounded-t-xl bg-gradient-to-t from-[#1A53C8] to-[#5C87F5]"
+                                style={{ height: `${Math.max((point.amount / max) * 100, point.amount > 0 ? 12 : 4)}%` }}
+                                title={`${point.label}: ${formatCurrency(point.amount)}`}
+                            />
                         </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// --- Order Status Chart ---
-function OrderStatusChart({ data }: { data: { label: string; value: number; color: string }[] }) {
-    // Build conic gradient
-    let cumulative = 0;
-    const gradientStops = data.map(({ value, color }) => {
-        const start = cumulative;
-        cumulative += value;
-        return `${color} ${start}% ${cumulative}%`;
-    }).join(', ');
-
-    return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 col-span-1">
-            <div className="mb-6">
-                <h2 className="text-base font-bold text-slate-900">Order Status</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Distribution by status</p>
-            </div>
-            <div className="flex flex-col items-center gap-6">
-                <div className="relative">
-                    <div
-                        className="w-36 h-36 rounded-full"
-                        style={{ background: `conic-gradient(${gradientStops})` }}
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-inner">
-                            <div className="text-center">
-                                <p className="text-xl font-bold text-slate-900">324</p>
-                                <p className="text-[9px] text-slate-400 font-medium">Total</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="w-full space-y-2">
-                    {data.map(({ label, value, color }) => (
-                        <div key={label} className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
-                                <span className="text-xs text-slate-600">{label}</span>
-                            </div>
-                            <span className="text-xs font-semibold text-slate-900">{value}%</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// --- Recent Orders (Kept local for now until Phase 2) ---
-const recentOrdersData = [
-    { id: '#ORD-0091', product: 'Apple MacBook Pro', customer: 'Kwame Adu', amount: 'GH¢10,000', status: 'Delivered', statusColor: 'bg-emerald-100 text-emerald-700' },
-    { id: '#ORD-0090', product: 'Sony PlayStation 5', customer: 'Ama Owusu', amount: 'GH¢7,000', status: 'Processing', statusColor: 'bg-blue-100 text-blue-700' },
-    { id: '#ORD-0089', product: 'Adidas Sneakers', customer: 'Kofi Mensah', amount: 'GH¢800', status: 'Pending', statusColor: 'bg-amber-100 text-amber-700' },
-    { id: '#ORD-0088', product: 'Canon EOS R5', customer: 'Abena Sarpong', amount: 'GH¢35,000', status: 'Delivered', statusColor: 'bg-emerald-100 text-emerald-700' },
-    { id: '#ORD-0087', product: 'Nike Air Force', customer: 'Yaw Boateng', amount: 'GH¢1,200', status: 'Cancelled', statusColor: 'bg-red-100 text-red-600' },
-];
-
-function RecentOrders() {
-    return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 col-span-1 lg:col-span-2">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                <div>
-                    <h2 className="text-base font-bold text-slate-900">Recent Orders</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Latest customer orders</p>
-                </div>
-                <a href="/merchant/orders" className="text-xs font-semibold text-[#1A53C8] hover:text-[#306CFE] flex items-center gap-1 transition-colors">
-                    View all <Eye className="w-3.5 h-3.5" />
-                </a>
-            </div>
-            <div className="divide-y divide-slate-50 overflow-x-auto">
-                {recentOrdersData.map(order => (
-                    <div key={order.id} className="flex items-center gap-4 px-4 md:px-6 py-4 hover:bg-slate-50/50 transition-colors min-w-[400px] md:min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
-                            <ShoppingCart className="w-4 h-4 text-[#1A53C8]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-slate-900 truncate">{order.product}</p>
-                            <p className="text-xs text-slate-400 truncate">{order.customer} · {order.id}</p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                            <p className="text-sm font-bold text-slate-900">{order.amount}</p>
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md inline-block mt-1 ${order.statusColor}`}>
-                                {order.status}
-                            </span>
+                        <div className="text-center">
+                            <p className="text-xs font-semibold text-slate-700">{point.label}</p>
+                            <p className="text-[11px] text-slate-400">{formatCurrency(point.amount)}</p>
                         </div>
                     </div>
                 ))}
@@ -197,203 +83,180 @@ function RecentOrders() {
     );
 }
 
-// --- Top Products ---
-function TopProducts({ products }: { products: any[] }) {
-    return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 col-span-1">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                <div>
-                    <h2 className="text-base font-bold text-slate-900">Top Products</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Best performers this month</p>
-                </div>
-                <TrendingUp className="w-4 h-4 text-emerald-500" />
-            </div>
-            <div className="divide-y divide-slate-50">
-                {products.map((p, i) => (
-                    <div key={p.name} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors">
-                        <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold flex items-center justify-center flex-shrink-0">
-                            {i + 1}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-slate-900 truncate">{p.name}</p>
-                            <div className="flex items-center gap-1 mt-0.5">
-                                <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                                <span className="text-[10px] text-slate-400 font-medium">{p.rating}</span>
-                                <span className="text-[10px] text-slate-400">· {p.sales} sold</span>
-                            </div>
-                        </div>
-                        <p className="text-xs font-bold text-emerald-600">{p.revenue}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-// --- Quick Activity Feed ---
-function ActivityFeed({ activities }: { activities: any[] }) {
-    const getTypeStyles = (type: string) => {
-        switch (type) {
-            case 'order': return 'bg-blue-100 text-blue-600';
-            case 'product': return 'bg-emerald-100 text-emerald-600';
-            case 'payment': return 'bg-purple-100 text-purple-600';
-            case 'shipping': return 'bg-amber-100 text-amber-600';
-            default: return 'bg-slate-100 text-slate-600';
-        }
-    };
-
-    return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 col-span-1">
-            <div className="p-6 border-b border-slate-100">
-                <h2 className="text-base font-bold text-slate-900">Recent Activity</h2>
-                <p className="text-xs text-slate-500 mt-0.5">What's happening in your store</p>
-            </div>
-            <div className="divide-y divide-slate-50">
-                {activities.map(({ id, text, time, type }, i) => (
-                    <div key={id} className="flex items-start gap-4 px-6 py-4">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${getTypeStyles(type)}`}>
-                            {type === 'order' && <ShoppingCart className="w-4 h-4" />}
-                            {type === 'product' && <Package className="w-4 h-4" />}
-                            {type === 'payment' && <DollarSign className="w-4 h-4" />}
-                            {type === 'shipping' && <Clock className="w-4 h-4" />}
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-700 font-medium leading-tight">{text}</p>
-                            <p className="text-[11px] text-slate-400 mt-0.5">{time}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-// --- Error Helper ---
-function XCircle({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-            <circle cx="12" cy="12" r="10" />
-            <path d="m15 9-6 6" />
-            <path d="m9 9 6 6" />
-        </svg>
-    );
-}
-
-// --- Main Page ---
-export default function MerchantDashboard() {
-    const { data, isLoading, error } = useMerchantDashboard();
+export default function MerchantDashboardPage() {
+    const { data, isLoading, error, refetch } = useMerchantDashboard();
+    const { profile } = useMerchantProfile();
 
     if (error) {
         return (
-            <div className="min-h-[400px] flex flex-col items-center justify-center p-8 bg-white rounded-2xl border border-red-100">
-                <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4">
-                    <XCircle className="w-6 h-6 text-red-500" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Failed to load dashboard</h3>
-                <p className="text-slate-500 text-center max-w-xs mb-6">{error}</p>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="px-4 py-2 bg-[#1A53C8] text-white rounded-lg font-semibold hover:bg-[#1542a1] transition-colors"
-                >
+            <div className="rounded-2xl border border-red-100 bg-white p-8 text-center shadow-sm">
+                <h1 className="text-xl font-bold text-slate-900">Merchant dashboard unavailable</h1>
+                <p className="mt-2 text-sm text-slate-500">{error}</p>
+                <Button className="mt-4 bg-[#1A53C8] text-white hover:bg-[#1542a1]" onClick={refetch}>
                     Retry
-                </button>
+                </Button>
             </div>
         );
     }
 
     return (
         <div className="space-y-6">
-            {/* Welcome Banner */}
-            <div className="relative bg-gradient-to-r from-[#212D67] to-[#1A53C8] rounded-2xl p-6 overflow-hidden">
-                <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute right-16 bottom-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2" />
-                <div className="relative z-10">
-                    <p className="text-blue-300 text-sm font-medium mb-1">Good afternoon,</p>
-                    <h2 className="text-2xl font-bold text-white mb-1">Welcome back, My Store 👋</h2>
-                    <p className="text-blue-200 text-sm">Here's what's happening with your store today.</p>
+            <section className="rounded-3xl bg-gradient-to-r from-[#1B2559] to-[#1A53C8] p-6 text-white shadow-xl">
+                <p className="text-sm font-medium text-blue-100">Merchant workspace</p>
+                <h1 className="mt-2 text-3xl font-bold">
+                    {profile?.storeName || 'Your store'}
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm text-blue-100">
+                    This dashboard is now driven by your live products, redemptions, and payout requests.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                    <Button asChild className="bg-white text-[#1A53C8] hover:bg-slate-100">
+                        <Link href="/merchant/products">Manage products</Link>
+                    </Button>
+                    <Button asChild variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10">
+                        <Link href="/merchant/payments">Open payouts</Link>
+                    </Button>
                 </div>
-            </div>
+            </section>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {isLoading ? (
-                    Array(4).fill(0).map((_, i) => <StatCardSkeleton key={i} />)
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {isLoading || !data ? (
+                    Array.from({ length: 4 }).map((_, index) => (
+                        <Skeleton key={index} className="h-36 rounded-2xl" />
+                    ))
                 ) : (
                     <>
                         <StatCard
-                            label="Total Revenue"
-                            value={data!.stats.totalRevenue}
-                            change={data!.stats.revenueChange}
-                            changeLabel="vs last month"
-                            icon={DollarSign}
-                            iconBg="bg-gradient-to-br from-[#1A53C8] to-[#306CFE]"
-                            positive
+                            title="Available Balance"
+                            value={formatCurrency(data.summary.availableBalance)}
+                            hint={`${data.summary.pendingPayouts} pending payout${data.summary.pendingPayouts === 1 ? '' : 's'}`}
+                            icon={Wallet}
                         />
                         <StatCard
-                            label="Total Orders"
-                            value={data!.stats.totalOrders.toString()}
-                            change={data!.stats.ordersChange}
-                            changeLabel="vs last month"
-                            icon={ShoppingCart}
-                            iconBg="bg-gradient-to-br from-emerald-400 to-emerald-600"
-                            positive
+                            title="Total Revenue"
+                            value={formatCurrency(data.summary.totalRevenue)}
+                            hint="Completed merchant redemptions"
+                            icon={CreditCard}
                         />
                         <StatCard
-                            label="Active Products"
-                            value={data!.stats.activeProducts.toString()}
-                            change={data!.stats.productsChange}
-                            changeLabel="this week"
+                            title="Orders"
+                            value={data.summary.totalOrders.toString()}
+                            hint="Redemption-backed orders"
+                            icon={ShoppingBag}
+                        />
+                        <StatCard
+                            title="Active Products"
+                            value={data.summary.activeProducts.toString()}
+                            hint={`${formatCurrency(data.summary.avgOrderValue)} avg order`}
                             icon={Package}
-                            iconBg="bg-gradient-to-br from-purple-400 to-purple-600"
-                            positive
-                        />
-                        <StatCard
-                            label="Avg. Order Value"
-                            value={data!.stats.avgOrderValue}
-                            change={data!.stats.avgOrderValueChange}
-                            changeLabel="vs last month"
-                            icon={TrendingUp}
-                            iconBg="bg-gradient-to-br from-amber-400 to-amber-600"
-                            positive={data!.stats.avgOrderValueChange.startsWith('+')}
                         />
                     </>
                 )}
-            </div>
+            </section>
 
-            {/* Charts row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {isLoading ? (
+            <section className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr,1fr]">
+                {isLoading || !data ? (
                     <>
-                        <Skeleton className="h-72 col-span-1 lg:col-span-2 rounded-2xl" />
-                        <Skeleton className="h-72 rounded-2xl" />
+                        <Skeleton className="h-96 rounded-2xl" />
+                        <Skeleton className="h-96 rounded-2xl" />
                     </>
                 ) : (
                     <>
-                        <SalesChart data={data!.stats.recentRevenue} />
-                        <OrderStatusChart data={data!.stats.orderStatusDistribution} />
+                        <RevenueChart points={data.monthlyRevenue} />
+                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <div className="mb-6 flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-lg font-bold text-slate-900">Top Products</h2>
+                                    <p className="text-sm text-slate-500">Ranked by redeemed revenue</p>
+                                </div>
+                                <Link href="/merchant/products" className="text-sm font-semibold text-[#1A53C8]">
+                                    Catalog
+                                </Link>
+                            </div>
+                            <div className="space-y-4">
+                                {data.topProducts.length === 0 ? (
+                                    <p className="text-sm text-slate-500">No product revenue yet. Once customers redeem goals, your top products will appear here.</p>
+                                ) : (
+                                    data.topProducts.map((product, index) => (
+                                        <div key={`${product.name}-${index}`} className="rounded-xl border border-slate-100 p-4">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div>
+                                                    <p className="font-semibold text-slate-900">{product.name}</p>
+                                                    <p className="text-sm text-slate-500">{product.orders} redemption{product.orders === 1 ? '' : 's'}</p>
+                                                </div>
+                                                <p className="font-bold text-[#1A53C8]">{formatCurrency(product.revenue)}</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
                     </>
                 )}
-            </div>
+            </section>
 
-            {/* Bottom row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="col-span-1 lg:col-span-2">
-                    {isLoading ? <Skeleton className="h-[400px] rounded-2xl" /> : <RecentOrders />}
-                </div>
-                <div className="flex flex-col gap-6">
-                    {isLoading ? (
-                        <>
-                            <Skeleton className="h-64 rounded-2xl" />
-                            <Skeleton className="h-64 rounded-2xl" />
-                        </>
+            <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr,1fr]">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="mb-6 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-900">Latest Orders</h2>
+                            <p className="text-sm text-slate-500">Newest customer redemptions</p>
+                        </div>
+                        <Link href="/merchant/orders" className="inline-flex items-center gap-1 text-sm font-semibold text-[#1A53C8]">
+                            All orders <ArrowRight className="h-4 w-4" />
+                        </Link>
+                    </div>
+                    {isLoading || !data ? (
+                        <Skeleton className="h-64 rounded-2xl" />
+                    ) : data.latestOrders.length === 0 ? (
+                        <p className="text-sm text-slate-500">No merchant orders yet. Orders appear when customers redeem a completed Save Now Buy Later goal.</p>
                     ) : (
-                        <>
-                            <TopProducts products={data!.topProducts} />
-                            <ActivityFeed activities={data!.recentActivities} />
-                        </>
+                        <div className="space-y-3">
+                            {data.latestOrders.map((order) => (
+                                <Link
+                                    key={order.id}
+                                    href={`/merchant/orders/${order.id}`}
+                                    className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 p-4 transition-colors hover:bg-slate-50"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="font-semibold text-slate-900">{order.productName}</p>
+                                        <p className="truncate text-sm text-slate-500">
+                                            {order.customerName} • {formatDate(order.createdAt)}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-bold text-slate-900">{formatCurrency(order.amount, order.currency)}</p>
+                                        <p className="text-xs font-medium text-slate-500">{order.orderStatus}</p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
                     )}
                 </div>
-            </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="mb-6">
+                        <h2 className="text-lg font-bold text-slate-900">Recent Activity</h2>
+                        <p className="text-sm text-slate-500">Live merchant events from products, orders, and payouts</p>
+                    </div>
+                    {isLoading || !data ? (
+                        <Skeleton className="h-64 rounded-2xl" />
+                    ) : data.recentActivity.length === 0 ? (
+                        <p className="text-sm text-slate-500">No recent activity yet.</p>
+                    ) : (
+                        <div className="space-y-4">
+                            {data.recentActivity.map((activity) => (
+                                <div key={activity.id} className="rounded-xl border border-slate-100 p-4">
+                                    <p className="font-medium text-slate-900">{activity.message}</p>
+                                    <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">
+                                        {activity.type} • {activity.time}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </section>
         </div>
     );
 }

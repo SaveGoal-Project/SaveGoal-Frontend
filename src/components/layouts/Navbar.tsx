@@ -3,17 +3,21 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/src/components/ui/button";
-import { Menu, X, Bell, ChevronDown, LogOut, Settings, ShoppingCart, LayoutDashboard } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, Settings, ShoppingCart, LayoutDashboard } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { useCart } from "@/src/contexts/CartContext";
+import { cn } from "@/src/lib/utils";
+import { NotificationBell } from "@/src/components/shared/NotificationBell";
 
-export function Navbar() {
+interface NavbarProps {
+  variant?: "default" | "marketing";
+}
+
+export function Navbar({ variant = "default" }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const notifRef = useRef<HTMLDivElement>(null);
   const { user, isAuthenticated, logout } = useAuth();
   const { cartCount } = useCart();
 
@@ -25,12 +29,6 @@ export function Navbar() {
         !userMenuRef.current.contains(event.target as Node)
       ) {
         setIsUserMenuOpen(false);
-      }
-      if (
-        notifRef.current &&
-        !notifRef.current.contains(event.target as Node)
-      ) {
-        setIsNotifOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -58,10 +56,29 @@ export function Navbar() {
     return (first + last).toUpperCase();
   };
 
+  const isMarketing = variant === "marketing";
+
   return (
-    <nav className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
+    <nav
+      className={cn(
+        "sticky top-0 z-50",
+        isMarketing
+          ? "border-b border-black/5 bg-white/55 shadow-[0_4px_25px_rgba(0,0,0,0.11)] backdrop-blur-md"
+          : "border-b border-gray-100 bg-white/80 shadow-sm backdrop-blur-md"
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto px-4",
+          isMarketing ? "max-w-[1440px] md:px-6 lg:px-10" : "container"
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center justify-between",
+            isMarketing ? "h-[89px]" : "h-20"
+          )}
+        >
           {/* Logo */}
           <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center">
             <Image
@@ -69,18 +86,23 @@ export function Navbar() {
               alt="SaveGoal"
               width={140}
               height={48}
-              style={{ width: "auto", height: "48px" }}
+              style={{ width: "auto", height: isMarketing ? "44px" : "48px" }}
               priority
             />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-10">
+          <div className={cn("hidden md:flex items-center", isMarketing ? "gap-8 lg:gap-[52px]" : "gap-10")}>
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-base font-medium text-[#1a53c8] hover:text-[#2d3369] transition-colors"
+                className={cn(
+                  "transition-colors hover:text-[#2d3369]",
+                  isMarketing
+                    ? "text-[14px] font-semibold text-[#1a53c8]"
+                    : "text-base font-medium text-[#1a53c8]"
+                )}
               >
                 {link.label}
               </Link>
@@ -92,33 +114,7 @@ export function Navbar() {
             {isAuthenticated && user ? (
               /* Authenticated: notification bell + cart + avatar dropdown */
               <div className="flex items-center gap-2">
-                {/* Notification Bell */}
-                <div className="relative" ref={notifRef}>
-                  <button
-                    onClick={() => setIsNotifOpen(!isNotifOpen)}
-                    className="relative p-2 text-gray-600 hover:text-[#1a53c8] transition-colors"
-                    aria-label="Notifications"
-                  >
-                    <Bell className="h-5 w-5" />
-                  </button>
-
-                  {/* Notification Dropdown */}
-                  {isNotifOpen && (
-                    <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg py-3 z-50">
-                      <div className="px-4 pb-2 border-b border-gray-100">
-                        <p className="text-sm font-semibold text-gray-900">
-                          Notifications
-                        </p>
-                      </div>
-                      <div className="px-4 py-8 text-center">
-                        <Bell className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-                        <p className="text-sm text-gray-400">
-                          No notifications yet
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <NotificationBell variant="consumer" />
 
                 {/* Cart Icon */}
                 <Link
@@ -197,13 +193,19 @@ export function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="text-base font-semibold text-gray-800 hover:text-[#1a53c8] transition-colors"
+                  className={cn(
+                    "font-semibold text-gray-800 transition-colors hover:text-[#1a53c8]",
+                    isMarketing ? "text-[14px]" : "text-base"
+                  )}
                 >
                   Sign In
                 </Link>
                 <Button
                   asChild
-                  className="bg-gradient-to-r from-[#2b3063] to-[#5761c9] hover:opacity-90 text-white rounded-full px-6"
+                  className={cn(
+                    "bg-gradient-to-r from-[#2b3063] to-[#5761c9] text-white hover:opacity-90",
+                    isMarketing ? "h-14 rounded-[11px] px-8 text-[14px] font-bold" : "rounded-full px-6"
+                  )}
                 >
                   <Link href="/register">Get Started</Link>
                 </Button>
